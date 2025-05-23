@@ -4,7 +4,6 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <!-- Page Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
@@ -21,7 +20,6 @@
         </div>
     </div>
 
-    <!-- Summary Cards -->
     <div class="row g-4 mb-5">
         <div class="col-lg-3 col-md-6">
             <div class="card dashboard-card h-100">
@@ -92,7 +90,6 @@
         </div>
     </div>
 
-    <!-- Charts Row -->
     <div class="row g-4 mb-5">
         <div class="col-lg-8">
             <div class="card h-100">
@@ -105,7 +102,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container">
+                    <div class="chart-container" style="position: relative; height: 400px;">
                         <canvas id="activityChart"></canvas>
                     </div>
                 </div>
@@ -120,7 +117,7 @@
                 <div class="card-body">
                     {% if performance_data.courses %}
                         {% for course in performance_data.courses[:5] %}
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded bg-light">
                             <div class="flex-grow-1">
                                 <div class="fw-semibold">{{ course.course_title[:30] }}{{ '...' if course.course_title|length > 30 else '' }}</div>
                                 <small class="text-muted">{{ course.teacher_name }}</small>
@@ -132,7 +129,7 @@
                         </div>
                         {% endfor %}
                     {% else %}
-                        <div class="text-center text-muted">
+                        <div class="text-center text-muted py-4">
                             <i class="fas fa-chart-bar fa-2x mb-2"></i>
                             <p>No course performance data available</p>
                         </div>
@@ -142,20 +139,55 @@
         </div>
     </div>
 
-    <!-- Course Performance Table -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Course Categories Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 300px;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Student Engagement Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 300px;">
+                        <canvas id="engagementChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">Detailed Course Performance</h5>
-                    <button class="btn btn-outline-primary btn-sm" onclick="exportReport()">
-                        <i class="fas fa-download me-2"></i>Export Report
-                    </button>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary btn-sm" onclick="exportReport('csv')">
+                            <i class="fas fa-file-csv me-2"></i>Export CSV
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="exportReport('excel')">
+                            <i class="fas fa-file-excel me-2"></i>Export Excel
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="exportReport('pdf')">
+                            <i class="fas fa-file-pdf me-2"></i>Export PDF
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead>
+                        <table class="table table-hover mb-0" id="performanceTable">
+                            <thead class="table-light">
                                 <tr>
                                     <th class="ps-4">Course</th>
                                     <th>Instructor</th>
@@ -163,11 +195,12 @@
                                     <th class="text-center">Students</th>
                                     <th class="text-center">Completion Rate</th>
                                     <th class="text-center">Avg. Quiz Score</th>
+                                    <th class="text-center">Avg. Time to Complete</th>
                                     <th class="text-center">Rating</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for course in performance_data.courses[:10] if performance_data.courses %}
+                                {% for course in performance_data.courses[:15] if performance_data.courses %}
                                 <tr>
                                     <td class="ps-4">
                                         <div>
@@ -196,16 +229,20 @@
                                         <span class="fw-bold text-primary">{{ course.average_quiz_score|round(1) }}%</span>
                                     </td>
                                     <td class="text-center">
+                                        <span class="text-muted">{{ course.average_completion_days|round(0) }} days</span>
+                                    </td>
+                                    <td class="text-center">
                                         <div class="d-flex justify-content-center">
+                                            {% set rating = 4 %}
                                             {% for i in range(5) %}
-                                                <i class="fas fa-star {{ 'text-warning' if i < 4 else 'text-muted' }}"></i>
+                                                <i class="fas fa-star {{ 'text-warning' if i < rating else 'text-muted' }}"></i>
                                             {% endfor %}
                                         </div>
                                     </td>
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="7" class="text-center py-5">
+                                    <td colspan="8" class="text-center py-5">
                                         <div class="text-muted">
                                             <i class="fas fa-chart-bar fa-3x mb-3"></i>
                                             <div>No course performance data available</div>
@@ -226,26 +263,62 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-// Chart data
 const activityData = {
     registrations: {{ activity_data.user_registrations|tojson if activity_data.user_registrations else '[]' }},
     enrollments: {{ activity_data.course_enrollments|tojson if activity_data.course_enrollments else '[]' }},
     quizzes: {{ activity_data.quiz_attempts|tojson if activity_data.quiz_attempts else '[]' }}
 };
 
-// Initialize chart
-const ctx = document.getElementById('activityChart').getContext('2d');
-let activityChart = new Chart(ctx, {
+const performanceData = {{ performance_data.courses|tojson if performance_data.courses else '[]' }};
+
+function prepareCategoryData() {
+    const categories = {};
+    performanceData.forEach(course => {
+        const category = course.category || 'General';
+        categories[category] = (categories[category] || 0) + 1;
+    });
+    
+    return {
+        labels: Object.keys(categories),
+        data: Object.values(categories),
+        colors: ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#EF4444', '#3B82F6']
+    };
+}
+
+function prepareEngagementData() {
+    const totalStudents = performanceData.reduce((sum, course) => sum + course.total_students, 0);
+    const completedStudents = performanceData.reduce((sum, course) => 
+        sum + Math.round(course.total_students * course.completion_rate / 100), 0);
+    const activeStudents = totalStudents - completedStudents;
+    
+    return {
+        labels: ['Active Students', 'Completed Students', 'Quiz Participants'],
+        data: [activeStudents, completedStudents, activityData.quizzes.length],
+        colors: ['#3B82F6', '#10B981', '#F59E0B']
+    };
+}
+
+const activityCtx = document.getElementById('activityChart').getContext('2d');
+let activityChart = new Chart(activityCtx, {
     type: 'line',
     data: {
-        labels: activityData.registrations.map(item => new Date(item.date).toLocaleDateString()),
+        labels: activityData.registrations.map(item => {
+            const date = new Date(item.date);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }),
         datasets: [{
             label: 'User Registrations',
             data: activityData.registrations.map(item => item.count),
-            borderColor: 'rgb(139, 92, 246)',
+            borderColor: '#8B5CF6',
             backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            borderWidth: 3,
             tension: 0.4,
-            fill: true
+            fill: true,
+            pointBackgroundColor: '#8B5CF6',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
         }]
     },
     options: {
@@ -254,59 +327,355 @@ let activityChart = new Chart(ctx, {
         plugins: {
             legend: {
                 position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    padding: 20
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                cornerRadius: 8,
+                displayColors: false
             }
         },
         scales: {
             y: {
                 beginAtZero: true,
                 grid: {
-                    color: 'rgba(0, 0, 0, 0.05)'
+                    color: 'rgba(0, 0, 0, 0.05)',
+                    drawBorder: false
+                },
+                ticks: {
+                    color: '#6B7280'
                 }
             },
             x: {
                 grid: {
-                    color: 'rgba(0, 0, 0, 0.05)'
+                    display: false
+                },
+                ticks: {
+                    color: '#6B7280'
+                }
+            }
+        },
+        interaction: {
+            intersect: false,
+            mode: 'index'
+        }
+    }
+});
+
+const categoryData = prepareCategoryData();
+const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+const categoryChart = new Chart(categoryCtx, {
+    type: 'doughnut',
+    data: {
+        labels: categoryData.labels,
+        datasets: [{
+            data: categoryData.data,
+            backgroundColor: categoryData.colors,
+            borderWidth: 0,
+            hoverOffset: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    usePointStyle: true,
+                    padding: 15
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                cornerRadius: 8,
+                callbacks: {
+                    label: function(context) {
+                        const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                        return `${context.label}: ${context.parsed} courses (${percentage}%)`;
+                    }
                 }
             }
         }
     }
 });
 
-// Show different chart data
+const engagementData = prepareEngagementData();
+const engagementCtx = document.getElementById('engagementChart').getContext('2d');
+const engagementChart = new Chart(engagementCtx, {
+    type: 'bar',
+    data: {
+        labels: engagementData.labels,
+        datasets: [{
+            data: engagementData.data,
+            backgroundColor: engagementData.colors,
+            borderRadius: 8,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                cornerRadius: 8,
+                displayColors: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)',
+                    drawBorder: false
+                },
+                ticks: {
+                    color: '#6B7280'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    color: '#6B7280'
+                }
+            }
+        }
+    }
+});
+
 function showChart(type) {
-    // Update button states
     document.querySelectorAll('.btn-group .btn').forEach(btn => {
         btn.classList.remove('active');
     });
     event.target.classList.add('active');
     
-    // Update chart data
     let data, label, color;
     
     switch(type) {
         case 'registrations':
             data = activityData.registrations;
             label = 'User Registrations';
-            color = 'rgb(139, 92, 246)';
+            color = '#8B5CF6';
             break;
         case 'enrollments':
             data = activityData.enrollments;
             label = 'Course Enrollments';
-            color = 'rgb(236, 72, 153)';
+            color = '#EC4899';
             break;
         case 'quizzes':
             data = activityData.quizzes;
             label = 'Quiz Attempts';
-            color = 'rgb(16, 185, 129)';
+            color = '#10B981';
             break;
     }
     
-    activityChart.data.labels = data.map(item => new Date(item.date).toLocaleDateString());
+    activityChart.data.labels = data.map(item => {
+        const date = new Date(item.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
     activityChart.data.datasets[0].data = data.map(item => item.count);
     activityChart.data.datasets[0].label = label;
     activityChart.data.datasets[0].borderColor = color;
-    activityChart.data.datasets[0].backgroundColor = color.replace('rgb', 'rgba').replace(')', ', 0.1)');
+    activityChart.data.datasets[0].backgroundColor = color.replace(')', ', 0.1)').replace('rgb', 'rgba');
+    activityChart.data.datasets[0].pointBackgroundColor = color;
     
-    activityChart.update();
+    activityChart.update('active');
 }
 
+function exportReport(format) {
+    switch(format) {
+        case 'csv':
+            exportTableToCSV();
+            break;
+        case 'excel':
+            alert('Excel export functionality would be implemented here');
+            break;
+        case 'pdf':
+            alert('PDF export functionality would be implemented here');
+            break;
+    }
+}
+
+function exportTableToCSV() {
+    const table = document.getElementById('performanceTable');
+    const rows = table.querySelectorAll('tr');
+    const csvContent = [];
+    
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('td, th');
+        const rowData = [];
+        
+        cols.forEach(col => {
+            let text = col.textContent.trim();
+            text = text.replace(/\s+/g, ' '); // Replace multiple spaces with single space
+            text = text.replace(/"/g, '""'); // Escape quotes
+            rowData.push(`"${text}"`);
+        });
+        
+        if (rowData.length > 0) {
+            csvContent.push(rowData.join(','));
+        }
+    });
+    
+    const csvString = csvContent.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `course_performance_report_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exporting...';
+            this.disabled = true;
+            
+            setTimeout(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            }, 2000);
+        });
+    });
+});
+
+let autoRefreshInterval;
+
+function startAutoRefresh() {
+    autoRefreshInterval = setInterval(() => {
+        console.log('Auto-refreshing reports data...');
+    }, 300000); // 5 minutes
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+}
+
+// Start auto-refresh when page loads
+// startAutoRefresh();
+</script>
+
+<style>
+.dashboard-card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.dashboard-number {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.chart-container {
+    position: relative;
+}
+
+.chart-container canvas {
+    max-height: 400px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.progress {
+    background-color: #E5E7EB;
+}
+
+.bg-gradient-light {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.text-gradient-primary {
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.text-gradient-secondary {
+    background: linear-gradient(135deg, #EC4899 0%, #EF4444 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.text-gradient-success {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.text-gradient-warning {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+@media (max-width: 768px) {
+    .dashboard-number {
+        font-size: 1.5rem;
+    }
+    
+    .dashboard-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+    
+    .chart-container {
+        height: 250px !important;
+    }
+}
+</style>
+{% endblock %}

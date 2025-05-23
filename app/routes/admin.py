@@ -13,52 +13,33 @@ bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 def get_dashboard():
     """Get admin dashboard statistics"""
     try:
-        # Check user authentication and role first
         user_id_str = get_jwt_identity()
-        print(f"Dashboard - User ID from JWT: {user_id_str} (type: {type(user_id_str)})")
         
         if not user_id_str:
-            print("Dashboard - No user ID from JWT")
             return jsonify({'error': 'Authentication required'}), 401
         
-        # Convert string user ID to int for database query
         try:
             user_id = int(user_id_str)
         except (ValueError, TypeError):
-            print(f"Dashboard - Invalid user ID format: {user_id_str}")
             return jsonify({'error': 'Invalid user ID'}), 400
         
         user = User.query.get(user_id)
-        print(f"Dashboard - User object: {user}")
         
         if not user:
-            print("Dashboard - User not found")
             return jsonify({'error': 'User not found'}), 404
         
-        print(f"Dashboard - User role: {user.role}")
-        print(f"Dashboard - Is admin: {user.is_admin()}")
-        
         if not user.is_admin():
-            print("Dashboard - Access denied, not admin")
             return jsonify({'error': 'Access denied. Admin role required'}), 403
         
-        print("Dashboard - Admin access confirmed, getting data...")
-        
-        # Get dashboard data using the service
         dashboard_data = AdminService.get_dashboard()
         
-        print("Dashboard - Returning data successfully")
         return jsonify({
             'message': 'Dashboard data retrieved successfully',
             'data': dashboard_data
         }), 200
         
     except Exception as e:
-        print(f"Dashboard - Unexpected error: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        
-        # Return error with empty data structure
+        print(f"Dashboard error: {str(e)}")
         return jsonify({
             'error': f'Dashboard error: {str(e)}',
             'data': {
@@ -76,17 +57,15 @@ def get_users():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     role = request.args.get('role')
-    status = request.args.get('status')  # Changed from active_only to status
+    status = request.args.get('status')
     search = request.args.get('search')
-    
-    print(f"Admin get_users - Filters: role={role}, status={status}, search={search}")
     
     try:
         data = AdminService.get_users(
             page=page,
             per_page=per_page,
             role=role,
-            status=status,  # Pass status instead of active_only
+            status=status,
             search=search
         )
         return jsonify(data), 200
@@ -154,7 +133,6 @@ def export_users():
 def toggle_user_active(user_id):
     """Toggle user active status"""
     admin_id_str = get_jwt_identity()
-    # Convert string to int
     try:
         admin_id = int(admin_id_str)
     except (ValueError, TypeError):
@@ -170,21 +148,19 @@ def toggle_user_active(user_id):
 @bp.route('/courses', methods=['GET'])
 @admin_required()
 def get_all_courses():
-    """Get all courses with detailed information - FIXED FILTERS"""
+    """Get all courses with detailed information"""
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     category = request.args.get('category')
-    status = request.args.get('status')  # Changed from published_only to status
+    status = request.args.get('status')
     search = request.args.get('search')
-    
-    print(f"Admin get_courses - Filters: category={category}, status={status}, search={search}")
     
     try:
         data = AdminService.get_all_courses(
             page=page,
             per_page=per_page,
             category=category,
-            status=status,  # Pass status instead of published_only
+            status=status,
             search=search
         )
         return jsonify(data), 200
@@ -198,22 +174,6 @@ def get_all_courses():
             'pages': 1
         }), 200
 
-@bp.route('/courses/<int:course_id>', methods=['DELETE'])
-@admin_required()
-def delete_course(course_id):
-    """Delete a course"""
-    admin_id_str = get_jwt_identity()
-    try:
-        admin_id = int(admin_id_str)
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Invalid admin ID'}), 400
-        
-    return BaseController.handle_request(
-        AdminService.delete_course,
-        admin_id,
-        course_id,
-        success_message="Course deleted successfully"
-    )
 
 @bp.route('/courses/export', methods=['GET'])
 @admin_required()
@@ -277,6 +237,57 @@ def get_course_performance_report():
             'courses': [],
             'total_courses': 0
         }), 200
+    
+@bp.route('/reports/engagement-metrics', methods=['GET'])
+@admin_required()
+def get_engagement_metrics():
+    """Get student engagement metrics"""
+    try:
+        data = AdminService.get_engagement_metrics()
+        return jsonify(data), 200
+    except Exception as e:
+        print(f"Engagement metrics error: {str(e)}")
+        return jsonify({
+            'active_students': 0,
+            'recent_lesson_viewers': 0,
+            'recent_quiz_takers': 0,
+            'avg_lessons_per_student': 0,
+            'engagement_rate': 0
+        }), 200
+
+@bp.route('/reports/category-distribution', methods=['GET'])
+@admin_required()
+def get_category_distribution():
+    """Get course category distribution"""
+    try:
+        data = AdminService.get_category_distribution()
+        return jsonify(data), 200
+    except Exception as e:
+        print(f"Category distribution error: {str(e)}")
+        return jsonify({
+            'categories': [],
+            'total_categories': 0
+        }), 200
+
+@bp.route('/reports/export', methods=['GET'])
+@admin_required()
+def export_performance_report():
+    """Export performance report"""
+    format_type = request.args.get('format', 'csv')
+    
+    try:
+        from flask import make_response
+        
+        result = AdminService.export_performance_report(format_type)
+        
+        response = make_response(result['content'])
+        response.headers['Content-Type'] = result['content_type']
+        response.headers['Content-Disposition'] = f'attachment; filename={result["filename"]}'
+        
+        return response
+    except Exception as e:
+        print(f"Export performance report error: {str(e)}")
+        return jsonify({'error': f'Export failed: {str(e)}'}), 500
 
 @bp.route('/achievements', methods=['GET'])
 @admin_required()
@@ -303,7 +314,6 @@ def create_achievement():
         success_code=201
     )
 
-# Debug endpoints
 @bp.route('/test', methods=['GET'])
 def test_admin():
     """Simple test endpoint to check admin access"""
@@ -323,9 +333,7 @@ def test_auth():
     """Test JWT authentication"""
     try:
         user_id_str = get_jwt_identity()
-        print(f"Test auth - User ID: {user_id_str} (type: {type(user_id_str)})")
         
-        # Convert to int
         try:
             user_id = int(user_id_str)
         except (ValueError, TypeError):

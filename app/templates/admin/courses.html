@@ -11,11 +11,6 @@
                     <h1 class="display-6 fw-bold text-gradient-primary mb-1">Course Management</h1>
                     <p class="text-muted mb-0">Manage all courses on the platform</p>
                 </div>
-                <div>
-                    <button class="btn btn-gradient-primary" onclick="refreshData()">
-                        <i class="fas fa-sync-alt me-2"></i>Refresh
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -95,16 +90,10 @@
                             <li><a class="dropdown-item" href="#" onclick="viewCourse({{ course.id }})">
                                 <i class="fas fa-eye me-2 text-info"></i>View Details
                             </a></li>
-                            <li><a class="dropdown-item" href="#" onclick="editCourse({{ course.id }})">
-                                <i class="fas fa-edit me-2 text-warning"></i>Edit Course
-                            </a></li>
+                    
                             <li><a class="dropdown-item" href="#" onclick="togglePublished({{ course.id }}, {{ course.is_published|lower }})">
                                 <i class="fas fa-{{ 'eye-slash' if course.is_published else 'eye' }} me-2 text-primary"></i>
                                 {{ 'Unpublish' if course.is_published else 'Publish' }}
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteCourse({{ course.id }}, '{{ course.title }}')">
-                                <i class="fas fa-trash me-2"></i>Delete Course
                             </a></li>
                         </ul>
                     </div>
@@ -313,9 +302,10 @@ function togglePublished(courseId, isPublished) {
 }
 
 function viewCourse(courseId) {
-    fetch(`/api/courses/${courseId}`, {
+    fetch(`/admin/courses/${courseId}/details`, {
+        method: 'GET',
         headers: {
-            'Authorization': `Bearer {{ session.access_token }}`
+            'Content-Type': 'application/json'
         }
     })
     .then(response => response.json())
@@ -325,40 +315,42 @@ function viewCourse(courseId) {
             return;
         }
         
+        const courseData = data.data || data;
+        
         const content = `
             <div class="row g-4">
                 <div class="col-md-8">
-                    <h4>${data.title}</h4>
-                    <p class="text-muted">${data.description || 'No description available'}</p>
+                    <h4>${courseData.title}</h4>
+                    <p class="text-muted">${courseData.description || 'No description available'}</p>
                     
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <strong>Category:</strong><br>
-                            <span class="badge bg-gradient-primary">${data.category || 'Uncategorized'}</span>
+                            <span class="badge bg-gradient-primary">${courseData.category || 'Uncategorized'}</span>
                         </div>
                         <div class="col-md-6">
                             <strong>Instructor:</strong><br>
-                            <span class="text-muted">${data.teacher_name}</span>
+                            <span class="text-muted">${courseData.teacher_name}</span>
                         </div>
                         <div class="col-md-6">
                             <strong>Max Students:</strong><br>
-                            <span class="text-muted">${data.max_students}</span>
+                            <span class="text-muted">${courseData.max_students}</span>
                         </div>
                         <div class="col-md-6">
                             <strong>Current Enrollment:</strong><br>
-                            <span class="text-muted">${data.current_students}</span>
+                            <span class="text-muted">${courseData.current_students}</span>
                         </div>
                     </div>
                     
-                    ${data.start_date ? `
+                    ${courseData.start_date ? `
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <strong>Start Date:</strong><br>
-                            <span class="text-muted">${new Date(data.start_date).toLocaleDateString()}</span>
+                            <span class="text-muted">${new Date(courseData.start_date).toLocaleDateString()}</span>
                         </div>
                         <div class="col-md-6">
                             <strong>End Date:</strong><br>
-                            <span class="text-muted">${data.end_date ? new Date(data.end_date).toLocaleDateString() : 'Not specified'}</span>
+                            <span class="text-muted">${courseData.end_date ? new Date(courseData.end_date).toLocaleDateString() : 'Not specified'}</span>
                         </div>
                     </div>
                     ` : ''}
@@ -373,19 +365,19 @@ function viewCourse(courseId) {
                             <div class="row g-2 text-center">
                                 <div class="col-6">
                                     <div class="bg-gradient-light rounded p-2">
-                                        <div class="fw-bold text-primary">${data.lesson_count || 0}</div>
+                                        <div class="fw-bold text-primary">${courseData.lesson_count || 0}</div>
                                         <small class="text-muted">Lessons</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="bg-gradient-light rounded p-2">
-                                        <div class="fw-bold text-secondary">${data.quiz_count || 0}</div>
+                                        <div class="fw-bold text-secondary">${courseData.quiz_count || 0}</div>
                                         <small class="text-muted">Quizzes</small>
                                     </div>
                                 </div>
                                 <div class="col-12 mt-2">
                                     <div class="bg-gradient-light rounded p-2">
-                                        <div class="fw-bold text-success">${data.assignment_count || 0}</div>
+                                        <div class="fw-bold text-success">${courseData.assignment_count || 0}</div>
                                         <small class="text-muted">Assignments</small>
                                     </div>
                                 </div>
@@ -394,8 +386,8 @@ function viewCourse(courseId) {
                     </div>
                     
                     <div class="mt-3">
-                        <span class="badge ${data.is_published ? 'bg-gradient-success' : 'bg-gradient-warning'} fs-6">
-                            ${data.is_published ? 'Published' : 'Draft'}
+                        <span class="badge ${courseData.is_published ? 'bg-gradient-success' : 'bg-gradient-warning'} fs-6">
+                            ${courseData.is_published ? 'Published' : 'Draft'}
                         </span>
                     </div>
                 </div>
@@ -411,104 +403,6 @@ function viewCourse(courseId) {
     });
 }
 
-async function editCourse(courseId) {
-    try {
-        const response = await fetch(`/api/courses/${courseId}`, {
-            headers: {
-                'Authorization': `Bearer {{ session.access_token }}`
-            }
-        });
-        
-        if (response.ok) {
-            const courseData = await response.json();
-            
-            document.getElementById('editCourseId').value = courseId;
-            document.getElementById('editCourseTitle').value = courseData.title;
-            document.getElementById('editCourseDescription').value = courseData.description || '';
-            document.getElementById('editCourseCategory').value = courseData.category || '';
-            document.getElementById('editCourseMaxStudents').value = courseData.max_students || '';
-            document.getElementById('editCourseStartDate').value = courseData.start_date ? courseData.start_date.split('T')[0] : '';
-            document.getElementById('editCourseEndDate').value = courseData.end_date ? courseData.end_date.split('T')[0] : '';
-            document.getElementById('editCoursePublished').checked = courseData.is_published;
-            
-            new bootstrap.Modal(document.getElementById('editCourseModal')).show();
-        } else {
-            alert('Failed to load course details');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error loading course details');
-    }
-}
-
-async function submitEditCourse() {
-    const form = document.getElementById('editCourseForm');
-    const formData = new FormData(form);
-    const courseId = formData.get('course_id');
-    
-    const data = {
-        title: formData.get('title'),
-        description: formData.get('description'),
-        category: formData.get('category'),
-        max_students: parseInt(formData.get('max_students')) || null,
-        start_date: formData.get('start_date') || null,
-        end_date: formData.get('end_date') || null,
-        is_published: document.getElementById('editCoursePublished').checked
-    };
-    
-    try {
-        const response = await fetch(`/api/courses/${courseId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer {{ session.access_token }}`
-            },
-            body: JSON.stringify(data)
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            alert(result.message || 'Course updated successfully!');
-            bootstrap.Modal.getInstance(document.getElementById('editCourseModal')).hide();
-            location.reload();
-        } else {
-            const error = await response.json();
-            alert(error.error || 'Failed to update course');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error updating course');
-    }
-}
-
-async function deleteCourse(courseId, courseTitle) {
-    const confirmMessage = `Are you sure you want to delete the course "${courseTitle}"?\n\nThis action cannot be undone and will remove all associated lessons, quizzes, and assignments.`;
-    
-    if (confirm(confirmMessage)) {
-        try {
-            const response = await fetch(`/admin/courses/${courseId}/delete`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-            
-            if (response.ok) {
-                const result = await response.json();
-                alert(result.message || 'Course deleted successfully');
-                location.reload();
-            } else {
-                const error = await response.json();
-                alert(error.error || 'Failed to delete course');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error deleting course');
-        }
-    }
-}
-
-// Refresh data
 function refreshData() {
     location.reload();
 }
@@ -543,6 +437,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 10);
         });
     });
+    
+    const editForm = document.getElementById('editCourseForm');
+    if (editForm) {
+        editForm.addEventListener('input', function(e) {
+            if (e.target.id === 'editCourseStartDate' || e.target.id === 'editCourseEndDate') {
+                const startDate = document.getElementById('editCourseStartDate').value;
+                const endDate = document.getElementById('editCourseEndDate').value;
+                
+                if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
+                    document.getElementById('editCourseEndDate').setCustomValidity('End date must be after start date');
+                } else {
+                    document.getElementById('editCourseEndDate').setCustomValidity('');
+                }
+            }
+        });
+    }
 });
 </script>
 
@@ -574,6 +484,19 @@ document.addEventListener('DOMContentLoaded', function() {
     --bs-position: end;
 }
 
+.bg-gradient-light {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.course-card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.course-card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
 @media (max-width: 768px) {
     .dropdown-menu {
         position: fixed !important;
@@ -582,6 +505,20 @@ document.addEventListener('DOMContentLoaded', function() {
         left: auto !important;
         transform: none !important;
     }
+    
+    .col-md-3, .col-md-2, .col-md-1 {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
 }
 </style>
 {% endblock %}
