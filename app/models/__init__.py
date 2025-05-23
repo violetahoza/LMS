@@ -30,7 +30,7 @@ class User(UserMixin, db.Model):
     taught_courses = db.relationship('Course', backref='teacher', lazy='dynamic', foreign_keys='Course.teacher_id')
     enrollments = db.relationship('Enrollment', backref='student', lazy='dynamic', foreign_keys='Enrollment.student_id')
     quiz_attempts = db.relationship('QuizAttempt', backref='student', lazy='dynamic')
-    assignment_submissions = db.relationship('AssignmentSubmission', backref='student', lazy='dynamic')
+    assignment_submissions = db.relationship('AssignmentSubmission', backref='student', lazy='dynamic', foreign_keys='AssignmentSubmission.student_id')
     achievements = db.relationship('StudentAchievement', backref='student', lazy='dynamic')
     discussion_posts = db.relationship('DiscussionPost', backref='author', lazy='dynamic')
     

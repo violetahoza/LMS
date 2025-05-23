@@ -5,7 +5,7 @@ import random
 import string
 from flask import Flask
 from flask_migrate import Migrate
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
 import pymysql
 from dotenv import load_dotenv
@@ -34,7 +34,8 @@ def create_database():
     try:
         # Create database if it doesn't exist
         with engine.connect() as conn:
-            conn.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+            # Use text() to wrap the SQL statement
+            conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {db_name}"))
             conn.commit()
         print(f"Database '{db_name}' created or already exists.")
     except Exception as e:
@@ -69,7 +70,7 @@ def init_database(app):
             phone='555-0001',
             age=35
         )
-        admin.set_password('admin123')
+        admin.set_password('Admin123!')
         db.session.add(admin)
         
         # Teacher users
@@ -91,7 +92,7 @@ def init_database(app):
                 phone=phone,
                 age=age
             )
-            teacher.set_password('teacher123')
+            teacher.set_password('Teacher123!')
             teachers.append(teacher)
             db.session.add(teacher)
         
@@ -119,7 +120,7 @@ def init_database(app):
                 phone=phone,
                 age=age
             )
-            student.set_password('student123')
+            student.set_password('Student123!')
             students.append(student)
             db.session.add(student)
         
@@ -134,7 +135,7 @@ def init_database(app):
                 'title': 'Introduction to Python Programming',
                 'description': 'Learn Python from scratch with hands-on projects and real-world applications.',
                 'category': 'Programming',
-                'teacher': teachers[0],
+                'teacher_id': teachers[0].id,
                 'start_date': date.today(),
                 'end_date': date.today() + timedelta(days=90),
                 'is_published': True
@@ -143,7 +144,7 @@ def init_database(app):
                 'title': 'Web Development with Flask',
                 'description': 'Master web development using Flask framework and build dynamic web applications.',
                 'category': 'Web Development',
-                'teacher': teachers[0],
+                'teacher_id': teachers[0].id,
                 'start_date': date.today() + timedelta(days=7),
                 'end_date': date.today() + timedelta(days=97),
                 'is_published': True
@@ -152,7 +153,7 @@ def init_database(app):
                 'title': 'Data Science Fundamentals',
                 'description': 'Explore data analysis, visualization, and machine learning basics.',
                 'category': 'Data Science',
-                'teacher': teachers[1],
+                'teacher_id': teachers[1].id,
                 'start_date': date.today(),
                 'end_date': date.today() + timedelta(days=120),
                 'is_published': True
@@ -161,7 +162,7 @@ def init_database(app):
                 'title': 'Database Design and SQL',
                 'description': 'Learn to design efficient databases and write complex SQL queries.',
                 'category': 'Database',
-                'teacher': teachers[2],
+                'teacher_id': teachers[2].id,
                 'start_date': date.today() - timedelta(days=30),
                 'end_date': date.today() + timedelta(days=60),
                 'is_published': True
@@ -170,7 +171,7 @@ def init_database(app):
                 'title': 'JavaScript for Beginners',
                 'description': 'Start your journey with JavaScript and build interactive web applications.',
                 'category': 'Programming',
-                'teacher': teachers[3],
+                'teacher_id': teachers[3].id,
                 'start_date': date.today() + timedelta(days=14),
                 'end_date': date.today() + timedelta(days=104),
                 'is_published': True
@@ -179,7 +180,7 @@ def init_database(app):
                 'title': 'Machine Learning Basics',
                 'description': 'Introduction to machine learning algorithms and their applications.',
                 'category': 'AI/ML',
-                'teacher': teachers[1],
+                'teacher_id': teachers[1].id,
                 'start_date': date.today() + timedelta(days=30),
                 'end_date': date.today() + timedelta(days=150),
                 'is_published': False
@@ -377,9 +378,9 @@ def init_database(app):
         
         print("\nDatabase initialization completed successfully!")
         print("\nSample login credentials:")
-        print("Admin: username='admin', password='admin123'")
-        print("Teacher: username='john_smith', password='teacher123'")
-        print("Student: username='alice_martin', password='student123'")
+        print("Admin: email='admin@lms.com', password='Admin123!'")
+        print("Teacher: email='john.smith@lms.com', password='Teacher123!'")
+        print("Student: email='alice.martin@student.com', password='Student123!'")
 
 def main():
     """Main function to create and initialize the database"""
