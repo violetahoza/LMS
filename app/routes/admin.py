@@ -174,6 +174,22 @@ def get_all_courses():
             'pages': 1
         }), 200
 
+@bp.route('/courses/<int:course_id>', methods=['DELETE'])
+@admin_required()
+def delete_course(course_id):
+    """Delete a course"""
+    admin_id_str = get_jwt_identity()
+    try:
+        admin_id = int(admin_id_str)
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid admin ID'}), 400
+        
+    return BaseController.handle_request(
+        AdminService.delete_course,
+        admin_id,
+        course_id,
+        success_message="Course deleted successfully"
+    )
 
 @bp.route('/courses/export', methods=['GET'])
 @admin_required()
@@ -237,57 +253,6 @@ def get_course_performance_report():
             'courses': [],
             'total_courses': 0
         }), 200
-    
-@bp.route('/reports/engagement-metrics', methods=['GET'])
-@admin_required()
-def get_engagement_metrics():
-    """Get student engagement metrics"""
-    try:
-        data = AdminService.get_engagement_metrics()
-        return jsonify(data), 200
-    except Exception as e:
-        print(f"Engagement metrics error: {str(e)}")
-        return jsonify({
-            'active_students': 0,
-            'recent_lesson_viewers': 0,
-            'recent_quiz_takers': 0,
-            'avg_lessons_per_student': 0,
-            'engagement_rate': 0
-        }), 200
-
-@bp.route('/reports/category-distribution', methods=['GET'])
-@admin_required()
-def get_category_distribution():
-    """Get course category distribution"""
-    try:
-        data = AdminService.get_category_distribution()
-        return jsonify(data), 200
-    except Exception as e:
-        print(f"Category distribution error: {str(e)}")
-        return jsonify({
-            'categories': [],
-            'total_categories': 0
-        }), 200
-
-@bp.route('/reports/export', methods=['GET'])
-@admin_required()
-def export_performance_report():
-    """Export performance report"""
-    format_type = request.args.get('format', 'csv')
-    
-    try:
-        from flask import make_response
-        
-        result = AdminService.export_performance_report(format_type)
-        
-        response = make_response(result['content'])
-        response.headers['Content-Type'] = result['content_type']
-        response.headers['Content-Disposition'] = f'attachment; filename={result["filename"]}'
-        
-        return response
-    except Exception as e:
-        print(f"Export performance report error: {str(e)}")
-        return jsonify({'error': f'Export failed: {str(e)}'}), 500
 
 @bp.route('/achievements', methods=['GET'])
 @admin_required()
@@ -314,6 +279,7 @@ def create_achievement():
         success_code=201
     )
 
+# Debug endpoints
 @bp.route('/test', methods=['GET'])
 def test_admin():
     """Simple test endpoint to check admin access"""

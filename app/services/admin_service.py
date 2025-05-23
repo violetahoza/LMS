@@ -483,78 +483,54 @@ class AdminService:
     
     @staticmethod
     def get_user_activity_report(days: int = 30) -> Dict[str, Any]:
-        """Get user activity report with better data formatting"""
+        """Get user activity report"""
         try:
             start_date = datetime.utcnow() - timedelta(days=days)
             
-            # Create a complete date range for the period
-            date_range = []
-            current_date = start_date.date()
-            end_date = datetime.utcnow().date()
-            
-            while current_date <= end_date:
-                date_range.append(current_date)
-                current_date += timedelta(days=1)
-            
             # User registrations over time
-            user_reg_data = db.session.query(
+            user_registrations = db.session.query(
                 func.date(User.created_at).label('date'),
                 func.count(User.id).label('count')
             ).filter(
                 User.created_at >= start_date
             ).group_by(
                 func.date(User.created_at)
-            ).all()
+            ).order_by('date').all()
             
             # Course enrollments over time
-            enrollment_data = db.session.query(
+            enrollments = db.session.query(
                 func.date(Enrollment.enrolled_at).label('date'),
                 func.count(Enrollment.id).label('count')
             ).filter(
                 Enrollment.enrolled_at >= start_date
             ).group_by(
                 func.date(Enrollment.enrolled_at)
-            ).all()
+            ).order_by('date').all()
             
             # Quiz attempts over time
-            quiz_data = db.session.query(
+            quiz_attempts = db.session.query(
                 func.date(QuizAttempt.started_at).label('date'),
                 func.count(QuizAttempt.id).label('count')
             ).filter(
                 QuizAttempt.started_at >= start_date
             ).group_by(
                 func.date(QuizAttempt.started_at)
-            ).all()
-            
-            # Convert to dictionaries for easier lookup
-            user_reg_dict = {item.date: item.count for item in user_reg_data}
-            enrollment_dict = {item.date: item.count for item in enrollment_data}
-            quiz_dict = {item.date: item.count for item in quiz_data}
-            
-            # Fill in missing dates with 0 counts
-            user_registrations = []
-            course_enrollments = []
-            quiz_attempts = []
-            
-            for date in date_range:
-                user_registrations.append({
-                    'date': date.isoformat(),
-                    'count': user_reg_dict.get(date, 0)
-                })
-                course_enrollments.append({
-                    'date': date.isoformat(),
-                    'count': enrollment_dict.get(date, 0)
-                })
-                quiz_attempts.append({
-                    'date': date.isoformat(),
-                    'count': quiz_dict.get(date, 0)
-                })
+            ).order_by('date').all()
             
             return {
                 'period_days': days,
-                'user_registrations': user_registrations,
-                'course_enrollments': course_enrollments,
-                'quiz_attempts': quiz_attempts
+                'user_registrations': [
+                    {'date': str(item.date), 'count': item.count}
+                    for item in user_registrations
+                ],
+                'course_enrollments': [
+                    {'date': str(item.date), 'count': item.count}
+                    for item in enrollments
+                ],
+                'quiz_attempts': [
+                    {'date': str(item.date), 'count': item.count}
+                    for item in quiz_attempts
+                ]
             }
         except Exception as e:
             print(f"Error in get_user_activity_report: {str(e)}")
@@ -564,25 +540,17 @@ class AdminService:
                 'course_enrollments': [],
                 'quiz_attempts': []
             }
-
+    
     @staticmethod
     def get_course_performance_report() -> Dict[str, Any]:
-        """Get enhanced course performance report"""
+        """Get course performance report"""
         try:
             courses = Course.query.filter_by(is_published=True).all()
             
             course_performance = []
             for course in courses:
                 try:
-                    # Get enrollment statistics
-                    total_enrollments = course.enrollments.count()
-                    active_enrollments = course.enrollments.filter_by(status='active').count()
-                    completed_enrollments = course.enrollments.filter_by(status='completed').count()
-                    
-                    # Calculate completion rate
-                    completion_rate = 0
-                    if total_enrollments > 0:
-                        completion_rate = (completed_enrollments / total_enrollments) * 100
+                    stats = calculate_course_statistics(course)
                     
                     # Get average quiz scores for the course
                     avg_quiz_score = db.session.query(
@@ -592,46 +560,23 @@ class AdminService:
                         QuizAttempt.status == 'completed'
                     ).scalar() or 0
                     
-                    # Calculate average completion time
-                    completed_enrollments_with_time = course.enrollments.filter(
-                        Enrollment.status == 'completed',
-                        Enrollment.enrolled_at.isnot(None),
-                        Enrollment.completed_at.isnot(None)
-                    ).all()
-                    
-                    avg_completion_days = 0
-                    if completed_enrollments_with_time:
-                        total_days = sum([
-                            (enrollment.completed_at - enrollment.enrolled_at).days
-                            for enrollment in completed_enrollments_with_time
-                        ])
-                        avg_completion_days = total_days / len(completed_enrollments_with_time)
-                    
-                    # Get content counts
-                    total_lessons = course.lessons.count()
-                    total_quizzes = course.quizzes.count()
-                    total_assignments = course.assignments.count()
-                    
                     course_performance.append({
                         'course_id': course.id,
                         'course_title': course.title,
-                        'teacher_name': course.teacher.full_name if course.teacher else 'Unknown',
-                        'category': course.category or 'General',
-                        'total_students': total_enrollments,
-                        'active_students': active_enrollments,
-                        'completed_students': completed_enrollments,
-                        'completion_rate': round(float(completion_rate), 2),
+                        'teacher_name': course.teacher.full_name,
+                        'category': course.category,
+                        'total_students': stats['total_students'],
+                        'completion_rate': stats['completion_rate'],
                         'average_quiz_score': round(float(avg_quiz_score), 2),
-                        'total_lessons': total_lessons,
-                        'total_quizzes': total_quizzes,
-                        'total_assignments': total_assignments,
-                        'average_completion_days': round(float(avg_completion_days), 1)
+                        'total_lessons': stats['total_lessons'],
+                        'total_quizzes': stats['total_quizzes'],
+                        'average_completion_days': stats['average_completion_days']
                     })
                 except Exception as e:
                     print(f"Error processing course {course.id}: {str(e)}")
                     continue
             
-            # Sort by completion rate (descending)
+            # Sort by completion rate
             course_performance.sort(key=lambda x: x['completion_rate'], reverse=True)
             
             return {
@@ -644,137 +589,6 @@ class AdminService:
                 'courses': [],
                 'total_courses': 0
             }
-
-    @staticmethod
-    def get_engagement_metrics() -> Dict[str, Any]:
-        """Get student engagement metrics"""
-        try:
-            # Total active students
-            active_students = User.query.filter_by(role='student', is_active=True).count()
-            
-            # Students with recent activity (last 7 days)
-            week_ago = datetime.utcnow() - timedelta(days=7)
-            recent_lesson_views = db.session.query(LessonProgress.student_id).filter(
-                LessonProgress.viewed_at >= week_ago
-            ).distinct().count()
-            
-            recent_quiz_attempts = db.session.query(QuizAttempt.student_id).filter(
-                QuizAttempt.started_at >= week_ago
-            ).distinct().count()
-            
-            # Average session time (simplified calculation)
-            avg_lessons_per_student = db.session.query(
-                func.avg(func.count(LessonProgress.id))
-            ).filter(
-                LessonProgress.viewed_at >= week_ago
-            ).group_by(LessonProgress.student_id).scalar() or 0
-            
-            return {
-                'active_students': active_students,
-                'recent_lesson_viewers': recent_lesson_views,
-                'recent_quiz_takers': recent_quiz_attempts,
-                'avg_lessons_per_student': round(float(avg_lessons_per_student), 1),
-                'engagement_rate': round((recent_lesson_views / active_students * 100), 1) if active_students > 0 else 0
-            }
-        except Exception as e:
-            print(f"Error in get_engagement_metrics: {str(e)}")
-            return {
-                'active_students': 0,
-                'recent_lesson_viewers': 0,
-                'recent_quiz_takers': 0,
-                'avg_lessons_per_student': 0,
-                'engagement_rate': 0
-            }
-
-    @staticmethod
-    def get_category_distribution() -> Dict[str, Any]:
-        """Get course category distribution"""
-        try:
-            category_data = db.session.query(
-                Course.category,
-                func.count(Course.id).label('count')
-            ).filter(
-                Course.is_published == True
-            ).group_by(Course.category).all()
-            
-            categories = []
-            for item in category_data:
-                categories.append({
-                    'category': item.category or 'General',
-                    'count': item.count
-                })
-            
-            # Sort by count (descending)
-            categories.sort(key=lambda x: x['count'], reverse=True)
-            
-            return {
-                'categories': categories,
-                'total_categories': len(categories)
-            }
-        except Exception as e:
-            print(f"Error in get_category_distribution: {str(e)}")
-            return {
-                'categories': [],
-                'total_categories': 0
-            }
-
-    @staticmethod
-    def export_performance_report(format_type: str = 'csv') -> Dict[str, Any]:
-        """Export performance report in specified format"""
-        try:
-            performance_data = AdminService.get_course_performance_report()
-            
-            if format_type.lower() == 'csv':
-                # Create CSV content
-                output = io.StringIO()
-                writer = csv.writer(output)
-                
-                # Write header
-                writer.writerow([
-                    'Course ID', 'Course Title', 'Instructor', 'Category',
-                    'Total Students', 'Active Students', 'Completed Students',
-                    'Completion Rate (%)', 'Average Quiz Score (%)',
-                    'Total Lessons', 'Total Quizzes', 'Total Assignments',
-                    'Average Completion Days'
-                ])
-                
-                # Write course data
-                for course in performance_data['courses']:
-                    writer.writerow([
-                        course['course_id'],
-                        course['course_title'],
-                        course['teacher_name'],
-                        course['category'],
-                        course['total_students'],
-                        course['active_students'],
-                        course['completed_students'],
-                        course['completion_rate'],
-                        course['average_quiz_score'],
-                        course['total_lessons'],
-                        course['total_quizzes'],
-                        course['total_assignments'],
-                        course['average_completion_days']
-                    ])
-                
-                csv_content = output.getvalue()
-                output.close()
-                
-                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-                filename = f"course_performance_report_{timestamp}.csv"
-                
-                return {
-                    'content': csv_content,
-                    'filename': filename,
-                    'content_type': 'text/csv',
-                    'total_exported': len(performance_data['courses'])
-                }
-            
-            else:
-                raise ValidationException(f"Unsupported export format: {format_type}")
-                
-        except Exception as e:
-            print(f"Error in export_performance_report: {str(e)}")
-            raise ValidationException(f"Export failed: {str(e)}")
     
     @staticmethod
     def get_achievements() -> Dict[str, Any]:

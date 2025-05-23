@@ -100,9 +100,6 @@ def register():
         if not request.form.get('role'):
             field_errors['role'] = 'Please select your role'
         
-        if not request.form.get('terms'):
-            field_errors['terms'] = 'You must agree to the terms and conditions'
-        
         if request.form.get('age'):
             try:
                 age = int(request.form.get('age'))
