@@ -24,23 +24,39 @@ def register():
         }), 201
         
     except ValueError as e:
-        # Handle validation errors
+        # Handle validation errors with specific field mapping
         error_msg = str(e)
         field_errors = {}
         
-        # Parse field-specific errors
-        if 'username already exists' in error_msg.lower():
-            field_errors['username'] = 'This username is already taken'
-        elif 'email already exists' in error_msg.lower():
+        # Map specific errors to fields
+        if 'email is already registered' in error_msg.lower() or 'this email is already registered' in error_msg.lower():
             field_errors['email'] = 'This email is already registered'
-        elif 'password' in error_msg.lower():
+        elif 'username is already taken' in error_msg.lower() or 'this username is already taken' in error_msg.lower():
+            field_errors['username'] = 'This username is already taken'
+        elif 'password must be at least' in error_msg.lower():
             field_errors['password'] = error_msg
+        elif 'password must contain' in error_msg.lower():
+            field_errors['password'] = error_msg
+        elif 'username must be at least' in error_msg.lower():
+            field_errors['username'] = error_msg
+        elif 'username can only contain' in error_msg.lower():
+            field_errors['username'] = error_msg
+        elif 'invalid email format' in error_msg.lower():
+            field_errors['email'] = 'Please enter a valid email address'
+        elif 'invalid phone number' in error_msg.lower():
+            field_errors['phone'] = 'Please enter a valid phone number'
+        elif 'age must be' in error_msg.lower():
+            field_errors['age'] = error_msg
+        elif 'role' in error_msg.lower():
+            field_errors['role'] = 'Please select a valid role'
+        elif 'full_name is required' in error_msg.lower():
+            field_errors['full_name'] = 'Full name is required'
         else:
-            # Generic validation error
+            # Generic validation error - don't map to specific field
             return jsonify({'error': error_msg}), 400
             
         return jsonify({
-            'error': 'Registration failed',
+            'error': 'Registration failed. Please correct the errors below.',
             'field_errors': field_errors
         }), 400
         

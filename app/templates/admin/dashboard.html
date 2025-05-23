@@ -4,7 +4,6 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <!-- Page Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
@@ -21,7 +20,6 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
     <div class="row g-4 mb-5">
         <div class="col-xl-3 col-md-6">
             <div class="card dashboard-card h-100">
@@ -93,7 +91,6 @@
         </div>
     </div>
 
-    <!-- User Statistics -->
     <div class="row g-4 mb-5">
         <div class="col-lg-8">
             <div class="card h-100">
@@ -155,7 +152,6 @@
         </div>
     </div>
 
-    <!-- Quick Actions -->
     <div class="row g-4 mb-5">
         <div class="col-12">
             <div class="card">
@@ -198,7 +194,6 @@
         </div>
     </div>
 
-    <!-- Recent Activity -->
     <div class="row g-4">
         <div class="col-lg-6">
             <div class="card">
@@ -291,7 +286,6 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-// Dashboard functionality
 function refreshDashboard() {
     location.reload();
 }
@@ -300,7 +294,6 @@ function showSystemSettings() {
     alert('System settings functionality coming soon!');
 }
 
-// Chart configuration
 const ctx = document.getElementById('userChart').getContext('2d');
 const userChart = new Chart(ctx, {
     type: 'line',
@@ -346,10 +339,8 @@ const userChart = new Chart(ctx, {
     }
 });
 
-// Auto-refresh every 5 minutes
 setInterval(function() {
     console.log('Auto-refreshing dashboard data...');
-    // Add AJAX call to refresh data without page reload
 }, 300000);
 </script>
 {% endblock %}

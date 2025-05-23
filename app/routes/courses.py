@@ -1,10 +1,10 @@
-# app/routes/courses.py 
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app.services.course_service import CourseService
 from app.utils.base_controller import BaseController
 from app.utils.decorators import teacher_required
+from app.models import User
 
 bp = Blueprint('courses', __name__, url_prefix='/api/courses')
 
@@ -52,10 +52,34 @@ def create_course():
     )
 
 @bp.route('/<int:course_id>', methods=['PUT'])
-@teacher_required()
+@jwt_required()  # Changed from teacher_required to jwt_required to allow admin access
 def update_course(course_id):
-    """Update a course (teachers only)"""
-    user_id = get_jwt_identity()
+    """Update a course (teachers and admins)"""
+    user_id_str = get_jwt_identity()
+    
+    try:
+        user_id = int(user_id_str)
+    except (ValueError, TypeError):
+        return BaseController.handle_request(
+            lambda: (_ for _ in ()).throw(ValueError("Invalid user ID")),
+            success_message="Course updated successfully"
+        )
+    
+    # Check if user exists and has permission
+    user = User.query.get(user_id)
+    if not user:
+        return BaseController.handle_request(
+            lambda: (_ for _ in ()).throw(ValueError("User not found")),
+            success_message="Course updated successfully"
+        )
+    
+    # Allow teachers and admins to update courses
+    if not (user.is_teacher() or user.is_admin()):
+        return BaseController.handle_request(
+            lambda: (_ for _ in ()).throw(PermissionError("Access denied. Teacher or admin role required")),
+            success_message="Course updated successfully"
+        )
+    
     return BaseController.handle_request(
         CourseService.update_course,
         user_id,
@@ -65,10 +89,34 @@ def update_course(course_id):
     )
 
 @bp.route('/<int:course_id>', methods=['DELETE'])
-@teacher_required()
+@jwt_required()  # Changed to allow admin access
 def delete_course(course_id):
-    """Delete a course (teachers only)"""
-    user_id = get_jwt_identity()
+    """Delete a course (teachers and admins)"""
+    user_id_str = get_jwt_identity()
+    
+    try:
+        user_id = int(user_id_str)
+    except (ValueError, TypeError):
+        return BaseController.handle_request(
+            lambda: (_ for _ in ()).throw(ValueError("Invalid user ID")),
+            success_message="Course deleted successfully"
+        )
+    
+    # Check if user exists and has permission
+    user = User.query.get(user_id)
+    if not user:
+        return BaseController.handle_request(
+            lambda: (_ for _ in ()).throw(ValueError("User not found")),
+            success_message="Course deleted successfully"
+        )
+    
+    # Allow teachers and admins to delete courses
+    if not (user.is_teacher() or user.is_admin()):
+        return BaseController.handle_request(
+            lambda: (_ for _ in ()).throw(PermissionError("Access denied. Teacher or admin role required")),
+            success_message="Course deleted successfully"
+        )
+    
     return BaseController.handle_request(
         CourseService.delete_course,
         user_id,
@@ -119,10 +167,34 @@ def get_enrolled_courses():
     )
 
 @bp.route('/<int:course_id>/students', methods=['GET'])
-@teacher_required()
+@jwt_required()  # Changed to allow admin access
 def get_course_students(course_id):
-    """Get students enrolled in a course (teachers only)"""
-    user_id = get_jwt_identity()
+    """Get students enrolled in a course (teachers and admins)"""
+    user_id_str = get_jwt_identity()
+    
+    try:
+        user_id = int(user_id_str)
+    except (ValueError, TypeError):
+        return BaseController.handle_request(
+            lambda: (_ for _ in ()).throw(ValueError("Invalid user ID")),
+            success_message="Students retrieved successfully"
+        )
+    
+    # Check if user exists and has permission
+    user = User.query.get(user_id)
+    if not user:
+        return BaseController.handle_request(
+            lambda: (_ for _ in ()).throw(ValueError("User not found")),
+            success_message="Students retrieved successfully"
+        )
+    
+    # Allow teachers and admins to view course students
+    if not (user.is_teacher() or user.is_admin()):
+        return BaseController.handle_request(
+            lambda: (_ for _ in ()).throw(PermissionError("Access denied. Teacher or admin role required")),
+            success_message="Students retrieved successfully"
+        )
+    
     return BaseController.handle_request(
         CourseService.get_course_students,
         user_id,

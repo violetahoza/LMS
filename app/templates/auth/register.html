@@ -16,7 +16,6 @@
                         <p class="text-muted">Create your account and start your learning journey</p>
                     </div>
 
-                    <!-- Display error messages -->
                     {% if error %}
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         <i class="fas fa-exclamation-triangle me-2"></i>
@@ -25,7 +24,6 @@
                     </div>
                     {% endif %}
 
-                    <!-- Display field-specific errors -->
                     {% if field_errors %}
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         <i class="fas fa-exclamation-triangle me-2"></i>
@@ -199,7 +197,7 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label for="phone" class="form-label fw-semibold">Phone Number (Optional)</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-gradient-primary text-white">
@@ -215,26 +213,6 @@
                             {% if field_errors and 'phone' in field_errors %}
                             <div class="invalid-feedback d-block">
                                 {{ field_errors['phone'] }}
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" 
-                                       type="checkbox" 
-                                       id="terms" 
-                                       name="terms"
-                                       {% if request.form.get('terms') %}checked{% endif %}
-                                       required>
-                                <label class="form-check-label" for="terms">
-                                    I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> 
-                                    and <a href="#" class="text-decoration-none">Privacy Policy</a>
-                                </label>
-                            </div>
-                            {% if field_errors and 'terms' in field_errors %}
-                            <div class="invalid-feedback d-block">
-                                {{ field_errors['terms'] }}
                             </div>
                             {% endif %}
                         </div>
@@ -304,7 +282,9 @@ function validatePassword() {
     } else {
         passwordInput.classList.add('is-invalid');
         passwordInput.classList.remove('is-valid');
-        createFeedbackElement('password-feedback', 'Password must be at least 8 characters long and include uppercase, lowercase, and a number.');
+        if (!document.querySelector('.invalid-feedback')) {
+            createFeedbackElement('password-feedback', 'Password must be at least 8 characters long and include uppercase, lowercase, and a number.');
+        }
     }
 }
 
@@ -317,18 +297,22 @@ function validateConfirmPassword() {
         confirmInput.classList.add('is-valid');
         const feedback = document.getElementById('confirm-feedback');
         if (feedback) feedback.remove();
-    } else {
+    } else if (confirmPassword !== '') {
         confirmInput.classList.add('is-invalid');
         confirmInput.classList.remove('is-valid');
-        createFeedbackElement('confirm-feedback', 'Passwords do not match.');
+        if (!confirmInput.parentNode.querySelector('.invalid-feedback')) {
+            createFeedbackElement('confirm-feedback', 'Passwords do not match.');
+        }
     }
 }
 
-passwordInput.addEventListener('input', function () {
-    validatePassword();
-    validateConfirmPassword(); // to sync if password is changed after confirm
-});
+if (!document.querySelector('.invalid-feedback')) {
+    passwordInput.addEventListener('input', function () {
+        validatePassword();
+        validateConfirmPassword(); // to sync if password is changed after confirm
+    });
 
-confirmInput.addEventListener('input', validateConfirmPassword);
+    confirmInput.addEventListener('input', validateConfirmPassword);
+}
 </script>
 {% endblock %}

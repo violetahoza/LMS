@@ -1,4 +1,4 @@
-# app/services/auth_service.py
+# app/services/auth_service.py - Fixed version with string user IDs
 from datetime import datetime
 from typing import Dict, Any, Tuple
 from flask_jwt_extended import create_access_token, create_refresh_token
@@ -90,9 +90,9 @@ class AuthService:
         if not user.is_active:
             raise ValidationException('Account is deactivated')
         
-        # Create tokens
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        # Create tokens with string user ID (FIXED!)
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
         
         return {
             'message': 'Login successful',
@@ -102,14 +102,20 @@ class AuthService:
         }
     
     @staticmethod
-    def refresh_token(user_id: int) -> Dict[str, Any]:
+    def refresh_token(user_id: str) -> Dict[str, Any]:
         """Refresh access token"""
-        user = User.query.get(user_id)
+        # Convert string back to int for database query
+        try:
+            user_id_int = int(user_id)
+        except ValueError:
+            raise NotFoundException('Invalid user ID')
+            
+        user = User.query.get(user_id_int)
         
         if not user or not user.is_active:
             raise NotFoundException('User not found or inactive')
         
-        new_token = create_access_token(identity=user_id)
+        new_token = create_access_token(identity=str(user.id))
         
         return {
             'access_token': new_token,
@@ -117,9 +123,15 @@ class AuthService:
         }
     
     @staticmethod
-    def get_user_profile(user_id: int) -> Dict[str, Any]:
+    def get_user_profile(user_id: str) -> Dict[str, Any]:
         """Get user profile with statistics"""
-        user = User.query.get(user_id)
+        # Convert string back to int for database query
+        try:
+            user_id_int = int(user_id)
+        except ValueError:
+            raise NotFoundException('Invalid user ID')
+            
+        user = User.query.get(user_id_int)
         if not user:
             raise NotFoundException('User not found')
         
@@ -127,6 +139,7 @@ class AuthService:
         
         # Add additional stats based on role
         if user.is_student():
+            enrollments = user.enrollments.all()
             profile_data['stats'] = {
                 'enrolled_courses': user.enrollments.filter_by(status='active').count(),
                 'completed_courses': user.enrollments.filter_by(status='completed').count(),
@@ -147,9 +160,15 @@ class AuthService:
         return profile_data
     
     @staticmethod
-    def update_profile(user_id: int, profile_data: Dict[str, Any]) -> Dict[str, Any]:
+    def update_profile(user_id: str, profile_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update user profile"""
-        user = User.query.get(user_id)
+        # Convert string back to int for database query
+        try:
+            user_id_int = int(user_id)
+        except ValueError:
+            raise NotFoundException('Invalid user ID')
+            
+        user = User.query.get(user_id_int)
         if not user:
             raise NotFoundException('User not found')
         
@@ -179,9 +198,15 @@ class AuthService:
         }
     
     @staticmethod
-    def change_password(user_id: int, current_password: str, new_password: str) -> Dict[str, str]:
+    def change_password(user_id: str, current_password: str, new_password: str) -> Dict[str, str]:
         """Change user password"""
-        user = User.query.get(user_id)
+        # Convert string back to int for database query
+        try:
+            user_id_int = int(user_id)
+        except ValueError:
+            raise NotFoundException('Invalid user ID')
+            
+        user = User.query.get(user_id_int)
         if not user:
             raise NotFoundException('User not found')
         

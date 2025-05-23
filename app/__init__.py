@@ -1,87 +1,95 @@
-from flask import Flask
-from flask_login import LoginManager
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager
-from flask_migrate import Migrate
-import logging
-from logging.handlers import RotatingFileHandler
 import os
-
-from app.models import db, User
+import logging
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 from config import config
 
 # Initialize extensions
-login_manager = LoginManager()
+db = SQLAlchemy()
 jwt = JWTManager()
-migrate = Migrate()
 
-def create_app(config_name='default'):
-    """Application factory pattern"""
-    app = Flask(__name__)
+def create_app(config_name=None):
+    """Application factory"""
+    if config_name is None:
+        config_name = os.environ.get('FLASK_ENV', 'development')
     
-    # Load configuration
+    app = Flask(__name__)
     app.config.from_object(config[config_name])
     
-    # Initialize extensions
+    # Initialize extensions with app
     db.init_app(app)
-    login_manager.init_app(app)
     jwt.init_app(app)
-    migrate.init_app(app, db)
-    
-    # Configure CORS
-    CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
-    
-    # Configure login manager
-    login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Please log in to access this page.'
-    
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
-    
-    # JWT callbacks
-    @jwt.user_identity_loader
-    def user_identity_lookup(user):
-        return user.id if hasattr(user, 'id') else user
-    
-    @jwt.user_lookup_loader
-    def user_lookup_callback(_jwt_header, jwt_data):
-        identity = jwt_data["sub"]
-        return User.query.filter_by(id=identity).one_or_none()
-    
-    # Register blueprints
-    from app.routes import auth, courses, lessons, quizzes, assignments, admin, student
-    
-    app.register_blueprint(auth.bp)
-    app.register_blueprint(courses.bp)
-    app.register_blueprint(lessons.bp)
-    app.register_blueprint(quizzes.bp)
-    app.register_blueprint(assignments.bp)
-    app.register_blueprint(admin.bp)
-    app.register_blueprint(student.bp)
-    
-    # Create upload directory if it doesn't exist
-    upload_path = os.path.join(app.root_path, '..', app.config['UPLOAD_FOLDER'])
-    if not os.path.exists(upload_path):
-        os.makedirs(upload_path)
+    CORS(app, origins=app.config.get('CORS_ORIGINS', ['http://localhost:3000']))
     
     # Setup logging
+    setup_logging(app)
+    
+    # Register blueprints
+    register_blueprints(app)
+    
+    # Create upload directories
+    create_directories(app)
+    
+    # Create tables if they don't exist
+    with app.app_context():
+        try:
+            db.create_all()
+            print("✅ Database tables created/verified")
+        except Exception as e:
+            print(f"⚠️ Database table creation warning: {e}")
+    
+    return app
+
+def register_blueprints(app):
+    """Register all blueprints"""
+    try:
+        # Import routes
+        from app.routes import auth, courses, lessons, quizzes, assignments, admin, student
+        
+        # Register API blueprints
+        app.register_blueprint(auth.bp)
+        app.register_blueprint(courses.bp)
+        app.register_blueprint(lessons.bp)
+        app.register_blueprint(quizzes.bp)
+        app.register_blueprint(assignments.bp)
+        app.register_blueprint(admin.bp)
+        app.register_blueprint(student.bp)
+        
+        print("✅ All blueprints registered successfully")
+    except Exception as e:
+        print(f"❌ Error registering blueprints: {e}")
+        import traceback
+        traceback.print_exc()
+
+def setup_logging(app):
+    """Setup application logging"""
     if not app.debug and not app.testing:
+        # Create logs directory if it doesn't exist
         if not os.path.exists('logs'):
             os.mkdir('logs')
         
-        file_handler = RotatingFileHandler(
-            'logs/lms.log', 
-            maxBytes=10240000, 
-            backupCount=10
-        )
+        # Configure file handler
+        file_handler = logging.FileHandler('logs/app.log')
         file_handler.setFormatter(logging.Formatter(
-            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+            '%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s'
         ))
         file_handler.setLevel(logging.INFO)
         app.logger.addHandler(file_handler)
         
         app.logger.setLevel(logging.INFO)
-        app.logger.info('LMS startup')
+        app.logger.info('EduPlatform startup')
+
+def create_directories(app):
+    """Create necessary directories"""
+    upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder)
     
-    return app
+    # Create subdirectories
+    subdirs = ['assignments', 'avatars', 'course_materials']
+    for subdir in subdirs:
+        path = os.path.join(upload_folder, subdir)
+        if not os.path.exists(path):
+            os.makedirs(path)

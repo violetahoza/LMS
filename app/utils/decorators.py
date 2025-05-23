@@ -1,3 +1,4 @@
+# app/utils/decorators.py - Fixed version with string user ID support
 from functools import wraps
 from flask import jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -9,7 +10,14 @@ def teacher_required():
         @wraps(f)
         @jwt_required()
         def decorated_function(*args, **kwargs):
-            user_id = get_jwt_identity()
+            user_id_str = get_jwt_identity()
+            
+            # Convert string to int
+            try:
+                user_id = int(user_id_str)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Invalid user ID'}), 400
+            
             user = User.query.get(user_id)
             
             if not user:
@@ -28,7 +36,14 @@ def admin_required():
         @wraps(f)
         @jwt_required()
         def decorated_function(*args, **kwargs):
-            user_id = get_jwt_identity()
+            user_id_str = get_jwt_identity()
+            
+            # Convert string to int
+            try:
+                user_id = int(user_id_str)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Invalid user ID'}), 400
+            
             user = User.query.get(user_id)
             
             if not user:
@@ -47,7 +62,14 @@ def student_required():
         @wraps(f)
         @jwt_required()
         def decorated_function(*args, **kwargs):
-            user_id = get_jwt_identity()
+            user_id_str = get_jwt_identity()
+            
+            # Convert string to int
+            try:
+                user_id = int(user_id_str)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Invalid user ID'}), 400
+            
             user = User.query.get(user_id)
             
             if not user:

@@ -1,10 +1,8 @@
-from flask_sqlalchemy import SQLAlchemy
+from app import db 
 from flask_login import UserMixin
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 import enum
-
-db = SQLAlchemy()
 
 class UserRole(enum.Enum):
     ADMIN = 'admin'
@@ -276,22 +274,6 @@ class QuizAttempt(db.Model):
     # Relationships
     student_answers = db.relationship('StudentAnswer', backref='attempt', lazy='dynamic', cascade='all, delete-orphan')
     
-    def calculate_score(self):
-        total_points = 0
-        earned_points = 0
-        
-        for answer in self.student_answers:
-            total_points += answer.question.points
-            if answer.is_correct:
-                earned_points += answer.points_earned or answer.question.points
-        
-        if total_points > 0:
-            self.score = (earned_points / total_points) * 100
-        else:
-            self.score = 0
-        
-        return self.score
-    
     def to_dict(self):
         return {
             'id': self.id,
@@ -318,21 +300,6 @@ class StudentAnswer(db.Model):
     
     # Relationships
     selected_option = db.relationship('AnswerOption', foreign_keys=[selected_option_id])
-    
-    def grade(self):
-        if self.question.question_type == 'multiple_choice':
-            if self.selected_option:
-                self.is_correct = self.selected_option.is_correct
-                self.points_earned = self.question.points if self.is_correct else 0
-        elif self.question.question_type == 'true_false':
-            correct_option = self.question.answer_options.filter_by(is_correct=True).first()
-            if correct_option and self.selected_option:
-                self.is_correct = self.selected_option.id == correct_option.id
-                self.points_earned = self.question.points if self.is_correct else 0
-        else:  # short_answer
-            # For now, short answers need manual grading
-            self.is_correct = False
-            self.points_earned = 0
 
 class Assignment(db.Model):
     __tablename__ = 'assignments'

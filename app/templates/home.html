@@ -3,7 +3,6 @@
 {% block title %}Home - EduPlatform{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
 <section class="hero-section bg-gradient-primary text-white">
     <div class="container">
         <div class="row align-items-center min-vh-75">
@@ -43,7 +42,6 @@
     </div>
 </section>
 
-<!-- Features Section -->
 <section id="features" class="py-5">
     <div class="container">
         <div class="row">
@@ -112,7 +110,6 @@
     </div>
 </section>
 
-<!-- Stats Section -->
 <section class="stats-section bg-gradient-light py-5">
     <div class="container">
         <div class="row text-center g-4">
@@ -144,7 +141,6 @@
     </div>
 </section>
 
-<!-- How It Works Section -->
 <section class="py-5">
     <div class="container">
         <div class="row">
@@ -186,7 +182,6 @@
     </div>
 </section>
 
-<!-- Testimonials Section -->
 <section class="py-5 bg-gradient-light">
     <div class="container">
         <div class="row">
@@ -270,7 +265,6 @@
     </div>
 </section>
 
-<!-- CTA Section -->
 <section class="cta-section bg-gradient-primary text-white py-5">
     <div class="container">
         <div class="row align-items-center">
@@ -287,7 +281,6 @@
     </div>
 </section>
 
-<!-- Newsletter Section -->
 <section class="py-5">
     <div class="container">
         <div class="row justify-content-center">
@@ -311,7 +304,6 @@
 
 {% block extra_js %}
 <script>
-// Smooth scrolling for anchor links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
@@ -325,7 +317,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Newsletter form submission
 document.querySelector('form').addEventListener('submit', function(e) {
     e.preventDefault();
     const email = this.querySelector('input[type="email"]').value;
@@ -335,7 +326,6 @@ document.querySelector('form').addEventListener('submit', function(e) {
     }
 });
 
-// Add animation on scroll
 const observerOptions = {
     threshold: 0.1
 };
@@ -349,7 +339,6 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
-// Observe all feature cards and stat items
 document.querySelectorAll('.feature-card, .stat-item').forEach(el => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(30px)';
