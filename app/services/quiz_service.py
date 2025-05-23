@@ -1,12 +1,301 @@
+# app/services/quiz_service.py 
 from datetime import datetime, timedelta
-from app.models import db, Quiz, QuizAttempt, Question, AnswerOption, StudentAnswer
-from app.utils.helpers import calculate_time_spent
+from typing import Dict, Any, List
+from app.models import db, Quiz, QuizAttempt, Question, AnswerOption, StudentAnswer, User, Course, Enrollment
+from app.services.achievement_service import AchievementService
+from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
+from app.utils.helpers import calculate_time_spent, calculate_quiz_statistics
+from app.utils.validators import validate_quiz_answers
 
 class QuizService:
     """Service class for quiz-related operations"""
     
     @staticmethod
-    def create_quiz_attempt(quiz_id, student_id):
+    def get_course_quizzes(user_id: int, course_id: int) -> Dict[str, Any]:
+        """Get all quizzes for a course"""
+        user = User.query.get(user_id)
+        course = Course.query.get(course_id)
+        
+        if not course:
+            raise NotFoundException("Course not found")
+        
+        if not user.can_access_course(course):
+            raise PermissionException("Access denied")
+        
+        quizzes = course.quizzes.all()
+        quizzes_data = []
+        
+        for quiz in quizzes:
+            quiz_dict = quiz.to_dict()
+            
+            # Add attempt info for students
+            if user.is_student():
+                attempts = QuizAttempt.query.filter_by(
+                    student_id=user_id,
+                    quiz_id=quiz.id
+                ).all()
+                
+                quiz_dict['attempts'] = {
+                    'count': len(attempts),
+                    'remaining': quiz.max_attempts - len(attempts),
+                    'best_score': max([a.score for a in attempts if a.score is not None], default=0) if attempts else 0,
+                    'has_passed': any(a.score >= quiz.passing_score for a in attempts if a.score is not None)
+                }
+            
+            quizzes_data.append(quiz_dict)
+        
+        return {
+            'quizzes': quizzes_data,
+            'total': len(quizzes_data)
+        }
+    
+    @staticmethod
+    def get_quiz(user_id: int, quiz_id: int) -> Dict[str, Any]:
+        """Get a specific quiz"""
+        user = User.query.get(user_id)
+        quiz = Quiz.query.get(quiz_id)
+        
+        if not quiz:
+            raise NotFoundException("Quiz not found")
+        
+        if not user.can_access_course(quiz.course):
+            raise PermissionException("Access denied")
+        
+        quiz_data = quiz.to_dict()
+        
+        # Add questions for teachers or during quiz attempt
+        if user.is_teacher() and quiz.course.teacher_id == user_id:
+            quiz_data['questions'] = QuizService.get_quiz_questions(quiz_id, include_answers=True)
+        
+        # Add attempt info for students
+        if user.is_student():
+            can_retake, message = QuizService.can_retake_quiz(user_id, quiz_id)
+            quiz_data['can_take'] = can_retake
+            quiz_data['message'] = message
+            quiz_data['attempts'] = QuizService.get_student_quiz_attempts(user_id, quiz_id)
+        
+        return quiz_data
+    
+    @staticmethod
+    def create_quiz(teacher_id: int, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new quiz"""
+        required_fields = ['course_id', 'title']
+        for field in required_fields:
+            if field not in quiz_data:
+                raise ValidationException(f'{field} is required')
+        
+        course = Course.query.get(quiz_data['course_id'])
+        if not course:
+            raise NotFoundException("Course not found")
+        
+        if course.teacher_id != teacher_id:
+            raise PermissionException("Access denied")
+        
+        quiz = Quiz(
+            course_id=quiz_data['course_id'],
+            lesson_id=quiz_data.get('lesson_id'),
+            title=quiz_data['title'],
+            description=quiz_data.get('description'),
+            total_points=quiz_data.get('total_points', 100),
+            passing_score=quiz_data.get('passing_score', 60),
+            time_limit_minutes=quiz_data.get('time_limit_minutes'),
+            max_attempts=quiz_data.get('max_attempts', 3)
+        )
+        
+        db.session.add(quiz)
+        db.session.commit()
+        
+        return {
+            'message': 'Quiz created successfully',
+            'quiz': quiz.to_dict()
+        }
+    
+    @staticmethod
+    def add_question(teacher_id: int, quiz_id: int, question_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Add a question to a quiz"""
+        quiz = Quiz.query.get(quiz_id)
+        if not quiz:
+            raise NotFoundException("Quiz not found")
+        
+        if quiz.course.teacher_id != teacher_id:
+            raise PermissionException("Access denied")
+        
+        required_fields = ['question_text', 'question_type', 'order_number']
+        for field in required_fields:
+            if field not in question_data:
+                raise ValidationException(f'{field} is required')
+        
+        question = Question(
+            quiz_id=quiz_id,
+            question_text=question_data['question_text'],
+            question_type=question_data['question_type'],
+            points=question_data.get('points', 10),
+            order_number=question_data['order_number']
+        )
+        
+        db.session.add(question)
+        db.session.flush()  # Get question ID
+        
+        # Add answer options for multiple choice and true/false
+        if question_data['question_type'] in ['multiple_choice', 'true_false']:
+            options = question_data.get('options', [])
+            if not options:
+                raise ValidationException("Options are required for this question type")
+            
+            for option in options:
+                answer_option = AnswerOption(
+                    question_id=question.id,
+                    option_text=option['text'],
+                    is_correct=option.get('is_correct', False)
+                )
+                db.session.add(answer_option)
+        
+        db.session.commit()
+        
+        return {
+            'message': 'Question added successfully',
+            'question': question.to_dict()
+        }
+    
+    @staticmethod
+    def start_quiz(student_id: int, quiz_id: int) -> Dict[str, Any]:
+        """Start a quiz attempt"""
+        quiz = Quiz.query.get(quiz_id)
+        if not quiz:
+            raise NotFoundException("Quiz not found")
+        
+        enrollment = Enrollment.query.filter_by(
+            student_id=student_id,
+            course_id=quiz.course_id,
+            status='active'
+        ).first()
+        
+        if not enrollment:
+            raise PermissionException("Not enrolled in this course")
+        
+        # Check if can take quiz
+        can_take, message = QuizService.can_retake_quiz(student_id, quiz_id)
+        if not can_take:
+            raise ValidationException(message)
+        
+        # Create quiz attempt
+        attempt = QuizService.create_quiz_attempt(quiz_id, student_id)
+        
+        # Get questions (without answers)
+        questions = QuizService.get_quiz_questions(quiz_id, include_answers=False)
+        
+        return {
+            'attempt_id': attempt.id,
+            'quiz': quiz.to_dict(),
+            'questions': questions,
+            'started_at': attempt.started_at.isoformat()
+        }
+    
+    @staticmethod
+    def submit_quiz_with_achievements(student_id: int, attempt_id: int, answers: Dict[str, Any]) -> Dict[str, Any]:
+        """Submit quiz and check for achievements"""
+        attempt = QuizAttempt.query.get(attempt_id)
+        if not attempt:
+            raise NotFoundException("Quiz attempt not found")
+        
+        if attempt.student_id != student_id:
+            raise PermissionException("Access denied")
+        
+        # Validate answers
+        questions = attempt.quiz.questions.all()
+        valid, errors = validate_quiz_answers(questions, answers)
+        if not valid:
+            raise ValidationException(f"Invalid answers: {', '.join(errors)}")
+        
+        # Submit and grade
+        result = QuizService.submit_quiz_attempt(attempt_id, answers)
+        
+        # Check for achievements
+        achievements = AchievementService.check_quiz_achievement(student_id, attempt_id)
+        
+        response = {
+            'message': 'Quiz submitted successfully',
+            'result': result
+        }
+        
+        if achievements:
+            response['achievements_earned'] = [
+                {
+                    'name': a.name,
+                    'description': a.description,
+                    'points': a.points_value
+                }
+                for a in achievements
+            ]
+        
+        return response
+    
+    @staticmethod
+    def get_quiz_results(user_id: int, attempt_id: int) -> Dict[str, Any]:
+        """Get quiz results"""
+        user = User.query.get(user_id)
+        attempt = QuizAttempt.query.get(attempt_id)
+        
+        if not attempt:
+            raise NotFoundException("Quiz attempt not found")
+        
+        # Check access
+        if user.is_student() and attempt.student_id != user_id:
+            raise PermissionException("Access denied")
+        elif user.is_teacher() and attempt.quiz.course.teacher_id != user_id:
+            raise PermissionException("Access denied")
+        
+        # Get detailed results
+        results = QuizService._get_detailed_results(attempt_id)
+        return results
+    
+    @staticmethod
+    def get_quiz_statistics(teacher_id: int, quiz_id: int) -> Dict[str, Any]:
+        """Get quiz statistics"""
+        quiz = Quiz.query.get(quiz_id)
+        if not quiz:
+            raise NotFoundException("Quiz not found")
+        
+        if quiz.course.teacher_id != teacher_id:
+            raise PermissionException("Access denied")
+        
+        # Get all completed attempts
+        attempts = QuizAttempt.query.filter_by(
+            quiz_id=quiz_id,
+            status='completed'
+        ).all()
+        
+        stats = calculate_quiz_statistics(attempts)
+        
+        # Get question-level statistics
+        question_stats = []
+        for question in quiz.questions:
+            correct_count = 0
+            total_answers = 0
+            
+            for attempt in attempts:
+                answer = next((a for a in attempt.student_answers if a.question_id == question.id), None)
+                if answer:
+                    total_answers += 1
+                    if answer.is_correct:
+                        correct_count += 1
+            
+            question_stats.append({
+                'question_id': question.id,
+                'question_text': question.question_text,
+                'total_answers': total_answers,
+                'correct_answers': correct_count,
+                'accuracy_rate': (correct_count / total_answers * 100) if total_answers > 0 else 0
+            })
+        
+        return {
+            'quiz': quiz.to_dict(),
+            'statistics': stats,
+            'question_statistics': question_stats
+        }
+    
+    @staticmethod
+    def create_quiz_attempt(quiz_id: int, student_id: int):
         """Create a new quiz attempt"""
         quiz = Quiz.query.get(quiz_id)
         if not quiz:
@@ -35,7 +324,7 @@ class QuizService:
         return attempt
     
     @staticmethod
-    def get_quiz_questions(quiz_id, include_answers=False):
+    def get_quiz_questions(quiz_id: int, include_answers: bool = False):
         """Get all questions for a quiz"""
         questions = Question.query.filter_by(quiz_id=quiz_id).order_by(Question.order_number).all()
         
@@ -66,7 +355,7 @@ class QuizService:
         return questions_data
     
     @staticmethod
-    def submit_quiz_attempt(attempt_id, answers):
+    def submit_quiz_attempt(attempt_id: int, answers: Dict[str, Any]):
         """Submit and grade a quiz attempt"""
         attempt = QuizAttempt.query.get(attempt_id)
         if not attempt:
@@ -100,18 +389,7 @@ class QuizService:
             )
             
             # Grade based on question type
-            if question.question_type == 'multiple_choice':
-                student_answer.selected_option_id = answer_value
-                selected_option = AnswerOption.query.get(answer_value)
-                if selected_option and selected_option.is_correct:
-                    student_answer.is_correct = True
-                    student_answer.points_earned = question.points
-                    earned_points += question.points
-                else:
-                    student_answer.is_correct = False
-                    student_answer.points_earned = 0
-            
-            elif question.question_type == 'true_false':
+            if question.question_type in ['multiple_choice', 'true_false']:
                 student_answer.selected_option_id = answer_value
                 selected_option = AnswerOption.query.get(answer_value)
                 if selected_option and selected_option.is_correct:
@@ -146,7 +424,7 @@ class QuizService:
         }
     
     @staticmethod
-    def get_quiz_results(attempt_id):
+    def _get_detailed_results(attempt_id: int):
         """Get detailed results for a quiz attempt"""
         attempt = QuizAttempt.query.get(attempt_id)
         if not attempt:
@@ -201,7 +479,7 @@ class QuizService:
         return results
     
     @staticmethod
-    def get_student_quiz_attempts(student_id, quiz_id=None):
+    def get_student_quiz_attempts(student_id: int, quiz_id: int = None):
         """Get all quiz attempts for a student"""
         query = QuizAttempt.query.filter_by(student_id=student_id)
         
@@ -213,7 +491,7 @@ class QuizService:
         return [attempt.to_dict() for attempt in attempts]
     
     @staticmethod
-    def can_retake_quiz(student_id, quiz_id):
+    def can_retake_quiz(student_id: int, quiz_id: int):
         """Check if student can retake a quiz"""
         quiz = Quiz.query.get(quiz_id)
         if not quiz:
@@ -238,33 +516,3 @@ class QuizService:
             return False, "You have an in-progress attempt"
         
         return True, f"You have {quiz.max_attempts - attempts} attempts remaining"
-    
-    @staticmethod
-    def auto_submit_expired_attempts():
-        """Auto-submit quiz attempts that have exceeded time limit"""
-        # Find all in-progress attempts with time limits
-        expired_attempts = db.session.query(QuizAttempt).join(Quiz).filter(
-            QuizAttempt.status == 'in_progress',
-            Quiz.time_limit_minutes.isnot(None)
-        ).all()
-        
-        count = 0
-        for attempt in expired_attempts:
-            time_spent = calculate_time_spent(attempt.started_at)
-            if time_spent > attempt.quiz.time_limit_minutes:
-                # Auto-submit with current answers
-                existing_answers = {
-                    str(sa.question_id): sa.selected_option_id or sa.answer_text
-                    for sa in attempt.student_answers
-                }
-                
-                try:
-                    QuizService.submit_quiz_attempt(attempt.id, existing_answers)
-                    count += 1
-                except Exception:
-                    # If submission fails, mark as abandoned
-                    attempt.status = 'abandoned'
-                    attempt.submitted_at = datetime.utcnow()
-                    db.session.commit()
-        
-        return count

@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1">Admin Dashboard</h1>
+                    <p class="text-muted mb-0">Welcome back, {{ session.user_name }}! Here's what's happening in your platform.</p>
+                </div>
+                <div>
+                    <button class="btn btn-gradient-primary" onclick="refreshDashboard()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="dashboard-icon bg-gradient-primary me-3">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="dashboard-number text-gradient-primary">{{ data.users.total if data.users else 0 }}</div>
+                        <div class="text-muted fw-semibold">Total Users</div>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up me-1"></i>
+                            +{{ data.users.recent if data.users else 0 }} this week
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="dashboard-icon bg-gradient-secondary me-3">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div>
+                        <div class="dashboard-number text-gradient-secondary">{{ data.courses.total if data.courses else 0 }}</div>
+                        <div class="text-muted fw-semibold">Total Courses</div>
+                        <small class="text-info">
+                            {{ data.courses.published if data.courses else 0 }} published
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="dashboard-icon bg-gradient-success me-3">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <div class="dashboard-number text-gradient-success">{{ data.enrollments.active if data.enrollments else 0 }}</div>
+                        <div class="text-muted fw-semibold">Active Enrollments</div>
+                        <small class="text-warning">
+                            {{ data.enrollments.completed if data.enrollments else 0 }} completed
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="dashboard-icon bg-gradient-warning me-3">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div>
+                        <div class="dashboard-number text-gradient-warning">{{ data.quizzes.total if data.quizzes else 0 }}</div>
+                        <div class="text-muted fw-semibold">Total Quizzes</div>
+                        <small class="text-primary">
+                            {{ data.quizzes.attempts if data.quizzes else 0 }} attempts
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Statistics -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">User Overview</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary active">7 Days</button>
+                        <button type="button" class="btn btn-outline-primary">30 Days</button>
+                        <button type="button" class="btn btn-outline-primary">90 Days</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="userChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">User Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">Students</span>
+                            <span class="badge bg-gradient-primary">{{ data.users.students if data.users else 0 }}</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-gradient-primary" style="width: {{ (data.users.students / data.users.total * 100) if data.users and data.users.total > 0 else 0 }}%"></div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">Teachers</span>
+                            <span class="badge bg-gradient-secondary">{{ data.users.teachers if data.users else 0 }}</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-gradient-secondary" style="width: {{ (data.users.teachers / data.users.total * 100) if data.users and data.users.total > 0 else 0 }}%"></div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">Active Users</span>
+                            <span class="badge bg-gradient-success">{{ data.users.active if data.users else 0 }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-gradient-success" style="width: {{ (data.users.active / data.users.total * 100) if data.users and data.users.total > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('frontend.admin_users') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-users me-2"></i>Manage Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-3 col-md-6">
+                            <a href="{{ url_for('frontend.admin_users') }}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <span class="fw-semibold">Manage Users</span>
+                                <small class="text-muted">Add, edit, or disable users</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <a href="{{ url_for('frontend.admin_courses') }}" class="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                                <i class="fas fa-book fa-2x mb-2"></i>
+                                <span class="fw-semibold">Manage Courses</span>
+                                <small class="text-muted">Publish or unpublish courses</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <a href="{{ url_for('frontend.admin_reports') }}" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                                <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                                <span class="fw-semibold">View Reports</span>
+                                <small class="text-muted">Analytics and insights</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <button class="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3" onclick="showSystemSettings()">
+                                <i class="fas fa-cog fa-2x mb-2"></i>
+                                <span class="fw-semibold">System Settings</span>
+                                <small class="text-muted">Configure platform settings</small>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Registrations</h5>
+                    <a href="{{ url_for('frontend.admin_users') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <!-- Placeholder for recent users -->
+                        <div class="list-group-item d-flex align-items-center border-0 px-0">
+                            <div class="avatar bg-gradient-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">New Student Registration</div>
+                                <small class="text-muted">2 hours ago</small>
+                            </div>
+                            <span class="badge bg-soft-primary text-primary">Student</span>
+                        </div>
+                        <div class="list-group-item d-flex align-items-center border-0 px-0">
+                            <div class="avatar bg-gradient-secondary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="fas fa-chalkboard-teacher text-white"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">New Teacher Registration</div>
+                                <small class="text-muted">5 hours ago</small>
+                            </div>
+                            <span class="badge bg-soft-secondary text-secondary">Teacher</span>
+                        </div>
+                        <div class="list-group-item d-flex align-items-center border-0 px-0">
+                            <div class="avatar bg-gradient-success rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="fas fa-user-graduate text-white"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">Course Enrollment</div>
+                                <small class="text-muted">1 day ago</small>
+                            </div>
+                            <span class="badge bg-soft-success text-success">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">System Status</h5>
+                    <span class="badge bg-gradient-success">All Systems Operational</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-soft-primary rounded">
+                                <i class="fas fa-server fa-2x text-primary mb-2"></i>
+                                <div class="fw-semibold">Server Status</div>
+                                <span class="badge bg-gradient-success">Online</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-soft-secondary rounded">
+                                <i class="fas fa-database fa-2x text-secondary mb-2"></i>
+                                <div class="fw-semibold">Database</div>
+                                <span class="badge bg-gradient-success">Connected</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-soft-success rounded">
+                                <i class="fas fa-envelope fa-2x text-success mb-2"></i>
+                                <div class="fw-semibold">Email Service</div>
+                                <span class="badge bg-gradient-success">Active</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-soft-warning rounded">
+                                <i class="fas fa-cloud fa-2x text-warning mb-2"></i>
+                                <div class="fw-semibold">Storage</div>
+                                <span class="badge bg-gradient-warning">75% Used</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+// Dashboard functionality
+function refreshDashboard() {
+    location.reload();
+}
+
+function showSystemSettings() {
+    alert('System settings functionality coming soon!');
+}
+
+// Chart configuration
+const ctx = document.getElementById('userChart').getContext('2d');
+const userChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+            label: 'New Users',
+            data: [12, 19, 3, 5, 2, 3, 7],
+            borderColor: 'rgb(139, 92, 246)',
+            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            tension: 0.4,
+            fill: true
+        }, {
+            label: 'Active Users',
+            data: [45, 52, 38, 65, 59, 80, 74],
+            borderColor: 'rgb(236, 72, 153)',
+            backgroundColor: 'rgba(236, 72, 153, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            },
+            x: {
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            }
+        }
+    }
+});
+
+// Auto-refresh every 5 minutes
+setInterval(function() {
+    console.log('Auto-refreshing dashboard data...');
+    // Add AJAX call to refresh data without page reload
+}, 300000);
+</script>
+{% endblock %}

@@ -23,6 +23,10 @@ def create_application():
     # Initialize database migrations
     migrate = Migrate(app, db)
     
+    # Register frontend routes
+    from app.routes import frontend
+    app.register_blueprint(frontend.bp)
+    
     # Add global error handlers
     @app.errorhandler(404)
     def not_found(error):
@@ -91,7 +95,7 @@ if __name__ == '__main__':
     debug = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
     
     print("=" * 50)
-    print("🎓 Learning Management System API")
+    print("🎓 Learning Management System")
     print("=" * 50)
     print(f"Environment: {os.environ.get('FLASK_ENV', 'development')}")
     print(f"Debug Mode: {debug}")
@@ -99,12 +103,12 @@ if __name__ == '__main__':
     print(f"Database: {app.config['SQLALCHEMY_DATABASE_URI'].split('@')[1] if '@' in app.config['SQLALCHEMY_DATABASE_URI'] else 'SQLite'}")
     print("=" * 50)
     print("Available endpoints:")
+    print("  GET  /                - Home page")
+    print("  GET  /login           - Login page")  
+    print("  GET  /register        - Registration page")
+    print("  GET  /admin/dashboard - Admin dashboard")
     print("  GET  /health          - Health check")
     print("  GET  /api             - API information")
-    print("  POST /api/auth/login  - User login")
-    print("  POST /api/auth/register - User registration")
-    print("  GET  /api/courses     - List courses")
-    print("  And many more...")
     print("=" * 50)
     
     app.run(
