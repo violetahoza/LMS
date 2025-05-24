@@ -177,5 +177,22 @@ def get_individual_student_progress(student_id):
         student_id,
         course_id
     )
-    
 
+@bp.route('/course/<int:course_id>/students/export', methods=['GET'])
+@teacher_required()
+def export_course_students(course_id):
+    """Export course students to CSV"""
+    teacher_id_str = get_jwt_identity()
+    try:
+        teacher_id = int(teacher_id_str)
+    except (ValueError, TypeError):
+        return BaseController.handle_request(
+            lambda: (_ for _ in ()).throw(ValueError("Invalid teacher ID")),
+            success_message="Export completed"
+        )
+    
+    return BaseController.handle_request(
+        TeacherService.export_course_students,
+        teacher_id,
+        course_id
+    )

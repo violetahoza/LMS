@@ -257,10 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function loadStudentProgress() {
     try {
-        let url = `/api/student/progress?student_id=${studentId}`;
-        if (courseId) {
-            url += `&course_id=${courseId}`;
-        }
+        let url = `/api/student/progress?student_id=${studentId}&course_id=${courseId}`;
         
         const response = await fetch(url, {
             method: 'GET',
@@ -272,132 +269,89 @@ async function loadStudentProgress() {
         
         if (response.ok) {
             const data = await response.json();
+            console.log('Progress data received:', data); // Debug log
             progressData = data.data || data;
             updateProgressDisplay(progressData);
         } else {
-            showError('Failed to load student progress');
+            const errorData = await response.json();
+            console.error('Error response:', errorData);
+            showError('Failed to load student progress: ' + (errorData.error || response.statusText));
         }
     } catch (error) {
         console.error('Error loading progress:', error);
-        showError('Error loading progress data');
+        showError('Error loading progress data: ' + error.message);
     }
 }
 
 function updateProgressDisplay(data) {
-    // Update student info
+    console.log('Updating display with data:', data); // Debug log
+    
+    // Handle different data structures
     const student = data.student;
-    document.getElementById('studentName').textContent = student.full_name;
-    document.getElementById('studentEmail').textContent = student.email;
+    const course = data.course;
+    const progress = data.progress;
     
-    if (data.course) {
-        document.getElementById('courseInfo').textContent = `Course: ${data.course.title}`;
-        document.getElementById('pageTitle').textContent = `${student.full_name} - ${data.course.title}`;
-    } else {
-        document.getElementById('courseInfo').textContent = 'All Courses';
-        document.getElementById('pageTitle').textContent = `${student.full_name} - Progress Overview`;
+    if (!student || !course || !progress) {
+        console.error('Missing required data:', { student: !!student, course: !!course, progress: !!progress });
+        showError('Invalid progress data structure');
+        return;
     }
     
-    // Update progress for single course
-    if (data.progress) {
-        updateSingleCourseProgress(data.progress);
-    } else if (data.courses && data.courses.length > 0) {
-        // For multiple courses, show aggregated data
-        updateMultipleCourseProgress(data.courses);
-    }
-}
-
-function updateSingleCourseProgress(progress) {
+    // Update student info
+    document.getElementById('studentName').textContent = student.full_name || 'Unknown Student';
+    document.getElementById('studentEmail').textContent = student.email || '';
+    document.getElementById('courseInfo').textContent = `Course: ${course.title || 'Unknown Course'}`;
+    document.getElementById('pageTitle').textContent = `${student.full_name} - ${course.title}`;
+    
     // Update overall progress
-    document.getElementById('overallProgress').textContent = `${progress.overall_percentage.toFixed(1)}%`;
+    const overallProgress = progress.overall_percentage || 0;
+    document.getElementById('overallProgress').textContent = `${overallProgress.toFixed(1)}%`;
     
     // Update last activity
     if (progress.last_activity) {
         const lastActivity = new Date(progress.last_activity);
         document.getElementById('lastActivity').textContent = formatRelativeTime(lastActivity);
+    } else {
+        document.getElementById('lastActivity').textContent = 'No activity';
     }
     
     // Update lessons progress
-    const lessons = progress.lessons;
-    document.getElementById('completedLessons').textContent = lessons.completed;
-    document.getElementById('totalLessons').textContent = lessons.total;
-    document.getElementById('timeSpent').textContent = `${progress.time_spent_minutes} min`;
-    updateCircularProgress('lessonsCircle', 'lessonsPercentage', lessons.percentage);
+    const lessons = progress.lessons || { completed: 0, total: 0, percentage: 0 };
+    document.getElementById('completedLessons').textContent = lessons.completed || 0;
+    document.getElementById('totalLessons').textContent = lessons.total || 0;
+    document.getElementById('timeSpent').textContent = `${progress.time_spent_minutes || 0} min`;
+    updateCircularProgress('lessonsCircle', 'lessonsPercentage', lessons.percentage || 0);
     
     // Update quizzes progress
-    const quizzes = progress.quizzes;
-    document.getElementById('passedQuizzes').textContent = quizzes.passed;
-    document.getElementById('totalQuizzes').textContent = quizzes.total;
-    document.getElementById('quizAverage').textContent = `${quizzes.average_score.toFixed(1)}%`;
+    const quizzes = progress.quizzes || { total: 0, passed: 0, average_score: 0 };
+    document.getElementById('passedQuizzes').textContent = quizzes.passed || 0;
+    document.getElementById('totalQuizzes').textContent = quizzes.total || 0;
+    document.getElementById('quizAverage').textContent = `${(quizzes.average_score || 0).toFixed(1)}%`;
     const quizPercentage = quizzes.total > 0 ? (quizzes.passed / quizzes.total * 100) : 0;
     updateCircularProgress('quizzesCircle', 'quizzesPercentage', quizPercentage);
     
     // Update assignments progress
-    const assignments = progress.assignments;
-    document.getElementById('submittedAssignments').textContent = assignments.submitted;
-    document.getElementById('totalAssignments').textContent = assignments.total;
-    document.getElementById('assignmentAverage').textContent = `${assignments.average_score.toFixed(1)}%`;
+    const assignments = progress.assignments || { total: 0, submitted: 0, average_score: 0 };
+    document.getElementById('submittedAssignments').textContent = assignments.submitted || 0;
+    document.getElementById('totalAssignments').textContent = assignments.total || 0;
+    document.getElementById('assignmentAverage').textContent = `${(assignments.average_score || 0).toFixed(1)}%`;
     const assignmentPercentage = assignments.total > 0 ? (assignments.submitted / assignments.total * 100) : 0;
     updateCircularProgress('assignmentsCircle', 'assignmentsPercentage', assignmentPercentage);
     
     // Load detailed data for tabs
     displayDetailedLessons(progress.detailed_lessons || []);
-    displayDetailedQuizzes(progress.quizzes.details || []);
-    displayDetailedAssignments(progress.assignments.details || []);
-}
-
-function updateMultipleCourseProgress(courses) {
-    // Aggregate data across all courses
-    let totalLessons = 0, completedLessons = 0, totalTime = 0;
-    let totalQuizzes = 0, passedQuizzes = 0, totalQuizScore = 0;
-    let totalAssignments = 0, submittedAssignments = 0, totalAssignmentScore = 0;
-    
-    courses.forEach(courseData => {
-        const progress = courseData.progress;
-        totalLessons += progress.lessons.total;
-        completedLessons += progress.lessons.completed;
-        totalTime += progress.time_spent_minutes;
-        
-        totalQuizzes += progress.quizzes.total;
-        passedQuizzes += progress.quizzes.passed;
-        totalQuizScore += progress.quizzes.average_score * progress.quizzes.total;
-        
-        totalAssignments += progress.assignments.total;
-        submittedAssignments += progress.assignments.submitted;
-        totalAssignmentScore += progress.assignments.average_score * progress.assignments.submitted;
-    });
-    
-    // Calculate averages
-    const avgQuizScore = totalQuizzes > 0 ? totalQuizScore / totalQuizzes : 0;
-    const avgAssignmentScore = submittedAssignments > 0 ? totalAssignmentScore / submittedAssignments : 0;
-    const overallProgress = courses.reduce((sum, c) => sum + c.progress.overall_percentage, 0) / courses.length;
-    
-    // Update display
-    document.getElementById('overallProgress').textContent = `${overallProgress.toFixed(1)}%`;
-    document.getElementById('completedLessons').textContent = completedLessons;
-    document.getElementById('totalLessons').textContent = totalLessons;
-    document.getElementById('timeSpent').textContent = `${totalTime} min`;
-    
-    const lessonPercentage = totalLessons > 0 ? (completedLessons / totalLessons * 100) : 0;
-    updateCircularProgress('lessonsCircle', 'lessonsPercentage', lessonPercentage);
-    
-    document.getElementById('passedQuizzes').textContent = passedQuizzes;
-    document.getElementById('totalQuizzes').textContent = totalQuizzes;
-    document.getElementById('quizAverage').textContent = `${avgQuizScore.toFixed(1)}%`;
-    
-    const quizPercentage = totalQuizzes > 0 ? (passedQuizzes / totalQuizzes * 100) : 0;
-    updateCircularProgress('quizzesCircle', 'quizzesPercentage', quizPercentage);
-    
-    document.getElementById('submittedAssignments').textContent = submittedAssignments;
-    document.getElementById('totalAssignments').textContent = totalAssignments;
-    document.getElementById('assignmentAverage').textContent = `${avgAssignmentScore.toFixed(1)}%`;
-    
-    const assignmentPercentage = totalAssignments > 0 ? (submittedAssignments / totalAssignments * 100) : 0;
-    updateCircularProgress('assignmentsCircle', 'assignmentsPercentage', assignmentPercentage);
+    displayDetailedQuizzes(progress.quizzes?.details || []);
+    displayDetailedAssignments(progress.assignments?.details || []);
 }
 
 function updateCircularProgress(circleId, textId, percentage) {
     const circle = document.getElementById(circleId);
     const text = document.getElementById(textId);
+    
+    if (!circle || !text) {
+        console.warn(`Circle elements not found: ${circleId}, ${textId}`);
+        return;
+    }
     
     const circumference = 2 * Math.PI * 15.915;
     const strokeDasharray = `${(percentage / 100) * circumference}, ${circumference}`;
@@ -409,7 +363,7 @@ function updateCircularProgress(circleId, textId, percentage) {
 function displayDetailedLessons(lessons) {
     const container = document.getElementById('lessonsContainer');
     
-    if (lessons.length === 0) {
+    if (!lessons || lessons.length === 0) {
         container.innerHTML = '<div class="text-center py-4 text-muted">No lessons available</div>';
         return;
     }
@@ -428,7 +382,7 @@ function displayDetailedLessons(lessons) {
     `;
     
     lessons.forEach(lessonData => {
-        const lesson = lessonData.lesson;
+        const lesson = lessonData.lesson || lessonData;
         const statusBadge = lessonData.completed ? 
             '<span class="badge bg-success">Completed</span>' : 
             lessonData.viewed ? 
@@ -442,8 +396,8 @@ function displayDetailedLessons(lessons) {
         content += `
             <tr>
                 <td>
-                    <div class="fw-semibold">${lesson.title}</div>
-                    <small class="text-muted">Lesson ${lesson.order_number}</small>
+                    <div class="fw-semibold">${lesson.title || 'Unknown Lesson'}</div>
+                    <small class="text-muted">Lesson ${lesson.order_number || 'N/A'}</small>
                 </td>
                 <td class="text-center">${statusBadge}</td>
                 <td class="text-center">${lessonData.time_spent || 0} min</td>
@@ -461,7 +415,7 @@ function displayDetailedLessons(lessons) {
 function displayDetailedQuizzes(quizzes) {
     const container = document.getElementById('quizzesContainer');
     
-    if (quizzes.length === 0) {
+    if (!quizzes || quizzes.length === 0) {
         container.innerHTML = '<div class="text-center py-4 text-muted">No quizzes attempted</div>';
         return;
     }
@@ -480,7 +434,8 @@ function displayDetailedQuizzes(quizzes) {
     `;
     
     quizzes.forEach(quiz => {
-        const scoreClass = quiz.score >= 80 ? 'text-success' : quiz.score >= 60 ? 'text-warning' : 'text-danger';
+        const score = quiz.best_score || quiz.score || 0;
+        const scoreClass = score >= 80 ? 'text-success' : score >= 60 ? 'text-warning' : 'text-danger';
         const statusBadge = quiz.passed ? 
             '<span class="badge bg-success">Passed</span>' : 
             '<span class="badge bg-danger">Failed</span>';
@@ -488,13 +443,13 @@ function displayDetailedQuizzes(quizzes) {
         content += `
             <tr>
                 <td>
-                    <div class="fw-semibold">${quiz.quiz_title}</div>
+                    <div class="fw-semibold">${quiz.quiz_title || 'Unknown Quiz'}</div>
                 </td>
                 <td class="text-center">
-                    <span class="fw-bold ${scoreClass}">${quiz.score.toFixed(1)}%</span>
+                    <span class="fw-bold ${scoreClass}">${score.toFixed(1)}%</span>
                 </td>
                 <td class="text-center">${statusBadge}</td>
-                <td class="text-center">${quiz.attempts}</td>
+                <td class="text-center">${quiz.attempts || 0}</td>
             </tr>
         `;
     });
@@ -506,7 +461,7 @@ function displayDetailedQuizzes(quizzes) {
 function displayDetailedAssignments(assignments) {
     const container = document.getElementById('assignmentsContainer');
     
-    if (assignments.length === 0) {
+    if (!assignments || assignments.length === 0) {
         container.innerHTML = '<div class="text-center py-4 text-muted">No assignments submitted</div>';
         return;
     }
@@ -542,7 +497,7 @@ function displayDetailedAssignments(assignments) {
         content += `
             <tr>
                 <td>
-                    <div class="fw-semibold">${assignment.assignment_title}</div>
+                    <div class="fw-semibold">${assignment.assignment_title || 'Unknown Assignment'}</div>
                     ${assignment.feedback ? `<small class="text-muted">${assignment.feedback.substring(0, 50)}...</small>` : ''}
                 </td>
                 <td class="text-center">${gradeDisplay}</td>
@@ -600,7 +555,7 @@ async function sendMessageNow() {
             messageData.course_id = courseId;
         }
         
-        const response = await fetch('/api/student/messages/send', {
+        const response = await fetch('/api/messages/send', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer {{ session.access_token }}`,
@@ -632,33 +587,30 @@ function exportProgress() {
     // Generate CSV export
     let csvContent = '';
     
-    if (progressData.progress) {
-        // Single course export
-        const student = progressData.student;
-        const course = progressData.course;
-        const progress = progressData.progress;
-        
-        csvContent = `Student Progress Report\n`;
-        csvContent += `Student: ${student.full_name}\n`;
-        csvContent += `Email: ${student.email}\n`;
-        csvContent += `Course: ${course.title}\n`;
-        csvContent += `Generated: ${new Date().toLocaleDateString()}\n\n`;
-        
-        csvContent += `Overall Progress: ${progress.overall_percentage.toFixed(1)}%\n`;
-        csvContent += `Time Spent: ${progress.time_spent_minutes} minutes\n\n`;
-        
-        csvContent += `Lessons Progress:\n`;
-        csvContent += `Completed: ${progress.lessons.completed}/${progress.lessons.total}\n`;
-        csvContent += `Percentage: ${progress.lessons.percentage.toFixed(1)}%\n\n`;
-        
-        csvContent += `Quiz Performance:\n`;
-        csvContent += `Passed: ${progress.quizzes.passed}/${progress.quizzes.total}\n`;
-        csvContent += `Average Score: ${progress.quizzes.average_score.toFixed(1)}%\n\n`;
-        
-        csvContent += `Assignment Performance:\n`;
-        csvContent += `Submitted: ${progress.assignments.submitted}/${progress.assignments.total}\n`;
-        csvContent += `Average Score: ${progress.assignments.average_score.toFixed(1)}%\n`;
-    }
+    const student = progressData.student;
+    const course = progressData.course;
+    const progress = progressData.progress;
+    
+    csvContent = `Student Progress Report\n`;
+    csvContent += `Student: ${student.full_name}\n`;
+    csvContent += `Email: ${student.email}\n`;
+    csvContent += `Course: ${course.title}\n`;
+    csvContent += `Generated: ${new Date().toLocaleDateString()}\n\n`;
+    
+    csvContent += `Overall Progress: ${progress.overall_percentage.toFixed(1)}%\n`;
+    csvContent += `Time Spent: ${progress.time_spent_minutes} minutes\n\n`;
+    
+    csvContent += `Lessons Progress:\n`;
+    csvContent += `Completed: ${progress.lessons.completed}/${progress.lessons.total}\n`;
+    csvContent += `Percentage: ${progress.lessons.percentage.toFixed(1)}%\n\n`;
+    
+    csvContent += `Quiz Performance:\n`;
+    csvContent += `Passed: ${progress.quizzes.passed}/${progress.quizzes.total}\n`;
+    csvContent += `Average Score: ${progress.quizzes.average_score.toFixed(1)}%\n\n`;
+    
+    csvContent += `Assignment Performance:\n`;
+    csvContent += `Submitted: ${progress.assignments.submitted}/${progress.assignments.total}\n`;
+    csvContent += `Average Score: ${progress.assignments.average_score.toFixed(1)}%\n`;
     
     // Download CSV
     const blob = new Blob([csvContent], { type: 'text/csv' });
