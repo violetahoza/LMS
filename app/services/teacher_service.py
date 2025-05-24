@@ -2,10 +2,13 @@
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from sqlalchemy import desc, func
-from app.models import db, User, Course, Enrollment, Lesson, Quiz, Assignment, QuizAttempt, AssignmentSubmission, LessonProgress
+from app.models import db, User, Course, Enrollment, Lesson, Quiz, Assignment, QuizAttempt, AssignmentSubmission, LessonProgress, Message
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from app.utils.helpers import calculate_course_statistics, calculate_quiz_statistics
 from collections import defaultdict
+import io
+import csv
+from flask import make_response
 
 class TeacherService:
     """Service for teacher-specific operations"""
@@ -322,6 +325,69 @@ class TeacherService:
         }
     
     @staticmethod
+    def export_course_students(teacher_id: int, course_id: int):
+        """Export course students to CSV"""
+        user = User.query.get(teacher_id)
+        if not user or not user.is_teacher():
+            raise PermissionException("Only teachers can export student data")
+        
+        course = Course.query.get(course_id)
+        if not course:
+            raise NotFoundException("Course not found")
+        
+        if course.teacher_id != teacher_id:
+            raise PermissionException("Access denied to this course")
+        
+        # Get student reports
+        report_data = TeacherService.get_student_progress_report(teacher_id, course_id)
+        
+        # Create CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        writer.writerow([
+            'Student Name', 'Email', 'Enrollment Date', 'Progress %', 
+            'Lessons Completed', 'Quiz Average', 'Assignment Average',
+            'Last Activity', 'Status'
+        ])
+        
+        # Write data
+        for report in report_data['student_reports']:
+            student = report['student']
+            enrollment = report['enrollment']
+            progress = report['progress']
+            
+            # Calculate last activity
+            last_activity = 'Never'
+            if progress.get('lessons') and len(progress['lessons']) > 0:
+                # Find most recent lesson activity
+                for lesson_data in progress.get('detailed_lessons', []):
+                    if lesson_data.get('last_viewed'):
+                        last_activity = lesson_data['last_viewed'][:10]  # Just date part
+                        break
+            
+            writer.writerow([
+                student['full_name'],
+                student['email'],
+                enrollment['enrolled_at'][:10] if enrollment['enrolled_at'] else '',
+                f"{progress['overall_percentage']:.1f}%",
+                f"{progress['lessons']['completed']}/{progress['lessons']['total']}",
+                f"{progress['quiz_average']:.1f}%",
+                f"{progress['assignment_average']:.1f}%",
+                last_activity,
+                enrollment['status']
+            ])
+        
+        # Create response
+        output.seek(0)
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = f'attachment; filename=course_{course_id}_students.csv'
+        
+        return response
+    
+    @staticmethod
     def get_course_analytics(teacher_id: int, course_id: int) -> Dict[str, Any]:
         """Get comprehensive course analytics"""
         user = User.query.get(teacher_id)
@@ -408,7 +474,7 @@ class TeacherService:
                 status='completed'
             ).order_by(desc(QuizAttempt.score)).first()
             
-            if best_attempt:
+            if best_attempt and best_attempt.score is not None:
                 quiz_scores.append({
                     'quiz_id': quiz.id,
                     'quiz_title': quiz.title,
@@ -424,7 +490,7 @@ class TeacherService:
                 assignment_id=assignment.id
             ).first()
             
-            if submission:
+            if submission and submission.grade is not None:
                 assignment_grades.append({
                     'assignment_id': assignment.id,
                     'assignment_title': assignment.title,
@@ -432,12 +498,21 @@ class TeacherService:
                     'status': submission.status
                 })
         
-        # Calculate overall progress
+        # Calculate overall progress safely
         lesson_progress = (completed_lessons / total_lessons * 100) if total_lessons > 0 else 0
         quiz_average = sum(q['score'] for q in quiz_scores) / len(quiz_scores) if quiz_scores else 0
-        assignment_average = sum(a['grade'] for a in assignment_grades if a['grade']) / len([a for a in assignment_grades if a['grade']]) if assignment_grades else 0
+        assignment_average = sum(a['grade'] for a in assignment_grades) / len(assignment_grades) if assignment_grades else 0
         
-        overall_percentage = (lesson_progress + quiz_average + assignment_average) / 3
+        # Calculate overall percentage (only include components that have data)
+        components = []
+        if total_lessons > 0:
+            components.append(lesson_progress)
+        if quiz_scores:
+            components.append(quiz_average)
+        if assignment_grades:
+            components.append(assignment_average)
+        
+        overall_percentage = sum(components) / len(components) if components else 0
         
         return {
             'lessons': {
@@ -452,7 +527,6 @@ class TeacherService:
             'overall_percentage': overall_percentage
         }
     
-   
     @staticmethod
     def get_teacher_analytics_overview(teacher_id: int) -> Dict[str, Any]:
         """Aggregate analytics overview across all courses taught by the teacher"""
@@ -510,11 +584,13 @@ class TeacherService:
             },
             "enrollment_trends": enrollment_trends,
             "lesson_engagement": lesson_engagement,
-            "quiz_performance": quiz_performance
+            "quiz_performance": quiz_performance,
+            "student_reports": []  # Add this for compatibility
         }
 
     @staticmethod
     def get_individual_student_progress(teacher_id: int, student_id: int, course_id: int) -> Dict[str, Any]:
+        """Get detailed progress for a specific student in a specific course"""
         user = User.query.get(teacher_id)
         if not user or not user.is_teacher():
             raise PermissionException("Only teachers can access this data")
@@ -527,7 +603,102 @@ class TeacherService:
         if not student:
             raise NotFoundException("Student not found")
 
+        # Check if student is enrolled
+        enrollment = Enrollment.query.filter_by(
+            student_id=student_id,
+            course_id=course_id
+        ).first()
+        
+        if not enrollment:
+            raise NotFoundException("Student not enrolled in this course")
+
         progress = TeacherService._calculate_student_progress(student_id, course_id)
+        
+        # Get detailed lesson progress
+        detailed_lessons = []
+        for lesson in course.lessons.order_by(Lesson.order_number):
+            lesson_progress = LessonProgress.query.filter_by(
+                student_id=student_id,
+                lesson_id=lesson.id
+            ).first()
+            
+            detailed_lessons.append({
+                'lesson': lesson.to_dict(),
+                'viewed': lesson_progress is not None,
+                'completed': lesson_progress.completed_at is not None if lesson_progress else False,
+                'time_spent': lesson_progress.time_spent_minutes if lesson_progress else 0,
+                'last_viewed': lesson_progress.viewed_at.isoformat() if lesson_progress and lesson_progress.viewed_at else None
+            })
+        
+        # Get detailed quiz progress
+        detailed_quizzes = []
+        for quiz in course.quizzes:
+            attempts = QuizAttempt.query.filter_by(
+                student_id=student_id,
+                quiz_id=quiz.id,
+                status='completed'
+            ).order_by(desc(QuizAttempt.score)).all()
+            
+            best_score = max(a.score for a in attempts) if attempts and any(a.score is not None for a in attempts) else None
+            
+            detailed_quizzes.append({
+                'quiz_id': quiz.id,
+                'quiz_title': quiz.title,
+                'attempts': len(attempts),
+                'best_score': best_score,
+                'passed': best_score >= quiz.passing_score if best_score is not None else False
+            })
+        
+        # Get detailed assignment progress
+        detailed_assignments = []
+        for assignment in course.assignments:
+            submission = AssignmentSubmission.query.filter_by(
+                student_id=student_id,
+                assignment_id=assignment.id
+            ).first()
+            
+            detailed_assignments.append({
+                'assignment_id': assignment.id,
+                'assignment_title': assignment.title,
+                'submitted': submission is not None,
+                'grade': submission.grade if submission else None,
+                'status': submission.status if submission else 'not_submitted',
+                'submitted_at': submission.submitted_at.isoformat() if submission and submission.submitted_at else None,
+                'feedback': submission.feedback if submission else None
+            })
+
+        # Calculate last activity
+        last_activity = None
+        if detailed_lessons:
+            for lesson_data in detailed_lessons:
+                if lesson_data['last_viewed']:
+                    if not last_activity or lesson_data['last_viewed'] > last_activity:
+                        last_activity = lesson_data['last_viewed']
+
+        # Safe calculations for averages
+        quizzes_with_scores = [q for q in detailed_quizzes if q['best_score'] is not None]
+        quiz_average = sum(q['best_score'] for q in quizzes_with_scores) / len(quizzes_with_scores) if quizzes_with_scores else 0
+        
+        assignments_with_grades = [a for a in detailed_assignments if a['grade'] is not None]
+        assignment_average = sum(a['grade'] for a in assignments_with_grades) / len(assignments_with_grades) if assignments_with_grades else 0
+
+        progress.update({
+            'detailed_lessons': detailed_lessons,
+            'quizzes': {
+                'details': detailed_quizzes,
+                'total': len(detailed_quizzes),
+                'passed': len([q for q in detailed_quizzes if q['passed']]),
+                'average_score': quiz_average
+            },
+            'assignments': {
+                'details': detailed_assignments,
+                'total': len(detailed_assignments),
+                'submitted': len([a for a in detailed_assignments if a['submitted']]),
+                'average_score': assignment_average
+            },
+            'last_activity': last_activity,
+            'time_spent_minutes': sum(l['time_spent'] for l in detailed_lessons)
+        })
 
         return {
             'student': student.to_dict(),
@@ -535,4 +706,50 @@ class TeacherService:
             'progress': progress
         }
 
-    
+    @staticmethod 
+    def send_message_to_student(teacher_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Send a message to a student"""
+        user = User.query.get(teacher_id)
+        if not user or not user.is_teacher():
+            raise PermissionException("Only teachers can send messages")
+        
+        recipient_id = data.get('recipient_id')
+        subject = data.get('subject', '').strip()
+        content = data.get('content', '').strip()
+        course_id = data.get('course_id')
+        
+        if not recipient_id or not subject or not content:
+            raise ValidationException("Recipient, subject, and content are required")
+        
+        recipient = User.query.get(recipient_id)
+        if not recipient or not recipient.is_student():
+            raise ValidationException("Invalid recipient")
+        
+        # If course_id provided, verify teacher has access and student is enrolled
+        if course_id:
+            course = Course.query.get(course_id)
+            if not course or course.teacher_id != teacher_id:
+                raise PermissionException("Access denied to this course")
+            
+            enrollment = Enrollment.query.filter_by(
+                student_id=recipient_id,
+                course_id=course_id
+            ).first()
+            if not enrollment:
+                raise ValidationException("Student is not enrolled in this course")
+        
+        message = Message(
+            sender_id=teacher_id,
+            recipient_id=recipient_id,
+            course_id=course_id,
+            subject=subject,
+            content=content
+        )
+        
+        db.session.add(message)
+        db.session.commit()
+        
+        return {
+            'message': 'Message sent successfully',
+            'message_data': message.to_dict()
+        }

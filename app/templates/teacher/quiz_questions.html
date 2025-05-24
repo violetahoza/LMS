@@ -74,7 +74,7 @@
 
 <!-- Add/Edit Question Modal -->
 <div class="modal fade" id="questionModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header bg-gradient-primary text-white">
                 <h5 class="modal-title" id="questionModalTitle">Add Question</h5>
@@ -85,19 +85,20 @@
                     <input type="hidden" id="questionId" name="question_id">
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Question Text</label>
-                            <textarea class="form-control" id="questionText" name="question_text" rows="3" required></textarea>
+                            <label class="form-label fw-semibold">Question Text *</label>
+                            <textarea class="form-control" id="questionText" name="question_text" rows="3" required placeholder="Enter your question here..."></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Question Type</label>
+                            <label class="form-label fw-semibold">Question Type *</label>
                             <select class="form-select" id="questionType" name="question_type" onchange="toggleQuestionFields()" required>
+                                <option value="">Select question type</option>
                                 <option value="multiple_choice">Multiple Choice</option>
                                 <option value="true_false">True/False</option>
                                 <option value="short_answer">Short Answer</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label fw-semibold">Points</label>
+                            <label class="form-label fw-semibold">Points *</label>
                             <input type="number" class="form-control" id="questionPoints" name="points" value="10" min="1" required>
                         </div>
                         <div class="col-md-3">
@@ -106,7 +107,7 @@
                         </div>
                         
                         <!-- Options section for multiple choice and true/false -->
-                        <div class="col-12" id="optionsSection">
+                        <div class="col-12 d-none" id="optionsSection">
                             <label class="form-label fw-semibold">Answer Options</label>
                             <div id="optionsContainer">
                                 <!-- Options will be dynamically added here -->
@@ -161,7 +162,9 @@ async function loadQuizData() {
             const data = await response.json();
             quizData = data.data || data;
             updateQuizInfo(quizData);
-            loadQuestions();
+            questions = quizData.questions || [];
+            displayQuestions(questions);
+            updateQuestionStats();
         } else {
             showError('Failed to load quiz data');
         }
@@ -175,19 +178,6 @@ function updateQuizInfo(quiz) {
     document.getElementById('quizTitle').textContent = `${quiz.title} - Questions`;
     document.getElementById('quizInfoTitle').textContent = quiz.title;
     document.getElementById('quizInfoDescription').textContent = quiz.description || 'No description';
-}
-
-async function loadQuestions() {
-    try {
-        // For now, we'll get questions from the quiz data
-        // In a real implementation, you might have a separate endpoint
-        questions = quizData.questions || [];
-        displayQuestions(questions);
-        updateQuestionStats();
-    } catch (error) {
-        console.error('Error loading questions:', error);
-        showError('Error loading questions');
-    }
 }
 
 function displayQuestions(questions) {
@@ -285,7 +275,10 @@ function addQuestion() {
     const nextOrder = Math.max(...questions.map(q => q.order_number || 0), 0) + 1;
     document.getElementById('questionOrder').value = nextOrder;
     
+    // Reset the form
+    document.getElementById('questionType').value = '';
     toggleQuestionFields();
+    
     new bootstrap.Modal(document.getElementById('questionModal')).show();
 }
 
@@ -328,7 +321,7 @@ function toggleQuestionFields() {
     if (questionType === 'short_answer') {
         optionsSection.classList.add('d-none');
         correctAnswerSection.classList.remove('d-none');
-    } else {
+    } else if (questionType === 'multiple_choice' || questionType === 'true_false') {
         optionsSection.classList.remove('d-none');
         correctAnswerSection.classList.add('d-none');
         
@@ -347,6 +340,9 @@ function toggleQuestionFields() {
                 addOption('', false);
             }
         }
+    } else {
+        optionsSection.classList.add('d-none');
+        correctAnswerSection.classList.add('d-none');
     }
 }
 
@@ -360,10 +356,8 @@ function addOption(text = '', isCorrect = false) {
     const inputName = questionType === 'true_false' ? 'correct_option' : '';
     
     optionDiv.innerHTML = `
-        <div class="input-group-prepend">
-            <div class="input-group-text">
-                <input type="${inputType}" ${inputName ? `name="${inputName}"` : ''} ${isCorrect ? 'checked' : ''}>
-            </div>
+        <div class="input-group-text">
+            <input type="${inputType}" ${inputName ? `name="${inputName}"` : ''} ${isCorrect ? 'checked' : ''}>
         </div>
         <input type="text" class="form-control option-text" placeholder="Enter option text" value="${text}" ${questionType === 'true_false' ? 'readonly' : ''}>
         ${questionType !== 'true_false' ? `
@@ -390,39 +384,52 @@ async function saveQuestion() {
     const formData = new FormData(form);
     const questionId = formData.get('question_id');
     
+    // Validate required fields
+    if (!formData.get('question_text').trim()) {
+        showError('Question text is required');
+        return;
+    }
+    
+    if (!formData.get('question_type')) {
+        showError('Question type is required');
+        return;
+    }
+    
     // Collect options
     const options = [];
     const optionInputs = document.querySelectorAll('.option-text');
     const correctInputs = document.querySelectorAll('#optionsContainer input[type="checkbox"], #optionsContainer input[type="radio"]');
     
-    optionInputs.forEach((input, index) => {
-        if (input.value.trim()) {
-            options.push({
-                text: input.value.trim(),
-                is_correct: correctInputs[index].checked
-            });
+    if (formData.get('question_type') !== 'short_answer') {
+        optionInputs.forEach((input, index) => {
+            if (input.value.trim()) {
+                options.push({
+                    text: input.value.trim(),
+                    is_correct: correctInputs[index] ? correctInputs[index].checked : false
+                });
+            }
+        });
+        
+        // Validation for options
+        if (options.length === 0) {
+            showError('Please add at least one option');
+            return;
         }
-    });
+        
+        if (!options.some(opt => opt.is_correct)) {
+            showError('Please mark at least one option as correct');
+            return;
+        }
+    }
     
     const data = {
         quiz_id: quizId,
-        question_text: formData.get('question_text'),
+        question_text: formData.get('question_text').trim(),
         question_type: formData.get('question_type'),
         points: parseInt(formData.get('points')),
         order_number: parseInt(formData.get('order_number')),
-        options: formData.get('question_type') !== 'short_answer' ? options : []
+        options: options
     };
-    
-    // Validation
-    if (data.question_type !== 'short_answer' && options.length === 0) {
-        showError('Please add at least one option');
-        return;
-    }
-    
-    if (data.question_type !== 'short_answer' && !options.some(opt => opt.is_correct)) {
-        showError('Please mark at least one option as correct');
-        return;
-    }
     
     try {
         const url = questionId ? `/api/quizzes/${quizId}/questions/${questionId}` : `/api/quizzes/${quizId}/questions`;

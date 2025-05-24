@@ -713,6 +713,34 @@ def teacher_assignment_submissions(assignment_id):
     
     return render_template('teacher/assignment_submissions.html', assignment_id=assignment_id)
 
+@bp.route('/messages')
+def messages():
+    """Messages inbox page"""
+    if not session.get('access_token'):
+        flash('Please log in to access messages.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('messages/inbox.html')
+
+@bp.route('/messages/compose')
+def compose_message():
+    """Compose new message page"""
+    if not session.get('access_token'):
+        flash('Please log in to compose messages.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('messages/compose.html')
+
+@bp.route('/messages/conversation/<int:partner_id>')
+def message_conversation(partner_id):
+    """View conversation with specific user"""
+    if not session.get('access_token'):
+        flash('Please log in to view conversations.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('messages/conversation.html', partner_id=partner_id)
+
+# Update the existing teacher student progress route to properly handle course_id
 @bp.route('/teacher/student/<int:student_id>/progress')
 def teacher_student_progress(student_id):
     """View individual student progress"""
@@ -720,5 +748,9 @@ def teacher_student_progress(student_id):
         flash('Access denied. Teacher privileges required.', 'error')
         return redirect(url_for('frontend.index'))
     
-    course_id = request.args.get('course')
+    course_id = request.args.get('course', type=int)
+    if not course_id:
+        flash('Course ID is required.', 'error')
+        return redirect(url_for('frontend.teacher_courses'))
+    
     return render_template('teacher/student_progress.html', student_id=student_id, course_id=course_id)
