@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+
+{% block title %}My Progress - Student - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1">My Progress</h1>
+                    <p class="text-muted mb-0">Track your learning journey across all courses</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('frontend.student_courses') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-book me-2"></i>My Courses
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5" id="progressSummary">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-primary rounded-circle mx-auto mb-3">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h3 class="stats-number text-primary" id="totalCourses">0</h3>
+                    <p class="text-muted mb-0">Total Courses</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-success rounded-circle mx-auto mb-3">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 class="stats-number text-success" id="completedCourses">0</h3>
+                    <p class="text-muted mb-0">Completed</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-warning rounded-circle mx-auto mb-3">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="stats-number text-warning" id="overallProgress">0%</h3>
+                    <p class="text-muted mb-0">Overall Progress</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-info rounded-circle mx-auto mb-3">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <h3 class="stats-number text-info" id="currentStreak">0</h3>
+                    <p class="text-muted mb-0">Day Streak</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2 text-primary"></i>Course Progress Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="courseProgressContainer">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-fire me-2 text-warning"></i>Study Streak
+                    </h6>
+                </div>
+                <div class="card-body" id="studyStreakCard">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-trophy me-2 text-warning"></i>Recent Achievements
+                    </h6>
+                </div>
+                <div class="card-body" id="achievementsCard">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="courseProgressModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title" id="courseProgressModalTitle">Course Progress</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="courseProgressModalBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let progressData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadProgress();
+    loadStudyStreak();
+    loadAchievements();
+});
+
+async function loadProgress() {
+    try {
+        const response = await fetch('/api/student/progress', {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            progressData = data.data || data;
+            updateProgressSummary();
+            displayCourseProgress();
+        } else {
+            showError('Failed to load progress data');
+        }
+    } catch (error) {
+        console.error('Error loading progress:', error);
+        showError('Error loading progress data');
+    }
+}
+
+function updateProgressSummary() {
+    if (!progressData) return;
+    
+    const courses = progressData.courses || [];
+    const totalCourses = courses.length;
+    const completedCourses = courses.filter(c => c.enrollment.status === 'completed').length;
+    const totalProgress = courses.length > 0 ? 
+        courses.reduce((sum, c) => sum + (c.enrollment.progress_percentage || 0), 0) / courses.length : 0;
+    
+    document.getElementById('totalCourses').textContent = totalCourses;
+    document.getElementById('completedCourses').textContent = completedCourses;
+    document.getElementById('overallProgress').textContent = `${totalProgress.toFixed(1)}%`;
+}
+
+function displayCourseProgress() {
+    const container = document.getElementById('courseProgressContainer');
+    
+    if (!progressData || !progressData.courses || progressData.courses.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No courses enrolled</h5>
+                <p class="text-muted">Start learning by enrolling in courses</p>
+                <a href="/student/courses/browse" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>Browse Courses
+                </a>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '';
+    
+    progressData.courses.forEach(courseData => {
+        const course = courseData.course;
+        const enrollment = courseData.enrollment;
+        const lessonProgress = courseData.lesson_progress;
+        const quizProgress = courseData.quiz_progress || [];
+        const assignmentProgress = courseData.assignment_progress || [];
+        
+        const progressPercentage = enrollment.progress_percentage || 0;
+        const statusClass = enrollment.status === 'completed' ? 'success' : 
+                           enrollment.status === 'active' ? 'primary' : 'secondary';
+        
+        content += `
+            <div class="card course-progress-card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center mb-2">
+                                <h6 class="card-title mb-0 me-3">${course.title}</h6>
+                                <span class="badge bg-${statusClass}">${enrollment.status}</span>
+                            </div>
+                            <p class="text-muted small mb-2">${course.description?.substring(0, 100) || 'No description'}${course.description?.length > 100 ? '...' : ''}</p>
+                            
+                            <div class="progress mb-2" style="height: 10px;">
+                                <div class="progress-bar bg-gradient-${statusClass}" style="width: ${progressPercentage}%"></div>
+                            </div>
+                            <small class="text-muted">${progressPercentage.toFixed(1)}% completed</small>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="row g-2 text-center">
+                                <div class="col-4">
+                                    <div class="bg-light rounded p-2">
+                                        <div class="fw-bold text-primary">${lessonProgress.completed}/${lessonProgress.total}</div>
+                                        <small class="text-muted">Lessons</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="bg-light rounded p-2">
+                                        <div class="fw-bold text-warning">${quizProgress.filter(q => q.passed).length}/${quizProgress.length}</div>
+                                        <small class="text-muted">Quizzes</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="bg-light rounded p-2">
+                                        <div class="fw-bold text-success">${assignmentProgress.filter(a => a.grade !== null).length}/${assignmentProgress.length}</div>
+                                        <small class="text-muted">Assignments</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-outline-info btn-sm" onclick="viewDetailedProgress('${course.id}')">
+                                    <i class="fas fa-chart-line me-1"></i>View Details
+                                </button>
+                                <a href="/student/courses/${course.id}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-play me-1"></i>Continue
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = content;
+}
+
+async function viewDetailedProgress(courseId) {
+    const courseData = progressData.courses.find(c => c.course.id == courseId);
+    if (!courseData) return;
+    
+    const course = courseData.course;
+    const lessonProgress = courseData.lesson_progress;
+    const quizProgress = courseData.quiz_progress || [];
+    const assignmentProgress = courseData.assignment_progress || [];
+    
+    document.getElementById('courseProgressModalTitle').textContent = `${course.title} - Detailed Progress`;
+    
+    let modalContent = `
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h5>Overall Progress</h5>
+                        <div class="h2 text-primary">${(courseData.enrollment.progress_percentage || 0).toFixed(1)}%</div>
+                        <div class="progress mb-3" style="height: 10px;">
+                            <div class="progress-bar bg-gradient-primary" style="width: ${courseData.enrollment.progress_percentage || 0}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="row g-3">
+                    <div class="col-4">
+                        <div class="text-center">
+                            <div class="h4 text-primary">${lessonProgress.completed}/${lessonProgress.total}</div>
+                            <small class="text-muted">Lessons Completed</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center">
+                            <div class="h4 text-warning">${quizProgress.filter(q => q.passed).length}/${quizProgress.length}</div>
+                            <small class="text-muted">Quizzes Passed</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center">
+                            <div class="h4 text-success">${assignmentProgress.filter(a => a.grade !== null).length}/${assignmentProgress.length}</div>
+                            <small class="text-muted">Assignments Graded</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Quiz Performance</h6>
+                <div class="list-group list-group-flush">
+    `;
+    
+    if (quizProgress.length > 0) {
+        quizProgress.forEach(quiz => {
+            const statusClass = quiz.passed ? 'success' : quiz.best_score > 0 ? 'warning' : 'secondary';
+            modalContent += `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold">${quiz.quiz_title}</div>
+                        <small class="text-muted">Attempts: ${quiz.attempts}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-${statusClass}">${quiz.best_score || 0}%</span>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        modalContent += '<div class="text-muted text-center py-3">No quizzes available</div>';
+    }
+    
+    modalContent += `
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6>Assignment Status</h6>
+                <div class="list-group list-group-flush">
+    `;
+    
+    if (assignmentProgress.length > 0) {
+        assignmentProgress.forEach(assignment => {
+            const statusClass = assignment.status === 'graded' ? 'success' : 
+                               assignment.status === 'submitted' ? 'warning' : 'secondary';
+            modalContent += `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold">${assignment.assignment_title}</div>
+                        <small class="text-muted">Status: ${assignment.status}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-${statusClass}">
+                            ${assignment.grade !== null ? assignment.grade + '%' : 'Not Graded'}
+                        </span>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        modalContent += '<div class="text-muted text-center py-3">No assignments available</div>';
+    }
+    
+    modalContent += `
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('courseProgressModalBody').innerHTML = modalContent;
+    new bootstrap.Modal(document.getElementById('courseProgressModal')).show();
+}
+
+async function loadStudyStreak() {
+    try {
+        const response = await fetch('/api/student/study-streak', {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const streakData = data.data || data;
+            displayStudyStreak(streakData);
+        } else {
+            document.getElementById('studyStreakCard').innerHTML = '<p class="text-muted">Failed to load streak data</p>';
+        }
+    } catch (error) {
+        console.error('Error loading study streak:', error);
+        document.getElementById('studyStreakCard').innerHTML = '<p class="text-muted">Error loading streak data</p>';
+    }
+}
+
+function displayStudyStreak(streakData) {
+    document.getElementById('currentStreak').textContent = streakData.current_streak || 0;
+    
+    document.getElementById('studyStreakCard').innerHTML = `
+        <div class="text-center mb-3">
+            <div class="h2 text-warning">${streakData.current_streak || 0}</div>
+            <div class="text-muted">Current Streak</div>
+        </div>
+        
+        <div class="row g-3 text-center">
+            <div class="col-6">
+                <div class="bg-light rounded p-2">
+                    <div class="fw-bold text-info">${streakData.longest_streak || 0}</div>
+                    <small class="text-muted">Longest Streak</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="bg-light rounded p-2">
+                    <div class="fw-bold text-success">${streakData.total_study_days || 0}</div>
+                    <small class="text-muted">Total Study Days</small>
+                </div>
+            </div>
+        </div>
+        
+        ${streakData.last_activity ? `
+            <div class="mt-3 text-center">
+                <small class="text-muted">
+                    Last activity: ${new Date(streakData.last_activity).toLocaleDateString()}
+                </small>
+            </div>
+        ` : ''}
+    `;
+}
+
+async function loadAchievements() {
+    try {
+        const response = await fetch('/api/student/achievements', {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const achievementsData = data.data || data;
+            displayAchievements(achievementsData.earned?.achievements || []);
+        } else {
+            document.getElementById('achievementsCard').innerHTML = '<p class="text-muted">Failed to load achievements</p>';
+        }
+    } catch (error) {
+        console.error('Error loading achievements:', error);
+        document.getElementById('achievementsCard').innerHTML = '<p class="text-muted">Error loading achievements</p>';
+    }
+}
+
+function displayAchievements(achievements) {
+    const container = document.getElementById('achievementsCard');
+    
+    if (achievements.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-3">
+                <i class="fas fa-trophy text-muted mb-2"></i>
+                <p class="text-muted mb-0">No achievements yet</p>
+                <small class="text-muted">Complete courses to earn achievements!</small>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '';
+    achievements.slice(0, 3).forEach(achievement => {
+        content += `
+            <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
+                <div class="me-3">
+                    <i class="fas fa-trophy text-warning fa-lg"></i>
+                </div>
+                <div>
+                    <div class="fw-semibold small">${achievement.name}</div>
+                    <small class="text-muted">${achievement.description}</small>
+                    <div class="small text-primary">${achievement.points} points</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    if (achievements.length > 3) {
+        content += `
+            <div class="text-center">
+                <a href="/student/achievements" class="btn btn-outline-warning btn-sm">
+                    View All Achievements
+                </a>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = content;
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}
