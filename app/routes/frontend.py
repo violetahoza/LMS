@@ -53,8 +53,11 @@ def login():
                     return redirect(url_for('frontend.admin_dashboard'))
                 elif data['user']['role'] == 'teacher':
                     return redirect(url_for('frontend.teacher_dashboard'))
-                else:
+                elif data['user']['role'] == 'student':
                     return redirect(url_for('frontend.student_dashboard'))
+                else:
+                    flash('Unknown user role', 'error')
+                    return redirect(url_for('frontend.index'))
             else:
                 error_data = response.json()
                 error_message = error_data.get('error', 'Login failed')

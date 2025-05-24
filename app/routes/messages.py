@@ -108,9 +108,7 @@ def search_users():
     if len(query) < 2:
         return jsonify({'users': []})
     
-    # Search users based on role permissions
     if current_user.is_admin():
-        # Admins can message anyone
         users_query = User.query.filter(
             User.id != current_user_id,
             User.is_active == True,
