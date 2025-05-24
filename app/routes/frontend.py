@@ -176,7 +176,7 @@ def admin_dashboard():
     """Admin dashboard"""
     if not session.get('access_token') or session.get('user_role') != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     try:
         headers = get_auth_headers()
@@ -208,7 +208,7 @@ def admin_users():
     """Admin users management"""
     if not session.get('access_token') or session.get('user_role') != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     page = request.args.get('page', 1, type=int)
     role = request.args.get('role', '')
@@ -253,7 +253,7 @@ def admin_courses():
     """Admin courses management"""
     if not session.get('access_token') or session.get('user_role') != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     page = request.args.get('page', 1, type=int)
     category = request.args.get('category', '')
@@ -298,7 +298,7 @@ def admin_reports():
     """Admin reports page"""
     if not session.get('access_token') or session.get('user_role') != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     days = request.args.get('days', 30, type=int)
     
@@ -420,7 +420,7 @@ def export_users():
     """Export users to CSV"""
     if not session.get('access_token') or session.get('user_role') != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     try:
         headers = get_auth_headers()
@@ -496,7 +496,7 @@ def export_courses():
     """Export courses to CSV"""
     if not session.get('access_token') or session.get('user_role') != 'admin':
         flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     try:
         headers = get_auth_headers()
@@ -535,7 +535,7 @@ def profile():
     """User profile page"""
     if not session.get('access_token'):
         flash('Please log in to access your profile.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     return render_template('profile.html')
 
@@ -592,7 +592,7 @@ def student_dashboard():
     """Student dashboard (placeholder)"""
     if not session.get('access_token') or session.get('user_role') != 'student':
         flash('Access denied. Student privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     return render_template('student/dashboard.html')
 
@@ -610,7 +610,7 @@ def teacher_courses():
     """Teacher courses management"""
     if not session.get('access_token') or session.get('user_role') != 'teacher':
         flash('Access denied. Teacher privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     return render_template('teacher/courses.html')
 
@@ -623,12 +623,21 @@ def teacher_create_course():
     
     return render_template('teacher/create_course.html')
 
+@bp.route('/teacher/courses/<int:course_id>')
+def teacher_course_view(course_id):
+    """View specific course - redirects to content management"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return redirect(url_for('frontend.teacher_course_content', course_id=course_id))
+
 @bp.route('/teacher/courses/<int:course_id>/content')
 def teacher_course_content(course_id):
     """Manage course content"""
     if not session.get('access_token') or session.get('user_role') != 'teacher':
         flash('Access denied. Teacher privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     return render_template('teacher/course_content.html', course_id=course_id)
 
@@ -637,7 +646,7 @@ def teacher_course_analytics(course_id):
     """Course analytics"""
     if not session.get('access_token') or session.get('user_role') != 'teacher':
         flash('Access denied. Teacher privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     return render_template('teacher/course_analytics.html', course_id=course_id)
 
@@ -646,7 +655,7 @@ def teacher_course_students(course_id):
     """Course students management"""
     if not session.get('access_token') or session.get('user_role') != 'teacher':
         flash('Access denied. Teacher privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     return render_template('teacher/course_students.html', course_id=course_id)
 
@@ -655,7 +664,7 @@ def teacher_submissions():
     """Pending submissions for grading"""
     if not session.get('access_token') or session.get('user_role') != 'teacher':
         flash('Access denied. Teacher privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     return render_template('teacher/submissions.html')
 
@@ -664,6 +673,52 @@ def teacher_analytics():
     """Teacher analytics overview"""
     if not session.get('access_token') or session.get('user_role') != 'teacher':
         flash('Access denied. Teacher privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     return render_template('teacher/analytics.html')
+
+@bp.route('/teacher/lesson/<int:lesson_id>/preview')
+def teacher_lesson_preview(lesson_id):
+    """Preview a lesson"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('teacher/lesson_preview.html', lesson_id=lesson_id)
+
+@bp.route('/teacher/quiz/<int:quiz_id>/analytics')
+def teacher_quiz_analytics(quiz_id):
+    """Quiz analytics"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('teacher/quiz_analytics.html', quiz_id=quiz_id)
+
+@bp.route('/teacher/quiz/<int:quiz_id>/questions')
+def teacher_quiz_questions(quiz_id):
+    """Manage quiz questions"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('teacher/quiz_questions.html', quiz_id=quiz_id)
+
+@bp.route('/teacher/assignment/<int:assignment_id>/submissions')
+def teacher_assignment_submissions(assignment_id):
+    """View assignment submissions"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('teacher/assignment_submissions.html', assignment_id=assignment_id)
+
+@bp.route('/teacher/student/<int:student_id>/progress')
+def teacher_student_progress(student_id):
+    """View individual student progress"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    course_id = request.args.get('course')
+    return render_template('teacher/student_progress.html', student_id=student_id, course_id=course_id)

@@ -111,6 +111,45 @@ class QuizService:
         }
     
     @staticmethod
+    def update_quiz(teacher_id: int, quiz_id: int, quiz_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update a quiz"""
+        quiz = Quiz.query.get(quiz_id)
+        if not quiz:
+            raise NotFoundException("Quiz not found")
+        
+        if quiz.course.teacher_id != teacher_id:
+            raise PermissionException("Access denied")
+        
+        # Update allowed fields
+        allowed_fields = ['title', 'description', 'total_points', 'passing_score', 'time_limit_minutes', 'max_attempts']
+        for field in allowed_fields:
+            if field in quiz_data:
+                setattr(quiz, field, quiz_data[field])
+        
+        quiz.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return {
+            'message': 'Quiz updated successfully',
+            'quiz': quiz.to_dict()
+        }
+    
+    @staticmethod
+    def delete_quiz(teacher_id: int, quiz_id: int) -> Dict[str, str]:
+        """Delete a quiz"""
+        quiz = Quiz.query.get(quiz_id)
+        if not quiz:
+            raise NotFoundException("Quiz not found")
+        
+        if quiz.course.teacher_id != teacher_id:
+            raise PermissionException("Access denied")
+        
+        db.session.delete(quiz)
+        db.session.commit()
+        
+        return {'message': 'Quiz deleted successfully'}
+    
+    @staticmethod
     def add_question(teacher_id: int, quiz_id: int, question_data: Dict[str, Any]) -> Dict[str, Any]:
         """Add a question to a quiz"""
         quiz = Quiz.query.get(quiz_id)
@@ -156,6 +195,66 @@ class QuizService:
             'message': 'Question added successfully',
             'question': question.to_dict()
         }
+    
+    @staticmethod
+    def update_question(teacher_id: int, quiz_id: int, question_id: int, question_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update a question"""
+        quiz = Quiz.query.get(quiz_id)
+        if not quiz:
+            raise NotFoundException("Quiz not found")
+        
+        if quiz.course.teacher_id != teacher_id:
+            raise PermissionException("Access denied")
+        
+        question = Question.query.get(question_id)
+        if not question or question.quiz_id != quiz_id:
+            raise NotFoundException("Question not found")
+        
+        # Update question fields
+        allowed_fields = ['question_text', 'question_type', 'points', 'order_number']
+        for field in allowed_fields:
+            if field in question_data:
+                setattr(question, field, question_data[field])
+        
+        # Update options if provided
+        if 'options' in question_data and question.question_type in ['multiple_choice', 'true_false']:
+            # Delete existing options
+            AnswerOption.query.filter_by(question_id=question.id).delete()
+            
+            # Add new options
+            for option in question_data['options']:
+                answer_option = AnswerOption(
+                    question_id=question.id,
+                    option_text=option['text'],
+                    is_correct=option.get('is_correct', False)
+                )
+                db.session.add(answer_option)
+        
+        db.session.commit()
+        
+        return {
+            'message': 'Question updated successfully',
+            'question': question.to_dict()
+        }
+    
+    @staticmethod
+    def delete_question(teacher_id: int, quiz_id: int, question_id: int) -> Dict[str, str]:
+        """Delete a question"""
+        quiz = Quiz.query.get(quiz_id)
+        if not quiz:
+            raise NotFoundException("Quiz not found")
+        
+        if quiz.course.teacher_id != teacher_id:
+            raise PermissionException("Access denied")
+        
+        question = Question.query.get(question_id)
+        if not question or question.quiz_id != quiz_id:
+            raise NotFoundException("Question not found")
+        
+        db.session.delete(question)
+        db.session.commit()
+        
+        return {'message': 'Question deleted successfully'}
     
     @staticmethod
     def start_quiz(student_id: int, quiz_id: int) -> Dict[str, Any]:

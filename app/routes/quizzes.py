@@ -45,6 +45,31 @@ def create_quiz():
         success_code=201
     )
 
+@bp.route('/<int:quiz_id>', methods=['PUT'])
+@teacher_required()
+def update_quiz(quiz_id):
+    """Update a quiz"""
+    user_id = get_jwt_identity()
+    return BaseController.handle_request(
+        QuizService.update_quiz,
+        user_id,
+        quiz_id,
+        request.get_json(),
+        success_message="Quiz updated successfully"
+    )
+
+@bp.route('/<int:quiz_id>', methods=['DELETE'])
+@teacher_required()
+def delete_quiz(quiz_id):
+    """Delete a quiz"""
+    user_id = get_jwt_identity()
+    return BaseController.handle_request(
+        QuizService.delete_quiz,
+        user_id,
+        quiz_id,
+        success_message="Quiz deleted successfully"
+    )
+
 @bp.route('/<int:quiz_id>/questions', methods=['POST'])
 @teacher_required()
 def add_question(quiz_id):
@@ -57,6 +82,33 @@ def add_question(quiz_id):
         request.get_json(),
         success_message="Question added successfully",
         success_code=201
+    )
+
+@bp.route('/<int:quiz_id>/questions/<int:question_id>', methods=['PUT'])
+@teacher_required()
+def update_question(quiz_id, question_id):
+    """Update a question"""
+    user_id = get_jwt_identity()
+    return BaseController.handle_request(
+        QuizService.update_question,
+        user_id,
+        quiz_id,
+        question_id,
+        request.get_json(),
+        success_message="Question updated successfully"
+    )
+
+@bp.route('/<int:quiz_id>/questions/<int:question_id>', methods=['DELETE'])
+@teacher_required()
+def delete_question(quiz_id, question_id):
+    """Delete a question"""
+    user_id = get_jwt_identity()
+    return BaseController.handle_request(
+        QuizService.delete_question,
+        user_id,
+        quiz_id,
+        question_id,
+        success_message="Question deleted successfully"
     )
 
 @bp.route('/<int:quiz_id>/start', methods=['POST'])

@@ -1,0 +1,687 @@
+{% extends "base.html" %}
+
+{% block title %}Assignment Submissions - Teacher - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1" id="assignmentTitle">Assignment Submissions</h1>
+                    <p class="text-muted mb-0">Grade and manage student submissions</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary me-2" onclick="window.history.back()">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </button>
+                    <button class="btn btn-outline-info me-2" onclick="exportSubmissions()">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                    <button class="btn btn-gradient-primary" onclick="gradeAllSubmissions()">
+                        <i class="fas fa-check-circle me-2"></i>Grade All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-success text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-2" id="assignmentInfoTitle">Loading...</h5>
+                            <p class="mb-0 opacity-75" id="assignmentInfoDescription">Loading assignment information...</p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="d-flex justify-content-md-end gap-3">
+                                <div class="text-center">
+                                    <div class="h4 mb-0" id="submissionCount">0</div>
+                                    <small class="opacity-75">Submissions</small>
+                                </div>
+                                <div class="text-center">
+                                    <div class="h4 mb-0" id="gradedCount">0</div>
+                                    <small class="opacity-75">Graded</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="searchSubmissions" class="form-label fw-semibold">Search Students</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="searchSubmissions" 
+                                       placeholder="Search by student name">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="statusFilter" class="form-label fw-semibold">Status</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="submitted">Submitted</option>
+                                <option value="graded">Graded</option>
+                                <option value="returned">Returned</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="sortBy" class="form-label fw-semibold">Sort By</label>
+                            <select class="form-select" id="sortBy">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="name">Student Name</option>
+                                <option value="grade">Grade</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="filterSubmissions()">
+                                <i class="fas fa-filter me-2"></i>Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-alt me-2 text-success"></i>Student Submissions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="submissionsContainer">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grade Submission Modal -->
+<div class="modal fade" id="gradeModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-success text-white">
+                <h5 class="modal-title">Grade Submission</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Student Submission</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="submissionContent">
+                                    <!-- Submission content will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Grading</h6>
+                            </div>
+                            <div class="card-body">
+                                <form id="gradingForm">
+                                    <input type="hidden" id="submissionId">
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Student</label>
+                                        <div id="studentInfo" class="p-2 bg-light rounded">
+                                            <!-- Student info will be loaded here -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="gradeInput" class="form-label fw-semibold">Grade</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="gradeInput" 
+                                                   name="grade" min="0" step="0.1" required>
+                                            <span class="input-group-text">/ <span id="maxPoints">100</span></span>
+                                        </div>
+                                        <div class="form-text">Enter a grade between 0 and <span id="maxPointsText">100</span></div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="feedbackInput" class="form-label fw-semibold">Feedback</label>
+                                        <textarea class="form-control" id="feedbackInput" name="feedback" 
+                                                  rows="6" placeholder="Provide detailed feedback to the student..."></textarea>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2">
+                                        <button type="button" class="btn btn-gradient-success" onclick="saveGrade()">
+                                            <i class="fas fa-check me-2"></i>Save Grade
+                                        </button>
+                                        <button type="button" class="btn btn-outline-warning" onclick="returnSubmission()">
+                                            <i class="fas fa-undo me-2"></i>Return for Revision
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Grade Modal -->
+<div class="modal fade" id="quickGradeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title">Quick Grade</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickGradingForm">
+                    <input type="hidden" id="quickSubmissionId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Student</label>
+                        <div id="quickStudentInfo" class="p-2 bg-light rounded">
+                            <!-- Student info will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="quickGradeInput" class="form-label fw-semibold">Grade</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="quickGradeInput" 
+                                   name="grade" min="0" step="0.1" required>
+                            <span class="input-group-text">/ <span id="quickMaxPoints">100</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="quickFeedbackInput" class="form-label fw-semibold">Feedback (Optional)</label>
+                        <textarea class="form-control" id="quickFeedbackInput" name="feedback" 
+                                  rows="3" placeholder="Brief feedback..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-gradient-success" onclick="saveQuickGrade()">
+                    <i class="fas fa-save me-2"></i>Save Grade
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const assignmentId = {{ assignment_id }};
+let assignmentData = null;
+let submissions = [];
+let currentSubmission = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadAssignmentData();
+    
+    let searchTimeout;
+    document.getElementById('searchSubmissions').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterSubmissions, 500);
+    });
+});
+
+async function loadAssignmentData() {
+    try {
+        const response = await fetch(`/api/assignments/${assignmentId}/submissions`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            assignmentData = data.data || data;
+            updateAssignmentInfo(assignmentData);
+            submissions = assignmentData.submissions || [];
+            displaySubmissions(submissions);
+        } else {
+            showError('Failed to load assignment data');
+        }
+    } catch (error) {
+        console.error('Error loading assignment:', error);
+        showError('Error loading assignment data');
+    }
+}
+
+function updateAssignmentInfo(data) {
+    const assignment = data.assignment || {};
+    document.getElementById('assignmentTitle').textContent = `${assignment.title} - Submissions`;
+    document.getElementById('assignmentInfoTitle').textContent = assignment.title;
+    document.getElementById('assignmentInfoDescription').textContent = assignment.description || 'No description';
+    
+    const submissionCount = submissions.length;
+    const gradedCount = submissions.filter(s => s.status === 'graded').length;
+    
+    document.getElementById('submissionCount').textContent = submissionCount;
+    document.getElementById('gradedCount').textContent = gradedCount;
+}
+
+function displaySubmissions(submissions) {
+    const container = document.getElementById('submissionsContainer');
+    
+    if (submissions.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                <h6 class="text-muted">No submissions yet</h6>
+                <p class="text-muted">Students haven't submitted their work yet</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="table-responsive"><table class="table table-hover">';
+    content += `
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th>Grade</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    submissions.forEach(submission => {
+        const student = submission.student;
+        const submittedDate = new Date(submission.submitted_at).toLocaleDateString();
+        const submittedTime = new Date(submission.submitted_at).toLocaleTimeString();
+        
+        const statusBadge = getStatusBadge(submission.status);
+        const gradeDisplay = getGradeDisplay(submission);
+        
+        content += `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar bg-gradient-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">${student.full_name}</div>
+                            <small class="text-muted">${student.email}</small>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div>${submittedDate}</div>
+                    <small class="text-muted">${submittedTime}</small>
+                </td>
+                <td>${statusBadge}</td>
+                <td>${gradeDisplay}</td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="viewSubmission(${submission.id})" title="View & Grade">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${submission.status === 'submitted' ? `
+                            <button class="btn btn-outline-success" onclick="quickGrade(${submission.id})" title="Quick Grade">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        ` : ''}
+                        ${submission.file_path ? `
+                            <button class="btn btn-outline-info" onclick="downloadFile('${submission.file_path}')" title="Download File">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    content += '</tbody></table></div>';
+    container.innerHTML = content;
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'submitted': '<span class="badge bg-warning">Submitted</span>',
+        'graded': '<span class="badge bg-success">Graded</span>',
+        'returned': '<span class="badge bg-danger">Returned</span>'
+    };
+    return badges[status] || '<span class="badge bg-secondary">Unknown</span>';
+}
+
+function getGradeDisplay(submission) {
+    if (submission.grade !== null && submission.grade !== undefined) {
+        const percentage = ((submission.grade / assignmentData.assignment.total_points) * 100).toFixed(1);
+        return `<span class="fw-bold">${submission.grade}/${assignmentData.assignment.total_points}</span> <small class="text-muted">(${percentage}%)</small>`;
+    }
+    return '<span class="text-muted">Not graded</span>';
+}
+
+function filterSubmissions() {
+    const search = document.getElementById('searchSubmissions').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    const sort = document.getElementById('sortBy').value;
+    
+    let filtered = [...submissions];
+    
+    if (search) {
+        filtered = filtered.filter(submission => 
+            submission.student.full_name.toLowerCase().includes(search) ||
+            submission.student.email.toLowerCase().includes(search)
+        );
+    }
+    
+    if (status) {
+        filtered = filtered.filter(submission => submission.status === status);
+    }
+    
+    filtered.sort((a, b) => {
+        switch (sort) {
+            case 'newest':
+                return new Date(b.submitted_at) - new Date(a.submitted_at);
+            case 'oldest':
+                return new Date(a.submitted_at) - new Date(b.submitted_at);
+            case 'name':
+                return a.student.full_name.localeCompare(b.student.full_name);
+            case 'grade':
+                return (b.grade || 0) - (a.grade || 0);
+            default:
+                return 0;
+        }
+    });
+    
+    displaySubmissions(filtered);
+}
+
+async function viewSubmission(submissionId) {
+    const submission = submissions.find(s => s.id === submissionId);
+    if (!submission) {
+        showError('Submission not found');
+        return;
+    }
+    
+    currentSubmission = submission;
+    
+    // Update modal content
+    document.getElementById('submissionId').value = submissionId;
+    document.getElementById('maxPoints').textContent = assignmentData.assignment.total_points;
+    document.getElementById('maxPointsText').textContent = assignmentData.assignment.total_points;
+    document.getElementById('gradeInput').max = assignmentData.assignment.total_points;
+    document.getElementById('gradeInput').value = submission.grade || '';
+    document.getElementById('feedbackInput').value = submission.feedback || '';
+    
+    // Student info
+    document.getElementById('studentInfo').innerHTML = `
+        <div class="fw-semibold">${submission.student.full_name}</div>
+        <small class="text-muted">${submission.student.email}</small>
+        <div class="mt-1">
+            <small class="text-muted">Submitted: ${new Date(submission.submitted_at).toLocaleString()}</small>
+        </div>
+    `;
+    
+    // Submission content
+    let submissionHtml = '';
+    
+    if (submission.submission_text) {
+        submissionHtml += `
+            <div class="mb-3">
+                <h6>Text Submission:</h6>
+                <div class="p-3 bg-light rounded">
+                    ${submission.submission_text.replace(/\n/g, '<br>')}
+                </div>
+            </div>
+        `;
+    }
+    
+    if (submission.file_path) {
+        const fileName = submission.file_path.split('/').pop();
+        submissionHtml += `
+            <div class="mb-3">
+                <h6>File Submission:</h6>
+                <div class="p-3 bg-light rounded d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-file me-2"></i>
+                        <span>${fileName}</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="downloadFile('${submission.file_path}')">
+                        <i class="fas fa-download me-1"></i>Download
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (!submissionHtml) {
+        submissionHtml = '<div class="text-muted">No submission content</div>';
+    }
+    
+    document.getElementById('submissionContent').innerHTML = submissionHtml;
+    
+    new bootstrap.Modal(document.getElementById('gradeModal')).show();
+}
+
+function quickGrade(submissionId) {
+    const submission = submissions.find(s => s.id === submissionId);
+    if (!submission) {
+        showError('Submission not found');
+        return;
+    }
+    
+    currentSubmission = submission;
+    
+    document.getElementById('quickSubmissionId').value = submissionId;
+    document.getElementById('quickMaxPoints').textContent = assignmentData.assignment.total_points;
+    document.getElementById('quickGradeInput').max = assignmentData.assignment.total_points;
+    document.getElementById('quickGradeInput').value = submission.grade || '';
+    document.getElementById('quickFeedbackInput').value = submission.feedback || '';
+    
+    document.getElementById('quickStudentInfo').innerHTML = `
+        <div class="fw-semibold">${submission.student.full_name}</div>
+        <small class="text-muted">${submission.student.email}</small>
+    `;
+    
+    new bootstrap.Modal(document.getElementById('quickGradeModal')).show();
+}
+
+async function saveGrade() {
+    const submissionId = document.getElementById('submissionId').value;
+    const grade = parseFloat(document.getElementById('gradeInput').value);
+    const feedback = document.getElementById('feedbackInput').value;
+    
+    if (isNaN(grade) || grade < 0 || grade > assignmentData.assignment.total_points) {
+        showError(`Grade must be between 0 and ${assignmentData.assignment.total_points}`);
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/assignments/submissions/${submissionId}/grade`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ grade, feedback })
+        });
+        
+        if (response.ok) {
+            showSuccess('Grade saved successfully');
+            bootstrap.Modal.getInstance(document.getElementById('gradeModal')).hide();
+            loadAssignmentData();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to save grade');
+        }
+    } catch (error) {
+        console.error('Error saving grade:', error);
+        showError('Error saving grade');
+    }
+}
+
+async function saveQuickGrade() {
+    const submissionId = document.getElementById('quickSubmissionId').value;
+    const grade = parseFloat(document.getElementById('quickGradeInput').value);
+    const feedback = document.getElementById('quickFeedbackInput').value;
+    
+    if (isNaN(grade) || grade < 0 || grade > assignmentData.assignment.total_points) {
+        showError(`Grade must be between 0 and ${assignmentData.assignment.total_points}`);
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/assignments/submissions/${submissionId}/grade`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ grade, feedback })
+        });
+        
+        if (response.ok) {
+            showSuccess('Grade saved successfully');
+            bootstrap.Modal.getInstance(document.getElementById('quickGradeModal')).hide();
+            loadAssignmentData();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to save grade');
+        }
+    } catch (error) {
+        console.error('Error saving grade:', error);
+        showError('Error saving grade');
+    }
+}
+
+async function returnSubmission() {
+    const submissionId = document.getElementById('submissionId').value;
+    const feedback = document.getElementById('feedbackInput').value || 'Please revise and resubmit.';
+    
+    if (!confirm('Are you sure you want to return this submission for revision?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/assignments/submissions/${submissionId}/return`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ feedback })
+        });
+        
+        if (response.ok) {
+            showSuccess('Submission returned to student');
+            bootstrap.Modal.getInstance(document.getElementById('gradeModal')).hide();
+            loadAssignmentData();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to return submission');
+        }
+    } catch (error) {
+        console.error('Error returning submission:', error);
+        showError('Error returning submission');
+    }
+}
+
+function downloadFile(filePath) {
+    const fileName = filePath.split('/').pop();
+    const link = document.createElement('a');
+    link.href = `/downloads/${fileName}`;
+    link.download = fileName;
+    link.click();
+}
+
+function exportSubmissions() {
+    const csvData = generateSubmissionsCSV();
+    downloadCSV(csvData, `assignment_${assignmentId}_submissions.csv`);
+}
+
+function generateSubmissionsCSV() {
+    let csv = 'Student Name,Email,Submitted Date,Status,Grade,Feedback\n';
+    
+    submissions.forEach(submission => {
+        const student = submission.student;
+        const submittedDate = new Date(submission.submitted_at).toLocaleDateString();
+        const grade = submission.grade || 'Not graded';
+        const feedback = (submission.feedback || '').replace(/"/g, '""');
+        
+        csv += `"${student.full_name}","${student.email}","${submittedDate}","${submission.status}","${grade}","${feedback}"\n`;
+    });
+    
+    return csv;
+}
+
+function downloadCSV(csvData, filename) {
+    const blob = new Blob([csvData], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function gradeAllSubmissions() {
+    // This would open a modal for bulk grading
+    showInfo('Bulk grading feature coming soon!');
+}
+
+function showSuccess(message) {
+    showAlert('success', message);
+}
+
+function showError(message) {
+    showAlert('danger', message);
+}
+
+function showInfo(message) {
+    showAlert('info', message);
+}
+
+function showAlert(type, message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}
