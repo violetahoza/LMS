@@ -553,7 +553,6 @@ class TeacherService:
         
         # Get student reports
         report_data = TeacherService.get_student_progress_report(teacher_id, course_id)
-
         
         output = io.StringIO()
         writer = csv.writer(output)
@@ -573,10 +572,15 @@ class TeacherService:
             
             # Calculate last activity safely
             last_activity = 'Never'
-            if progress.get('last_activity'):
+            if enrollment.get('enrolled_at'):
                 try:
-                    last_activity = progress['last_activity'][:10]  # Just date part
-                except (TypeError, IndexError):
+                    from datetime import datetime
+                    enrollment_date = enrollment['enrolled_at']
+                    if isinstance(enrollment_date, str):
+                        last_activity = enrollment_date[:10]
+                    else:
+                        last_activity = enrollment_date.strftime('%Y-%m-%d')
+                except (TypeError, AttributeError):
                     last_activity = 'Never'
             
             # Safe data extraction with defaults
@@ -588,18 +592,17 @@ class TeacherService:
                 student.get('full_name', 'Unknown'),
                 student.get('email', ''),
                 enrollment.get('enrolled_at', '')[:10] if enrollment.get('enrolled_at') else '',
-                f"{progress.get('overall_percentage', 0):.1f}%",
+                f"{progress.get('overall_percentage', 0):.1f}",
                 f"{completed_lessons}/{total_lessons}",
-                f"{progress.get('quiz_average', 0):.1f}%",
-                f"{progress.get('assignment_average', 0):.1f}%",
+                f"{progress.get('quiz_average', 0):.1f}",
+                f"{progress.get('assignment_average', 0):.1f}",
                 last_activity,
                 enrollment.get('status', 'unknown')
             ])
         
-        # Create response
+        # Return the CSV content as a string
         output.seek(0)
-        response = make_response(output.getvalue())
-        response.headers['Content-Type'] = 'text/csv'
-        response.headers['Content-Disposition'] = f'attachment; filename=course_{course_id}_students.csv'
+        csv_content = output.getvalue()
+        output.close()
         
-        return response
+        return csv_content

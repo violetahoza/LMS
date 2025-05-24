@@ -578,50 +578,58 @@ async function sendMessageNow() {
     }
 }
 
-function exportProgress() {
+async function exportProgress() {
     if (!progressData) {
         showError('No data to export');
         return;
     }
     
-    // Generate CSV export
-    let csvContent = '';
-    
-    const student = progressData.student;
-    const course = progressData.course;
-    const progress = progressData.progress;
-    
-    csvContent = `Student Progress Report\n`;
-    csvContent += `Student: ${student.full_name}\n`;
-    csvContent += `Email: ${student.email}\n`;
-    csvContent += `Course: ${course.title}\n`;
-    csvContent += `Generated: ${new Date().toLocaleDateString()}\n\n`;
-    
-    csvContent += `Overall Progress: ${progress.overall_percentage.toFixed(1)}%\n`;
-    csvContent += `Time Spent: ${progress.time_spent_minutes} minutes\n\n`;
-    
-    csvContent += `Lessons Progress:\n`;
-    csvContent += `Completed: ${progress.lessons.completed}/${progress.lessons.total}\n`;
-    csvContent += `Percentage: ${progress.lessons.percentage.toFixed(1)}%\n\n`;
-    
-    csvContent += `Quiz Performance:\n`;
-    csvContent += `Passed: ${progress.quizzes.passed}/${progress.quizzes.total}\n`;
-    csvContent += `Average Score: ${progress.quizzes.average_score.toFixed(1)}%\n\n`;
-    
-    csvContent += `Assignment Performance:\n`;
-    csvContent += `Submitted: ${progress.assignments.submitted}/${progress.assignments.total}\n`;
-    csvContent += `Average Score: ${progress.assignments.average_score.toFixed(1)}%\n`;
-    
-    // Download CSV
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `student_progress_${progressData.student.full_name.replace(/\s+/g, '_')}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    try {
+        // Option 1: Generate CSV client-side (current implementation - keep this)
+        let csvContent = '';
+        
+        const student = progressData.student;
+        const course = progressData.course;
+        const progress = progressData.progress;
+        
+        csvContent = `Student Progress Report\n`;
+        csvContent += `Student: ${student.full_name}\n`;
+        csvContent += `Email: ${student.email}\n`;
+        csvContent += `Course: ${course.title}\n`;
+        csvContent += `Generated: ${new Date().toLocaleDateString()}\n\n`;
+        
+        csvContent += `Overall Progress: ${progress.overall_percentage.toFixed(1)}%\n`;
+        csvContent += `Time Spent: ${progress.time_spent_minutes || 0} minutes\n\n`;
+        
+        csvContent += `Lessons Progress:\n`;
+        csvContent += `Completed: ${progress.lessons.completed}/${progress.lessons.total}\n`;
+        csvContent += `Percentage: ${progress.lessons.percentage.toFixed(1)}%\n\n`;
+        
+        csvContent += `Quiz Performance:\n`;
+        csvContent += `Passed: ${progress.quizzes.passed || 0}/${progress.quizzes.total || 0}\n`;
+        csvContent += `Average Score: ${progress.quizzes.average_score || 0}%\n\n`;
+        
+        csvContent += `Assignment Performance:\n`;
+        csvContent += `Submitted: ${progress.assignments.submitted || 0}/${progress.assignments.total || 0}\n`;
+        csvContent += `Average Score: ${progress.assignments.average_score || 0}%\n`;
+        
+        // Download CSV
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `student_progress_${progressData.student.full_name.replace(/\s+/g, '_')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showSuccess('Progress report exported successfully');
+        
+    } catch (error) {
+        console.error('Error exporting progress:', error);
+        showError('Error exporting progress data');
+    }
 }
 
 function formatRelativeTime(date) {

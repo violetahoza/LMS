@@ -1,5 +1,5 @@
 # app/routes/teacher.py
-from flask import Blueprint, request
+from flask import Blueprint, request, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app.services.teacher_service import TeacherService
@@ -186,13 +186,18 @@ def export_course_students(course_id):
     try:
         teacher_id = int(teacher_id_str)
     except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid teacher ID'}), 400
+    
+    try:
+        csv_content = TeacherService.export_course_students(teacher_id, course_id)
+        
+        response = make_response(csv_content)
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = f'attachment; filename=course_{course_id}_students.csv'
+        
+        return response
+    except Exception as e:
         return BaseController.handle_request(
-            lambda: (_ for _ in ()).throw(ValueError("Invalid teacher ID")),
+            lambda: (_ for _ in ()).throw(e),
             success_message="Export completed"
         )
-    
-    return BaseController.handle_request(
-        TeacherService.export_course_students,
-        teacher_id,
-        course_id
-    )

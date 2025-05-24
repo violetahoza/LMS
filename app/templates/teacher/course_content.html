@@ -363,6 +363,42 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="messageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title">Send Message to Student</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="messageForm">
+                    <input type="hidden" id="recipientId">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">To:</label>
+                        <div class="p-2 bg-light rounded" id="recipientInfo">
+                            <!-- Recipient info will be loaded here -->
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="messageSubject" class="form-label fw-semibold">Subject</label>
+                        <input type="text" class="form-control" id="messageSubject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="messageContent" class="form-label fw-semibold">Message</label>
+                        <textarea class="form-control" id="messageContent" rows="6" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-gradient-primary" onclick="sendMessageNow()">
+                    <i class="fas fa-paper-plane me-2"></i>Send Message
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -753,6 +789,9 @@ async function loadStudents() {
 }
 
 function displayStudents(studentReports) {
+    // Store for global access
+    window.currentStudentReports = studentReports;
+    
     const container = document.getElementById('studentsContainer');
     
     if (studentReports.length === 0) {
@@ -1187,13 +1226,95 @@ function viewStudentDetails(studentId) {
     window.location.href = `/teacher/student/${studentId}/progress?course=${courseId}`;
 }
 
-function messageStudent(studentId) {
-    // Placeholder for messaging functionality
-    showInfo('Messaging feature coming soon!');
+async function messageStudent(studentId) {
+    if (!studentId) {
+        showError('Student ID not found');
+        return;
+    }
+    
+    try {
+        // For course content page, we need to find the student in the loaded data
+        let student = null;
+        
+        // Try to find student in current data
+        if (typeof studentsContainer !== 'undefined') {
+            // If students are loaded, find the student
+            const studentReports = window.currentStudentReports || [];
+            const report = studentReports.find(r => r.student.id === studentId);
+            student = report ? report.student : null;
+        }
+        
+        if (!student) {
+            // Fallback: get student details from API
+            const response = await fetch(`/api/admin/users/${studentId}`, {
+                headers: {
+                    'Authorization': `Bearer {{ session.access_token }}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                student = data.data || data;
+            } else {
+                throw new Error('Failed to load student information');
+            }
+        }
+        
+        // Fill the message modal
+        document.getElementById('recipientId').value = studentId;
+        document.getElementById('recipientInfo').innerHTML = `
+            <div class="fw-semibold">${student.full_name}</div>
+            <small class="text-muted">${student.email}</small>
+        `;
+        
+        // Pre-fill subject with course context
+        if (courseData && courseData.title) {
+            document.getElementById('messageSubject').value = `Regarding ${courseData.title}`;
+        }
+        
+        new bootstrap.Modal(document.getElementById('messageModal')).show();
+        
+    } catch (error) {
+        console.error('Error loading student info:', error);
+        showError('Error loading student information');
+    }
 }
 
-function exportStudents() {
-    window.location.href = `/api/teacher/course/${courseId}/students/export`;
+async function exportStudents() {
+    try {
+        const response = await fetch(`/api/teacher/course/${courseId}/students/export`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            // Get the CSV content
+            const csvContent = await response.text();
+            
+            // Create and download the file
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `course_${courseId}_students.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showSuccess('Student data exported successfully');
+        } else {
+            const error = await response.json();
+            showError('Failed to export data: ' + (error.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error exporting students:', error);
+        showError('Error exporting student data');
+    }
 }
 
 function refreshStudents() {
@@ -1229,6 +1350,47 @@ function showAlert(type, message) {
     
     alertContainer.insertBefore(alert, alertContainer.firstChild);
     setTimeout(() => alert.remove(), 5000);
+}
+
+async function sendMessageNow() {
+    const recipientId = document.getElementById('recipientId').value;
+    const subject = document.getElementById('messageSubject').value;
+    const content = document.getElementById('messageContent').value;
+    
+    if (!subject.trim() || !content.trim()) {
+        showError('Subject and message content are required');
+        return;
+    }
+    
+    try {
+        const messageData = {
+            recipient_id: parseInt(recipientId),
+            subject: subject.trim(),
+            content: content.trim(),
+            course_id: courseId
+        };
+        
+        const response = await fetch('/api/messages/send', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(messageData)
+        });
+        
+        if (response.ok) {
+            showSuccess('Message sent successfully');
+            bootstrap.Modal.getInstance(document.getElementById('messageModal')).hide();
+            document.getElementById('messageForm').reset();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to send message');
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+        showError('Error sending message');
+    }
 }
 </script>
 {% endblock %}
