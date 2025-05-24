@@ -23,7 +23,12 @@ def validate_password(password):
 def validate_phone(phone):
     """Validate phone number format"""
     cleaned = re.sub(r'[\s\-\(\)]', '', phone)
-    pattern = r'^\+?\d{10,15}$'
+    pattern = (
+        r'^(?:\+40|0)'      
+        r'(?:7\d{8}'      
+        r'|2\d{2}\d{6}'     
+        r'|3\d{2}\d{6})$'  
+    )  
     return re.match(pattern, cleaned) is not None
 
 def validate_username(username):
