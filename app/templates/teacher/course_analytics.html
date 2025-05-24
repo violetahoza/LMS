@@ -85,10 +85,6 @@
                     <h5 class="card-title mb-0">
                         <i class="fas fa-chart-line me-2 text-primary"></i>Enrollment Trends (Last 30 Days)
                     </h5>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary active" onclick="updateChart('enrollments')">Enrollments</button>
-                        <button class="btn btn-outline-primary" onclick="updateChart('completions')">Completions</button>
-                    </div>
                 </div>
                 <div class="card-body">
                     <div class="chart-container" style="position: relative; height: 300px;">
@@ -219,17 +215,17 @@ function updateDashboard(data) {
     const stats = data.overall_stats || {};
     
     // Update course title
-    document.getElementById('courseTitle').textContent = `${course.title} - Analytics`;
+    document.getElementById('courseTitle').textContent = `${course.title || 'Course'} - Analytics`;
     
-    // Update stats
+    // Update stats with real data
     document.getElementById('totalStudents').textContent = stats.total_students || 0;
     document.getElementById('completionRate').textContent = `${(stats.completion_rate || 0).toFixed(1)}%`;
     document.getElementById('avgTime').textContent = `${Math.round(stats.average_completion_days || 0)} days`;
     
-    // Calculate average quiz score
+    // Calculate real average quiz score from quiz performance data
     const quizPerformance = data.quiz_performance || [];
     const avgQuizScore = quizPerformance.length > 0 
-        ? quizPerformance.reduce((sum, quiz) => sum + quiz.average_score, 0) / quizPerformance.length 
+        ? quizPerformance.reduce((sum, quiz) => sum + (quiz.average_score || 0), 0) / quizPerformance.length 
         : 0;
     document.getElementById('avgScore').textContent = `${avgQuizScore.toFixed(1)}%`;
 }
@@ -242,13 +238,13 @@ function createCharts(data) {
 function createTrendsChart(enrollmentData) {
     const ctx = document.getElementById('trendsChart').getContext('2d');
     
-    // Prepare data for last 30 days
+    // Use real enrollment trends data
     const labels = enrollmentData.map(item => {
         const date = new Date(item.date);
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     });
     
-    const enrollments = enrollmentData.map(item => item.enrollments);
+    const enrollments = enrollmentData.map(item => item.enrollments || 0);
     
     trendsChart = new Chart(ctx, {
         type: 'line',
@@ -302,11 +298,54 @@ function createTrendsChart(enrollmentData) {
 function createProgressChart(data) {
     const ctx = document.getElementById('progressChart').getContext('2d');
     
-    // Mock progress distribution data - you can replace this with real data
+    // Calculate real progress distribution from lesson engagement data
+    const lessonEngagement = data.lesson_engagement || [];
+    const stats = data.overall_stats || {};
+    
+    let notStarted = 0;
+    let inProgress = 0;
+    let completed = 0;
+    
+    if (lessonEngagement.length > 0) {
+        const totalStudents = stats.total_students || 1;
+        
+        // Calculate based on lesson completion rates
+        lessonEngagement.forEach(lesson => {
+            const completionRate = lesson.completion_rate || 0;
+            const completedCount = Math.round((completionRate / 100) * totalStudents);
+            const viewedCount = lesson.views || 0;
+            
+            completed += completedCount;
+            inProgress += Math.max(0, viewedCount - completedCount);
+            notStarted += Math.max(0, totalStudents - viewedCount);
+        });
+        
+        // Average across all lessons
+        const lessonCount = lessonEngagement.length;
+        notStarted = Math.round(notStarted / lessonCount);
+        inProgress = Math.round(inProgress / lessonCount);
+        completed = Math.round(completed / lessonCount);
+        
+        // Ensure total adds up to total students
+        const total = notStarted + inProgress + completed;
+        if (total !== totalStudents && totalStudents > 0) {
+            const diff = totalStudents - total;
+            notStarted += diff;
+        }
+    } else {
+        // Fallback if no lesson data
+        const totalStudents = stats.total_students || 0;
+        const completionRate = stats.completion_rate || 0;
+        
+        completed = Math.round((completionRate / 100) * totalStudents);
+        inProgress = Math.round(totalStudents * 0.4); // Estimate
+        notStarted = totalStudents - completed - inProgress;
+    }
+    
     const progressData = {
         labels: ['Not Started', 'In Progress', 'Completed'],
         datasets: [{
-            data: [30, 45, 25], // This should come from your analytics data
+            data: [Math.max(0, notStarted), Math.max(0, inProgress), Math.max(0, completed)],
             backgroundColor: [
                 'rgba(239, 68, 68, 0.8)',
                 'rgba(245, 158, 11, 0.8)',
@@ -339,7 +378,7 @@ function createProgressChart(data) {
                     callbacks: {
                         label: function(context) {
                             const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
-                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
                             return `${context.label}: ${context.parsed} (${percentage}%)`;
                         }
                     }
@@ -366,7 +405,7 @@ function updateLessonEngagement(lessons) {
     let content = '<div class="row g-3">';
     
     lessons.forEach(lessonData => {
-        const lesson = lessonData.lesson;
+        const lesson = lessonData.lesson || {};
         const completionRate = lessonData.completion_rate || 0;
         const views = lessonData.views || 0;
         const completions = lessonData.completions || 0;
@@ -375,9 +414,9 @@ function updateLessonEngagement(lessons) {
             <div class="col-md-6 col-lg-4">
                 <div class="card lesson-card h-100">
                     <div class="card-body">
-                        <h6 class="card-title">${lesson.title}</h6>
+                        <h6 class="card-title">${lesson.title || 'Untitled Lesson'}</h6>
                         <div class="mb-2">
-                            <small class="text-muted">Lesson ${lesson.order_number}</small>
+                            <small class="text-muted">Lesson ${lesson.order_number || 'N/A'}</small>
                         </div>
                         <div class="progress mb-2" style="height: 8px;">
                             <div class="progress-bar bg-gradient-success" style="width: ${completionRate}%"></div>
@@ -385,6 +424,9 @@ function updateLessonEngagement(lessons) {
                         <div class="d-flex justify-content-between text-sm">
                             <small class="text-muted">${views} views</small>
                             <small class="text-success">${completionRate.toFixed(1)}% completed</small>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-info">${completions} completions</small>
                         </div>
                     </div>
                 </div>
@@ -425,7 +467,7 @@ function updateQuizPerformance(quizzes) {
     `;
     
     quizzes.forEach(quizData => {
-        const quiz = quizData.quiz;
+        const quiz = quizData.quiz || {};
         const avgScore = quizData.average_score || 0;
         const passRate = quizData.pass_rate || 0;
         const attempts = quizData.total_attempts || 0;
@@ -435,7 +477,7 @@ function updateQuizPerformance(quizzes) {
         content += `
             <tr>
                 <td>
-                    <div class="fw-semibold">${quiz.title}</div>
+                    <div class="fw-semibold">${quiz.title || 'Untitled Quiz'}</div>
                     <small class="text-muted">${quiz.question_count || 0} questions</small>
                 </td>
                 <td class="text-center">${attempts}</td>
@@ -456,18 +498,6 @@ function updateQuizPerformance(quizzes) {
     
     content += '</tbody></table></div>';
     container.innerHTML = content;
-}
-
-function updateChart(type) {
-    // Update active button
-    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    
-    // Update chart based on type
-    if (type === 'completions' && analyticsData) {
-        // You can implement completion trends here
-        console.log('Updating to show completion trends');
-    }
 }
 
 function showLoading() {

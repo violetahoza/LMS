@@ -124,7 +124,7 @@ body {
 }
 
 .btn-gradient-primary:hover::before {
-    opacity: 0.5;
+    opacity: 1;
 }
 
 .btn-gradient-primary > * {
@@ -862,7 +862,7 @@ body {
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.course-card {
+.course-card, .quiz-card, .assignment-card {
     transition: all 0.3s ease;
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
@@ -995,16 +995,6 @@ body {
 
 .lesson-order-badge {
     min-width: 40px;
-}
-
-.quiz-card, .assignment-card {
-    transition: all 0.3s ease;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.quiz-card:hover, .assignment-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
 }
 
 .quiz-scores, .assignment-grades {

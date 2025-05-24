@@ -84,3 +84,4 @@ def create_directories(app):
         path = os.path.join(upload_folder, subdir)
         if not os.path.exists(path):
             os.makedirs(path)
+
