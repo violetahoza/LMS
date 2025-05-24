@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block title %}Course Analytics - Teacher - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1" id="courseTitle">Course Analytics</h1>
+                    <p class="text-muted mb-0">Detailed performance insights and statistics</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('frontend.teacher_courses') }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Courses
+                    </a>
+                    <a href="/teacher/courses/{{ course_id }}/content" class="btn btn-gradient-primary">
+                        <i class="fas fa-edit me-2"></i>Manage Content
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Overview Cards -->
+    <div class="row g-4 mb-5" id="overviewCards">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-primary rounded-circle mx-auto mb-3">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="stats-number text-primary" id="totalStudents">0</h3>
+                    <p class="text-muted mb-0">Total Students</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-success rounded-circle mx-auto mb-3">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h3 class="stats-number text-success" id="completionRate">0%</h3>
+                    <p class="text-muted mb-0">Completion Rate</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-info rounded-circle mx-auto mb-3">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3 class="stats-number text-info" id="avgTime">0 days</h3>
+                    <p class="text-muted mb-0">Avg. Completion Time</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-warning rounded-circle mx-auto mb-3">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h3 class="stats-number text-warning" id="avgScore">0%</h3>
+                    <p class="text-muted mb-0">Average Quiz Score</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-5">
+        <!-- Enrollment Trends -->
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2 text-primary"></i>Enrollment Trends (Last 30 Days)
+                    </h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary active" onclick="updateChart('enrollments')">Enrollments</button>
+                        <button class="btn btn-outline-primary" onclick="updateChart('completions')">Completions</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 300px;">
+                        <canvas id="trendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Progress Distribution -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2 text-success"></i>Student Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 300px;">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lesson Engagement -->
+    <div class="row g-4 mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-book-open me-2 text-info"></i>Lesson Engagement
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="lessonEngagementContainer">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Performance -->
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-question-circle me-2 text-warning"></i>Quiz Performance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="quizPerformanceContainer">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-warning" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>Loading analytics...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+const courseId = {{ course_id }};
+let trendsChart, progressChart;
+let analyticsData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadAnalytics();
+});
+
+async function loadAnalytics() {
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/teacher/course/${courseId}/analytics`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            analyticsData = data.data || data;
+            updateDashboard(analyticsData);
+            createCharts(analyticsData);
+            updateLessonEngagement(analyticsData.lesson_engagement || []);
+            updateQuizPerformance(analyticsData.quiz_performance || []);
+        } else {
+            showError('Failed to load analytics data');
+        }
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+        showError('Error loading analytics data');
+    } finally {
+        hideLoading();
+    }
+}
+
+function updateDashboard(data) {
+    const course = data.course || {};
+    const stats = data.overall_stats || {};
+    
+    // Update course title
+    document.getElementById('courseTitle').textContent = `${course.title} - Analytics`;
+    
+    // Update stats
+    document.getElementById('totalStudents').textContent = stats.total_students || 0;
+    document.getElementById('completionRate').textContent = `${(stats.completion_rate || 0).toFixed(1)}%`;
+    document.getElementById('avgTime').textContent = `${Math.round(stats.average_completion_days || 0)} days`;
+    
+    // Calculate average quiz score
+    const quizPerformance = data.quiz_performance || [];
+    const avgQuizScore = quizPerformance.length > 0 
+        ? quizPerformance.reduce((sum, quiz) => sum + quiz.average_score, 0) / quizPerformance.length 
+        : 0;
+    document.getElementById('avgScore').textContent = `${avgQuizScore.toFixed(1)}%`;
+}
+
+function createCharts(data) {
+    createTrendsChart(data.enrollment_trends || []);
+    createProgressChart(data);
+}
+
+function createTrendsChart(enrollmentData) {
+    const ctx = document.getElementById('trendsChart').getContext('2d');
+    
+    // Prepare data for last 30 days
+    const labels = enrollmentData.map(item => {
+        const date = new Date(item.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    
+    const enrollments = enrollmentData.map(item => item.enrollments);
+    
+    trendsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'New Enrollments',
+                data: enrollments,
+                borderColor: 'rgb(139, 92, 246)',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: 'rgb(139, 92, 246)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createProgressChart(data) {
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    
+    // Mock progress distribution data - you can replace this with real data
+    const progressData = {
+        labels: ['Not Started', 'In Progress', 'Completed'],
+        datasets: [{
+            data: [30, 45, 25], // This should come from your analytics data
+            backgroundColor: [
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(16, 185, 129, 0.8)'
+            ],
+            borderWidth: 0,
+            hoverOffset: 4
+        }]
+    };
+    
+    progressChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: progressData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateLessonEngagement(lessons) {
+    const container = document.getElementById('lessonEngagementContainer');
+    
+    if (lessons.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                <h6 class="text-muted">No lessons found</h6>
+                <p class="text-muted">Add lessons to see engagement data</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="row g-3">';
+    
+    lessons.forEach(lessonData => {
+        const lesson = lessonData.lesson;
+        const completionRate = lessonData.completion_rate || 0;
+        const views = lessonData.views || 0;
+        const completions = lessonData.completions || 0;
+        
+        content += `
+            <div class="col-md-6 col-lg-4">
+                <div class="card lesson-card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title">${lesson.title}</h6>
+                        <div class="mb-2">
+                            <small class="text-muted">Lesson ${lesson.order_number}</small>
+                        </div>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-gradient-success" style="width: ${completionRate}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between text-sm">
+                            <small class="text-muted">${views} views</small>
+                            <small class="text-success">${completionRate.toFixed(1)}% completed</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function updateQuizPerformance(quizzes) {
+    const container = document.getElementById('quizPerformanceContainer');
+    
+    if (quizzes.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+                <h6 class="text-muted">No quizzes found</h6>
+                <p class="text-muted">Add quizzes to see performance data</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="table-responsive"><table class="table table-hover">';
+    content += `
+        <thead>
+            <tr>
+                <th>Quiz</th>
+                <th class="text-center">Attempts</th>
+                <th class="text-center">Average Score</th>
+                <th class="text-center">Pass Rate</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    quizzes.forEach(quizData => {
+        const quiz = quizData.quiz;
+        const avgScore = quizData.average_score || 0;
+        const passRate = quizData.pass_rate || 0;
+        const attempts = quizData.total_attempts || 0;
+        
+        const scoreClass = avgScore >= 80 ? 'text-success' : avgScore >= 60 ? 'text-warning' : 'text-danger';
+        
+        content += `
+            <tr>
+                <td>
+                    <div class="fw-semibold">${quiz.title}</div>
+                    <small class="text-muted">${quiz.question_count || 0} questions</small>
+                </td>
+                <td class="text-center">${attempts}</td>
+                <td class="text-center">
+                    <span class="fw-bold ${scoreClass}">${avgScore.toFixed(1)}%</span>
+                </td>
+                <td class="text-center">
+                    <span class="fw-bold text-primary">${passRate.toFixed(1)}%</span>
+                </td>
+                <td class="text-center">
+                    <a href="/teacher/quiz/${quiz.id}/analytics" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-chart-bar me-1"></i>Details
+                    </a>
+                </td>
+            </tr>
+        `;
+    });
+    
+    content += '</tbody></table></div>';
+    container.innerHTML = content;
+}
+
+function updateChart(type) {
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Update chart based on type
+    if (type === 'completions' && analyticsData) {
+        // You can implement completion trends here
+        console.log('Updating to show completion trends');
+    }
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+
+{% endblock %}

@@ -46,7 +46,7 @@ def register_blueprints(app):
     """Register all blueprints"""
     try:
         # Import routes
-        from app.routes import auth, courses, lessons, quizzes, assignments, admin, student
+        from app.routes import auth, courses, lessons, quizzes, assignments, admin, student, teacher
         
         # Register API blueprints
         app.register_blueprint(auth.bp)
@@ -56,6 +56,7 @@ def register_blueprints(app):
         app.register_blueprint(assignments.bp)
         app.register_blueprint(admin.bp)
         app.register_blueprint(student.bp)
+        app.register_blueprint(teacher.bp)
         
         print("✅ All blueprints registered successfully")
     except Exception as e:

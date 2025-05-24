@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Dashboard - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1">Teacher Dashboard</h1>
+                    <p class="text-muted mb-0">Welcome back, {{ session.user_name }}! Manage your courses and students.</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('frontend.teacher_courses') }}" class="btn btn-gradient-primary me-2">
+                        <i class="fas fa-book me-2"></i>My Courses
+                    </a>
+                    <a href="{{ url_for('frontend.teacher_create_course') }}" class="btn btn-gradient-success">
+                        <i class="fas fa-plus me-2"></i>Create Course
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5" id="statsCards">
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="dashboard-icon bg-gradient-primary me-3">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div>
+                        <div class="dashboard-number text-gradient-primary" id="totalCourses">0</div>
+                        <div class="text-muted fw-semibold">Total Courses</div>
+                        <small class="text-success" id="publishedCourses">0 published</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="dashboard-icon bg-gradient-secondary me-3">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="dashboard-number text-gradient-secondary" id="totalStudents">0</div>
+                        <div class="text-muted fw-semibold">Total Students</div>
+                        <small class="text-info" id="activeStudents">0 active</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="dashboard-icon bg-gradient-success me-3">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div>
+                        <div class="dashboard-number text-gradient-success" id="recentEnrollments">0</div>
+                        <div class="text-muted fw-semibold">New Enrollments</div>
+                        <small class="text-warning">This week</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="dashboard-icon bg-gradient-warning me-3">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div>
+                        <div class="dashboard-number text-gradient-warning" id="recentSubmissions">0</div>
+                        <div class="text-muted fw-semibold">New Submissions</div>
+                        <small class="text-primary">This week</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2 text-primary"></i>Top Performing Courses
+                    </h5>
+                    <a href="{{ url_for('frontend.teacher_courses') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div id="topCoursesContainer">
+                        <!-- Content will be loaded dynamically -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2 text-warning"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('frontend.teacher_create_course') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-plus me-2"></i>Create New Course
+                        </a>
+                        <a href="{{ url_for('frontend.teacher_submissions') }}" class="btn btn-outline-warning btn-lg">
+                            <i class="fas fa-clipboard-list me-2"></i>Grade Assignments
+                        </a>
+                        <a href="{{ url_for('frontend.teacher_analytics') }}" class="btn btn-outline-info btn-lg">
+                            <i class="fas fa-chart-bar me-2"></i>View Analytics
+                        </a>
+                        <a href="{{ url_for('frontend.profile') }}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-user-cog me-2"></i>Profile Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2 text-info"></i>Recent Quiz Attempts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Quiz</th>
+                                    <th>Course</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentQuizAttempts">
+                                <!-- Content will be loaded dynamically -->
+                                <tr>
+                                    <td colspan="5" class="text-center py-3">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <span class="ms-2">Loading recent activity...</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i>Pending Grading
+                    </h5>
+                    <span class="badge bg-gradient-warning" id="pendingCount">0</span>
+                </div>
+                <div class="card-body">
+                    <div id="pendingSubmissions">
+                        <!-- Content will be loaded dynamically -->
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-warning" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="mt-2">Loading submissions...</div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="{{ url_for('frontend.teacher_submissions') }}" class="btn btn-gradient-warning w-100">
+                            <i class="fas fa-clipboard-check me-2"></i>Grade All
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>Loading dashboard...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+    
+    setInterval(loadDashboardData, 300000);
+});
+
+async function loadDashboardData() {
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/teacher/dashboard', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            updateDashboard(data.data || data);
+        } else {
+            console.error('Failed to load dashboard data');
+            showError('Failed to load dashboard data');
+        }
+    } catch (error) {
+        console.error('Error loading dashboard:', error);
+        showError('Error loading dashboard data');
+    } finally {
+        hideLoading();
+    }
+}
+
+function updateDashboard(data) {
+    const stats = data.stats || {};
+    document.getElementById('totalCourses').textContent = stats.total_courses || 0;
+    document.getElementById('publishedCourses').textContent = `${stats.published_courses || 0} published`;
+    document.getElementById('totalStudents').textContent = stats.total_students || 0;
+    document.getElementById('activeStudents').textContent = `${stats.active_students || 0} active`;
+    document.getElementById('recentEnrollments').textContent = stats.recent_enrollments || 0;
+    document.getElementById('recentSubmissions').textContent = stats.recent_submissions || 0;
+    
+    updateTopCourses(data.top_courses || []);
+    
+    updateRecentQuizAttempts(data.recent_quiz_attempts || []);
+    
+    loadPendingSubmissions();
+}
+
+function updateTopCourses(courses) {
+    const container = document.getElementById('topCoursesContainer');
+    
+    if (courses.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                <h6 class="text-muted">No courses yet</h6>
+                <p class="text-muted">Create your first course to see performance data</p>
+                <a href="{{ url_for('frontend.teacher_create_course') }}" class="btn btn-gradient-primary">
+                    <i class="fas fa-plus me-2"></i>Create Course
+                </a>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="row g-3">';
+    
+    courses.slice(0, 4).forEach(course => {
+        content += `
+            <div class="col-md-6">
+                <div class="card course-mini-card h-100">
+                    <div class="card-body">
+                        <h6 class="card-title">${course.title}</h6>
+                        <div class="row g-2 text-center">
+                            <div class="col-3">
+                                <div class="text-primary fw-bold">${course.students}</div>
+                                <small class="text-muted">Students</small>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-success fw-bold">${course.completion_rate.toFixed(1)}%</div>
+                                <small class="text-muted">Complete</small>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-info fw-bold">${course.lessons}</div>
+                                <small class="text-muted">Lessons</small>
+                            </div>
+                            <div class="col-3">
+                                <div class="text-warning fw-bold">${course.quizzes}</div>
+                                <small class="text-muted">Quizzes</small>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <a href="/teacher/courses/${course.id}" class="btn btn-sm btn-outline-primary w-100">
+                                <i class="fas fa-eye me-1"></i>View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function updateRecentQuizAttempts(attempts) {
+    const tbody = document.getElementById('recentQuizAttempts');
+    
+    if (attempts.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-4">
+                    <i class="fas fa-question-circle fa-2x text-muted mb-2"></i>
+                    <div class="text-muted">No recent quiz attempts</div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let content = '';
+    attempts.slice(0, 8).forEach(attempt => {
+        const scoreClass = attempt.score >= 70 ? 'text-success' : attempt.score >= 50 ? 'text-warning' : 'text-danger';
+        const date = new Date(attempt.submitted_at).toLocaleDateString();
+        
+        content += `
+            <tr>
+                <td>
+                    <div class="fw-semibold">${attempt.student_name}</div>
+                </td>
+                <td>${attempt.quiz_title}</td>
+                <td>
+                    <small class="text-muted">${attempt.course_title}</small>
+                </td>
+                <td>
+                    <span class="fw-bold ${scoreClass}">${attempt.score}%</span>
+                </td>
+                <td>
+                    <small class="text-muted">${date}</small>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = content;
+}
+
+async function loadPendingSubmissions() {
+    try {
+        const response = await fetch('/api/teacher/submissions/pending', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            updatePendingSubmissions(data.data || data);
+        }
+    } catch (error) {
+        console.error('Error loading pending submissions:', error);
+    }
+}
+
+function updatePendingSubmissions(data) {
+    const container = document.getElementById('pendingSubmissions');
+    const countBadge = document.getElementById('pendingCount');
+    const submissions = data.submissions || [];
+    
+    countBadge.textContent = submissions.length;
+    
+    if (submissions.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-3">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <div class="text-muted">All caught up!</div>
+                <small class="text-muted">No pending submissions</small>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="list-group list-group-flush">';
+    
+    submissions.slice(0, 5).forEach(submission => {
+        const date = new Date(submission.submitted_at).toLocaleDateString();
+        content += `
+            <div class="list-group-item border-0 px-0">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold">${submission.assignment.title}</div>
+                        <small class="text-muted">${submission.student.full_name}</small>
+                        <br><small class="text-primary">${submission.course.title}</small>
+                    </div>
+                    <small class="text-muted">${date}</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    
+    if (submissions.length > 5) {
+        content += `<div class="text-center mt-2">
+            <small class="text-muted">+${submissions.length - 5} more submissions</small>
+        </div>`;
+    }
+    
+    container.innerHTML = content;
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+function startAutoRefresh() {
+    return setInterval(loadDashboardData, 300000); // 5 minutes
+}
+
+let autoRefreshInterval = startAutoRefresh();
+
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        clearInterval(autoRefreshInterval);
+    } else {
+        autoRefreshInterval = startAutoRefresh();
+        loadDashboardData(); 
+    }
+});
+</script>
+
+{% endblock %}

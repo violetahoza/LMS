@@ -1,0 +1,1199 @@
+{% extends "base.html" %}
+
+{% block title %}Course Content - Teacher - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1" id="courseTitle">Course Content</h1>
+                    <p class="text-muted mb-0">Manage lessons, quizzes, and assignments</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('frontend.teacher_courses') }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Courses
+                    </a>
+                    <a href="/teacher/courses/{{ course_id }}/analytics" class="btn btn-outline-info me-2">
+                        <i class="fas fa-chart-bar me-2"></i>Analytics
+                    </a>
+                    <button class="btn btn-gradient-primary" data-bs-toggle="modal" data-bs-target="#addContentModal">
+                        <i class="fas fa-plus me-2"></i>Add Content
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-2" id="courseInfoTitle">Loading...</h5>
+                            <p class="mb-0 opacity-75" id="courseInfoDescription">Loading course information...</p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="d-flex justify-content-md-end gap-3">
+                                <div class="text-center">
+                                    <div class="h4 mb-0" id="studentCount">0</div>
+                                    <small class="opacity-75">Students</small>
+                                </div>
+                                <div class="text-center">
+                                    <div class="h4 mb-0" id="contentCount">0</div>
+                                    <small class="opacity-75">Items</small>
+                                </div>
+                                <div class="text-center">
+                                    <div class="h4 mb-0" id="completionRate">0%</div>
+                                    <small class="opacity-75">Completion</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header border-bottom-0">
+                    <ul class="nav nav-tabs card-header-tabs" id="contentTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="lessons-tab" data-bs-toggle="tab" data-bs-target="#lessons" type="button" role="tab">
+                                <i class="fas fa-book-open me-2"></i>Lessons <span class="badge bg-primary ms-2" id="lessonsCount">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="quizzes-tab" data-bs-toggle="tab" data-bs-target="#quizzes" type="button" role="tab">
+                                <i class="fas fa-question-circle me-2"></i>Quizzes <span class="badge bg-warning ms-2" id="quizzesCount">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments" type="button" role="tab">
+                                <i class="fas fa-tasks me-2"></i>Assignments <span class="badge bg-success ms-2" id="assignmentsCount">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab">
+                                <i class="fas fa-users me-2"></i>Students <span class="badge bg-info ms-2" id="studentsTabCount">0</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card-body p-0">
+                    <div class="tab-content" id="contentTabsContent">
+                        <div class="tab-pane fade show active" id="lessons" role="tabpanel">
+                            <div class="p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h6 class="mb-0">Course Lessons</h6>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="addLesson()">
+                                        <i class="fas fa-plus me-2"></i>Add Lesson
+                                    </button>
+                                </div>
+                                <div id="lessonsContainer">
+                                    <div class="text-center py-5">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="quizzes" role="tabpanel">
+                            <div class="p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h6 class="mb-0">Course Quizzes</h6>
+                                    <button class="btn btn-outline-warning btn-sm" onclick="addQuiz()">
+                                        <i class="fas fa-plus me-2"></i>Add Quiz
+                                    </button>
+                                </div>
+                                <div id="quizzesContainer">
+                                    <div class="text-center py-5">
+                                        <div class="spinner-border text-warning" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="assignments" role="tabpanel">
+                            <div class="p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h6 class="mb-0">Course Assignments</h6>
+                                    <button class="btn btn-outline-success btn-sm" onclick="addAssignment()">
+                                        <i class="fas fa-plus me-2"></i>Add Assignment
+                                    </button>
+                                </div>
+                                <div id="assignmentsContainer">
+                                    <div class="text-center py-5">
+                                        <div class="spinner-border text-success" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="students" role="tabpanel">
+                            <div class="p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h6 class="mb-0">Enrolled Students</h6>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-info" onclick="exportStudents()">
+                                            <i class="fas fa-download me-2"></i>Export
+                                        </button>
+                                        <button class="btn btn-outline-secondary" onclick="refreshStudents()">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="studentsContainer">
+                                    <div class="text-center py-5">
+                                        <div class="spinner-border text-info" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addContentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title">Add Course Content</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card content-type-card h-100" onclick="addLesson()">
+                            <div class="card-body text-center">
+                                <i class="fas fa-book-open fa-3x text-primary mb-3"></i>
+                                <h6>Add Lesson</h6>
+                                <p class="text-muted small mb-0">Create a new lesson with text, video, or mixed content</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card content-type-card h-100" onclick="addQuiz()">
+                            <div class="card-body text-center">
+                                <i class="fas fa-question-circle fa-3x text-warning mb-3"></i>
+                                <h6>Add Quiz</h6>
+                                <p class="text-muted small mb-0">Create an interactive quiz with multiple question types</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card content-type-card h-100" onclick="addAssignment()">
+                            <div class="card-body text-center">
+                                <i class="fas fa-tasks fa-3x text-success mb-3"></i>
+                                <h6>Add Assignment</h6>
+                                <p class="text-muted small mb-0">Create assignments for students to submit</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card content-type-card h-100" onclick="bulkImport()">
+                            <div class="card-body text-center">
+                                <i class="fas fa-upload fa-3x text-info mb-3"></i>
+                                <h6>Bulk Import</h6>
+                                <p class="text-muted small mb-0">Import multiple content items from file</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="lessonModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title" id="lessonModalTitle">Add Lesson</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="lessonForm">
+                    <input type="hidden" id="lessonId" name="lesson_id">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Lesson Title</label>
+                            <input type="text" class="form-control" id="lessonTitle" name="title" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Order</label>
+                            <input type="number" class="form-control" id="lessonOrder" name="order_number" min="1" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Lesson Type</label>
+                            <select class="form-select" id="lessonType" name="lesson_type" onchange="toggleLessonFields()">
+                                <option value="text">Text Only</option>
+                                <option value="video">Video</option>
+                                <option value="mixed">Text + Video</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Duration (minutes)</label>
+                            <input type="number" class="form-control" id="lessonDuration" name="duration_minutes" min="1">
+                        </div>
+                        <div class="col-12" id="videoUrlField" style="display: none;">
+                            <label class="form-label fw-semibold">Video URL</label>
+                            <input type="url" class="form-control" id="lessonVideoUrl" name="video_url" placeholder="https://youtube.com/watch?v=...">
+                            <div class="form-text">Supports YouTube, Vimeo, and direct video URLs</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Content</label>
+                            <textarea class="form-control" id="lessonContent" name="content" rows="8" required></textarea>
+                            <div class="form-text">You can use markdown formatting</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-gradient-primary" onclick="saveLesson()">
+                    <i class="fas fa-save me-2"></i>Save Lesson
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="quizModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-warning text-white">
+                <h5 class="modal-title" id="quizModalTitle">Add Quiz</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quizForm">
+                    <input type="hidden" id="quizId" name="quiz_id">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Quiz Title</label>
+                            <input type="text" class="form-control" id="quizTitle" name="title" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea class="form-control" id="quizDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Total Points</label>
+                            <input type="number" class="form-control" id="quizTotalPoints" name="total_points" value="100" min="1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Passing Score</label>
+                            <input type="number" class="form-control" id="quizPassingScore" name="passing_score" value="60" min="1" max="100" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Max Attempts</label>
+                            <input type="number" class="form-control" id="quizMaxAttempts" name="max_attempts" value="3" min="1" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Time Limit (minutes)</label>
+                            <input type="number" class="form-control" id="quizTimeLimit" name="time_limit_minutes" min="1">
+                            <div class="form-text">Leave empty for no time limit</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-gradient-warning" onclick="saveQuiz()">
+                    <i class="fas fa-save me-2"></i>Save Quiz
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="assignmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-success text-white">
+                <h5 class="modal-title" id="assignmentModalTitle">Add Assignment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignmentForm">
+                    <input type="hidden" id="assignmentId" name="assignment_id">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Assignment Title</label>
+                            <input type="text" class="form-control" id="assignmentTitle" name="title" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description & Instructions</label>
+                            <textarea class="form-control" id="assignmentDescription" name="description" rows="6" required></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Due Date</label>
+                            <input type="datetime-local" class="form-control" id="assignmentDueDate" name="due_date">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Total Points</label>
+                            <input type="number" class="form-control" id="assignmentTotalPoints" name="total_points" value="100" min="1" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-gradient-success" onclick="saveAssignment()">
+                    <i class="fas fa-save me-2"></i>Save Assignment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const courseId = {{ course_id }};
+let courseData = null;
+let currentEditingId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCourseContent();
+    
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            const target = e.target.getAttribute('data-bs-target');
+            if (target === '#lessons') loadLessons();
+            else if (target === '#quizzes') loadQuizzes();
+            else if (target === '#assignments') loadAssignments();
+            else if (target === '#students') loadStudents();
+        });
+    });
+});
+
+async function loadCourseContent() {
+    try {
+        const response = await fetch(`/api/teacher/courses/${courseId}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            courseData = data.data || data;
+            updateCourseInfo(courseData);
+            loadLessons(); 
+        } else {
+            showError('Failed to load course information');
+        }
+    } catch (error) {
+        console.error('Error loading course:', error);
+        showError('Error loading course information');
+    }
+}
+
+function updateCourseInfo(course) {
+    document.getElementById('courseTitle').textContent = `${course.title} - Content`;
+    document.getElementById('courseInfoTitle').textContent = course.title;
+    document.getElementById('courseInfoDescription').textContent = course.description || 'No description';
+    
+    const stats = course.statistics || {};
+    document.getElementById('studentCount').textContent = stats.total_students || 0;
+    document.getElementById('completionRate').textContent = `${(stats.completion_rate || 0).toFixed(1)}%`;
+    
+    document.getElementById('lessonsCount').textContent = course.lessons?.length || 0;
+    document.getElementById('quizzesCount').textContent = course.quizzes?.length || 0;
+    document.getElementById('assignmentsCount').textContent = course.assignments?.length || 0;
+    document.getElementById('studentsTabCount').textContent = course.students?.length || 0;
+    
+    const totalContent = (course.lessons?.length || 0) + (course.quizzes?.length || 0) + (course.assignments?.length || 0);
+    document.getElementById('contentCount').textContent = totalContent;
+}
+
+async function loadLessons() {
+    const container = document.getElementById('lessonsContainer');
+    
+    try {
+        const response = await fetch(`/api/lessons/course/${courseId}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayLessons(data.data?.lessons || data.lessons || []);
+        } else {
+            showError('Failed to load lessons');
+        }
+    } catch (error) {
+        console.error('Error loading lessons:', error);
+        showError('Error loading lessons');
+    }
+}
+
+function displayLessons(lessons) {
+    const container = document.getElementById('lessonsContainer');
+    
+    if (lessons.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                <h6 class="text-muted">No lessons yet</h6>
+                <p class="text-muted">Start by adding your first lesson</p>
+                <button class="btn btn-primary" onclick="addLesson()">
+                    <i class="fas fa-plus me-2"></i>Add First Lesson
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="list-group list-group-flush">';
+    
+    lessons.sort((a, b) => a.order_number - b.order_number);
+    
+    lessons.forEach(lesson => {
+        const typeIcon = lesson.lesson_type === 'video' ? 'fa-play-circle' : 
+                        lesson.lesson_type === 'mixed' ? 'fa-file-video' : 'fa-file-text';
+        const typeColor = lesson.lesson_type === 'video' ? 'text-danger' : 
+                         lesson.lesson_type === 'mixed' ? 'text-warning' : 'text-primary';
+        
+        content += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="lesson-order-badge me-3">
+                        <span class="badge bg-primary rounded-pill">${lesson.order_number}</span>
+                    </div>
+                    <div class="me-3">
+                        <i class="fas ${typeIcon} ${typeColor} fa-lg"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-1">${lesson.title}</h6>
+                        <small class="text-muted">
+                            ${lesson.lesson_type.charAt(0).toUpperCase() + lesson.lesson_type.slice(1)}
+                            ${lesson.duration_minutes ? ` • ${lesson.duration_minutes} min` : ''}
+                        </small>
+                    </div>
+                </div>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="editLesson(${lesson.id})" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="previewLesson(${lesson.id})" title="Preview">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="deleteLesson(${lesson.id})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+async function loadQuizzes() {
+    const container = document.getElementById('quizzesContainer');
+    
+    try {
+        const response = await fetch(`/api/quizzes/course/${courseId}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayQuizzes(data.data?.quizzes || data.quizzes || []);
+        } else {
+            showError('Failed to load quizzes');
+        }
+    } catch (error) {
+        console.error('Error loading quizzes:', error);
+        showError('Error loading quizzes');
+    }
+}
+
+function displayQuizzes(quizzes) {
+    const container = document.getElementById('quizzesContainer');
+    
+    if (quizzes.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+                <h6 class="text-muted">No quizzes yet</h6>
+                <p class="text-muted">Create interactive quizzes to test student knowledge</p>
+                <button class="btn btn-warning" onclick="addQuiz()">
+                    <i class="fas fa-plus me-2"></i>Add First Quiz
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="row g-3">';
+    
+    quizzes.forEach(quiz => {
+        content += `
+            <div class="col-md-6 col-lg-4">
+                <div class="card quiz-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title">${quiz.title}</h6>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="editQuiz(${quiz.id})">
+                                        <i class="fas fa-edit me-2"></i>Edit
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/teacher/quiz/${quiz.id}/analytics">
+                                        <i class="fas fa-chart-bar me-2"></i>Analytics
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteQuiz(${quiz.id})">
+                                        <i class="fas fa-trash me-2"></i>Delete
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="card-text text-muted small">${quiz.description || 'No description'}</p>
+                        <div class="row g-2 text-center mt-3">
+                            <div class="col-4">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold text-primary">${quiz.question_count || 0}</div>
+                                    <small class="text-muted">Questions</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold text-warning">${quiz.total_points}</div>
+                                    <small class="text-muted">Points</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold text-success">${quiz.passing_score}%</div>
+                                    <small class="text-muted">Pass</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+async function loadAssignments() {
+    const container = document.getElementById('assignmentsContainer');
+    
+    try {
+        const response = await fetch(`/api/assignments/course/${courseId}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayAssignments(data.data?.assignments || data.assignments || []);
+        } else {
+            showError('Failed to load assignments');
+        }
+    } catch (error) {
+        console.error('Error loading assignments:', error);
+        showError('Error loading assignments');
+    }
+}
+
+function displayAssignments(assignments) {
+    const container = document.getElementById('assignmentsContainer');
+    
+    if (assignments.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                <h6 class="text-muted">No assignments yet</h6>
+                <p class="text-muted">Create assignments for students to submit work</p>
+                <button class="btn btn-success" onclick="addAssignment()">
+                    <i class="fas fa-plus me-2"></i>Add First Assignment
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="row g-3">';
+    
+    assignments.forEach(assignment => {
+        const dueDate = assignment.due_date ? new Date(assignment.due_date) : null;
+        const isOverdue = dueDate && dueDate < new Date();
+        const dueDateText = dueDate ? dueDate.toLocaleDateString() : 'No due date';
+        
+        content += `
+            <div class="col-md-6 col-lg-4">
+                <div class="card assignment-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title">${assignment.title}</h6>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="editAssignment(${assignment.id})">
+                                        <i class="fas fa-edit me-2"></i>Edit
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/teacher/assignment/${assignment.id}/submissions">
+                                        <i class="fas fa-file-alt me-2"></i>Submissions
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteAssignment(${assignment.id})">
+                                        <i class="fas fa-trash me-2"></i>Delete
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="card-text text-muted small">${assignment.description?.substring(0, 100) || 'No description'}${assignment.description?.length > 100 ? '...' : ''}</p>
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                Due: <span class="${isOverdue ? 'text-danger' : ''}">${dueDateText}</span>
+                            </small>
+                        </div>
+                        <div class="row g-2 text-center">
+                            <div class="col-6">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold text-success">${assignment.submission_count || 0}</div>
+                                    <small class="text-muted">Submitted</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold text-primary">${assignment.total_points}</div>
+                                    <small class="text-muted">Points</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+async function loadStudents() {
+    const container = document.getElementById('studentsContainer');
+    
+    try {
+        const response = await fetch(`/api/teacher/course/${courseId}/students`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayStudents(data.data?.student_reports || data.student_reports || []);
+        } else {
+            showError('Failed to load students');
+        }
+    } catch (error) {
+        console.error('Error loading students:', error);
+        showError('Error loading students');
+    }
+}
+
+function displayStudents(studentReports) {
+    const container = document.getElementById('studentsContainer');
+    
+    if (studentReports.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <h6 class="text-muted">No students enrolled</h6>
+                <p class="text-muted">Share your course with students to see them here</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="table-responsive"><table class="table table-hover">';
+    content += `
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th class="text-center">Progress</th>
+                <th class="text-center">Lessons</th>
+                <th class="text-center">Quiz Avg</th>
+                <th class="text-center">Assignments</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    studentReports.forEach(report => {
+        const student = report.student;
+        const progress = report.progress || {};
+        const enrollment = report.enrollment || {};
+        
+        const progressPercentage = progress.overall_percentage || 0;
+        const progressClass = progressPercentage >= 80 ? 'bg-success' : 
+                             progressPercentage >= 60 ? 'bg-warning' : 'bg-danger';
+        
+        content += `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar bg-gradient-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">${student.full_name}</div>
+                            <small class="text-muted">${student.email}</small>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <div class="progress mx-auto" style="width: 80px; height: 8px;">
+                        <div class="progress-bar ${progressClass}" style="width: ${progressPercentage}%"></div>
+                    </div>
+                    <small class="text-muted">${progressPercentage.toFixed(1)}%</small>
+                </td>
+                <td class="text-center">
+                    <span class="fw-bold">${progress.lessons?.completed || 0}</span>
+                    <small class="text-muted">/${progress.lessons?.total || 0}</small>
+                </td>
+                <td class="text-center">
+                    <span class="fw-bold">${(progress.quiz_average || 0).toFixed(1)}%</span>
+                </td>
+                <td class="text-center">
+                    <span class="fw-bold">${(progress.assignment_average || 0).toFixed(1)}%</span>
+                </td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-info" onclick="viewStudentDetails(${student.id})" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="messageStudent(${student.id})" title="Message">
+                            <i class="fas fa-envelope"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    content += '</tbody></table></div>';
+    container.innerHTML = content;
+}
+
+function addLesson() {
+    currentEditingId = null;
+    document.getElementById('lessonModalTitle').textContent = 'Add Lesson';
+    document.getElementById('lessonForm').reset();
+    document.getElementById('lessonId').value = '';
+    
+    const nextOrder = (courseData?.lessons?.length || 0) + 1;
+    document.getElementById('lessonOrder').value = nextOrder;
+    
+    toggleLessonFields();
+    bootstrap.Modal.getInstance(document.getElementById('addContentModal'))?.hide();
+    new bootstrap.Modal(document.getElementById('lessonModal')).show();
+}
+
+function editLesson(lessonId) {
+    currentEditingId = lessonId;
+    const lesson = courseData?.lessons?.find(l => l.id === lessonId);
+    
+    if (!lesson) {
+        showError('Lesson not found');
+        return;
+    }
+    
+    document.getElementById('lessonModalTitle').textContent = 'Edit Lesson';
+    document.getElementById('lessonId').value = lesson.id;
+    document.getElementById('lessonTitle').value = lesson.title;
+    document.getElementById('lessonOrder').value = lesson.order_number;
+    document.getElementById('lessonType').value = lesson.lesson_type || 'text';
+    document.getElementById('lessonDuration').value = lesson.duration_minutes || '';
+    document.getElementById('lessonVideoUrl').value = lesson.video_url || '';
+    document.getElementById('lessonContent').value = lesson.content || '';
+    
+    toggleLessonFields();
+    new bootstrap.Modal(document.getElementById('lessonModal')).show();
+}
+
+function toggleLessonFields() {
+    const lessonType = document.getElementById('lessonType').value;
+    const videoField = document.getElementById('videoUrlField');
+    
+    if (lessonType === 'video' || lessonType === 'mixed') {
+        videoField.style.display = 'block';
+        document.getElementById('lessonVideoUrl').required = lessonType === 'video';
+    } else {
+        videoField.style.display = 'none';
+        document.getElementById('lessonVideoUrl').required = false;
+    }
+}
+
+async function saveLesson() {
+    const form = document.getElementById('lessonForm');
+    const formData = new FormData(form);
+    const lessonId = formData.get('lesson_id');
+    
+    const data = {
+        course_id: courseId,
+        title: formData.get('title'),
+        content: formData.get('content'),
+        order_number: parseInt(formData.get('order_number')),
+        lesson_type: formData.get('lesson_type'),
+        video_url: formData.get('video_url') || null,
+        duration_minutes: formData.get('duration_minutes') ? parseInt(formData.get('duration_minutes')) : null
+    };
+    
+    try {
+        const url = lessonId ? `/api/lessons/${lessonId}` : '/api/lessons/';
+        const method = lessonId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('lessonModal')).hide();
+            showSuccess(lessonId ? 'Lesson updated successfully' : 'Lesson created successfully');
+            loadLessons();
+            loadCourseContent(); 
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to save lesson');
+        }
+    } catch (error) {
+        console.error('Error saving lesson:', error);
+        showError('Error saving lesson');
+    }
+}
+
+function addQuiz() {
+    currentEditingId = null;
+    document.getElementById('quizModalTitle').textContent = 'Add Quiz';
+    document.getElementById('quizForm').reset();
+    document.getElementById('quizId').value = '';
+    
+    bootstrap.Modal.getInstance(document.getElementById('addContentModal'))?.hide();
+    new bootstrap.Modal(document.getElementById('quizModal')).show();
+}
+
+function editQuiz(quizId) {
+    currentEditingId = quizId;
+    const quiz = courseData?.quizzes?.find(q => q.id === quizId);
+    
+    if (!quiz) {
+        showError('Quiz not found');
+        return;
+    }
+    
+    document.getElementById('quizModalTitle').textContent = 'Edit Quiz';
+    document.getElementById('quizId').value = quiz.id;
+    document.getElementById('quizTitle').value = quiz.title;
+    document.getElementById('quizDescription').value = quiz.description || '';
+    document.getElementById('quizTotalPoints').value = quiz.total_points;
+    document.getElementById('quizPassingScore').value = quiz.passing_score;
+    document.getElementById('quizMaxAttempts').value = quiz.max_attempts;
+    document.getElementById('quizTimeLimit').value = quiz.time_limit_minutes || '';
+    
+    new bootstrap.Modal(document.getElementById('quizModal')).show();
+}
+
+async function saveQuiz() {
+    const form = document.getElementById('quizForm');
+    const formData = new FormData(form);
+    const quizId = formData.get('quiz_id');
+    
+    const data = {
+        course_id: courseId,
+        title: formData.get('title'),
+        description: formData.get('description') || null,
+        total_points: parseInt(formData.get('total_points')),
+        passing_score: parseInt(formData.get('passing_score')),
+        max_attempts: parseInt(formData.get('max_attempts')),
+        time_limit_minutes: formData.get('time_limit_minutes') ? parseInt(formData.get('time_limit_minutes')) : null
+    };
+    
+    try {
+        const url = quizId ? `/api/quizzes/${quizId}` : '/api/quizzes/';
+        const method = quizId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('quizModal')).hide();
+            showSuccess(quizId ? 'Quiz updated successfully' : 'Quiz created successfully');
+            loadQuizzes();
+            loadCourseContent();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to save quiz');
+        }
+    } catch (error) {
+        console.error('Error saving quiz:', error);
+        showError('Error saving quiz');
+    }
+}
+
+function addAssignment() {
+    currentEditingId = null;
+    document.getElementById('assignmentModalTitle').textContent = 'Add Assignment';
+    document.getElementById('assignmentForm').reset();
+    document.getElementById('assignmentId').value = '';
+    
+    bootstrap.Modal.getInstance(document.getElementById('addContentModal'))?.hide();
+    new bootstrap.Modal(document.getElementById('assignmentModal')).show();
+}
+
+function editAssignment(assignmentId) {
+    currentEditingId = assignmentId;
+    const assignment = courseData?.assignments?.find(a => a.id === assignmentId);
+    
+    if (!assignment) {
+        showError('Assignment not found');
+        return;
+    }
+    
+    document.getElementById('assignmentModalTitle').textContent = 'Edit Assignment';
+    document.getElementById('assignmentId').value = assignment.id;
+    document.getElementById('assignmentTitle').value = assignment.title;
+    document.getElementById('assignmentDescription').value = assignment.description || '';
+    document.getElementById('assignmentTotalPoints').value = assignment.total_points;
+    
+    if (assignment.due_date) {
+        const dueDate = new Date(assignment.due_date);
+        document.getElementById('assignmentDueDate').value = dueDate.toISOString().slice(0, 16);
+    }
+    
+    new bootstrap.Modal(document.getElementById('assignmentModal')).show();
+}
+
+async function saveAssignment() {
+    const form = document.getElementById('assignmentForm');
+    const formData = new FormData(form);
+    const assignmentId = formData.get('assignment_id');
+    
+    const data = {
+        course_id: courseId,
+        title: formData.get('title'),
+        description: formData.get('description'),
+        total_points: parseInt(formData.get('total_points')),
+        due_date: formData.get('due_date') || null
+    };
+    
+    try {
+        const url = assignmentId ? `/api/assignments/${assignmentId}` : '/api/assignments/';
+        const method = assignmentId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('assignmentModal')).hide();
+            showSuccess(assignmentId ? 'Assignment updated successfully' : 'Assignment created successfully');
+            loadAssignments();
+            loadCourseContent();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to save assignment');
+        }
+    } catch (error) {
+        console.error('Error saving assignment:', error);
+        showError('Error saving assignment');
+    }
+}
+
+async function deleteLesson(lessonId) {
+    if (!confirm('Are you sure you want to delete this lesson? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/lessons/${lessonId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showSuccess('Lesson deleted successfully');
+            loadLessons();
+            loadCourseContent();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to delete lesson');
+        }
+    } catch (error) {
+        console.error('Error deleting lesson:', error);
+        showError('Error deleting lesson');
+    }
+}
+
+async function deleteQuiz(quizId) {
+    if (!confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/quizzes/${quizId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showSuccess('Quiz deleted successfully');
+            loadQuizzes();
+            loadCourseContent();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to delete quiz');
+        }
+    } catch (error) {
+        console.error('Error deleting quiz:', error);
+        showError('Error deleting quiz');
+    }
+}
+
+async function deleteAssignment(assignmentId) {
+    if (!confirm('Are you sure you want to delete this assignment? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/assignments/${assignmentId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showSuccess('Assignment deleted successfully');
+            loadAssignments();
+            loadCourseContent();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to delete assignment');
+        }
+    } catch (error) {
+        console.error('Error deleting assignment:', error);
+        showError('Error deleting assignment');
+    }
+}
+
+function previewLesson(lessonId) {
+    window.open(`/teacher/lesson/${lessonId}/preview`, '_blank');
+}
+
+function viewStudentDetails(studentId) {
+    window.location.href = `/teacher/student/${studentId}/progress?course=${courseId}`;
+}
+
+function messageStudent(studentId) {
+    // Placeholder for messaging functionality
+    showInfo('Messaging feature coming soon!');
+}
+
+function exportStudents() {
+    window.location.href = `/api/teacher/course/${courseId}/students/export`;
+}
+
+function refreshStudents() {
+    loadStudents();
+}
+
+function bulkImport() {
+    showInfo('Bulk import feature coming soon!');
+    bootstrap.Modal.getInstance(document.getElementById('addContentModal'))?.hide();
+}
+
+function showSuccess(message) {
+    showAlert('success', message);
+}
+
+function showError(message) {
+    showAlert('danger', message);
+}
+
+function showInfo(message) {
+    showAlert('info', message);
+}
+
+function showAlert(type, message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}

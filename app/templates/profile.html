@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+
+{% block title %}Profile Settings - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient-primary text-white">
+                    <div class="d-flex align-items-center">
+                        <div class="profile-avatar bg-white bg-opacity-25 rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-{{ 'user-shield' if session.user_role == 'admin' else 'chalkboard-teacher' if session.user_role == 'teacher' else 'user-graduate' }} fa-2x text-white"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-1">Profile Settings</h4>
+                            <p class="mb-0 text-white-50">Update your personal information and preferences</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form id="profileForm" class="mb-5">
+                        <h5 class="mb-3 text-gradient-primary">
+                            <i class="fas fa-user me-2"></i>Personal Information
+                        </h5>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="fullName" class="form-label fw-semibold">Full Name</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gradient-primary text-white">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="fullName" name="full_name" 
+                                           placeholder="Enter your full name" required>
+                                </div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="username" class="form-label fw-semibold">Username</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gradient-secondary text-white">
+                                        <i class="fas fa-at"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="username" name="username" 
+                                           placeholder="Your username" readonly>
+                                </div>
+                                <small class="text-muted">Username cannot be changed</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label fw-semibold">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gradient-success text-white">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           placeholder="your.email@example.com" readonly>
+                                </div>
+                                <small class="text-muted">Email cannot be changed</small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="role" class="form-label fw-semibold">Role</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gradient-info text-white">
+                                        <i class="fas fa-user-tag"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="role" name="role" readonly>
+                                </div>
+                                <small class="text-muted">Role cannot be changed</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label fw-semibold">Phone Number (Optional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gradient-warning text-white">
+                                        <i class="fas fa-phone"></i>
+                                    </span>
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           placeholder="+1 (555) 123-4567">
+                                </div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="age" class="form-label fw-semibold">Age (Optional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gradient-danger text-white">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                    <input type="number" class="form-control" id="age" name="age" 
+                                           placeholder="25" min="13" max="120">
+                                </div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        
+                        <div id="roleSpecificInfo" class="mb-4">
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="loadProfileData()">
+                                <i class="fas fa-undo me-2"></i>Reset Changes
+                            </button>
+                            <button type="submit" class="btn btn-gradient-primary">
+                                <i class="fas fa-save me-2"></i>Update Profile
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="mb-3 text-gradient-secondary">
+                        <i class="fas fa-lock me-2"></i>Change Password
+                    </h5>
+                    
+                    <form id="passwordForm">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="currentPassword" class="form-label fw-semibold">Current Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gradient-secondary text-white">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input type="password" class="form-control" id="currentPassword" 
+                                           name="current_password" placeholder="Current password" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('currentPassword')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="newPassword" class="form-label fw-semibold">New Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gradient-warning text-white">
+                                        <i class="fas fa-key"></i>
+                                    </span>
+                                    <input type="password" class="form-control" id="newPassword" 
+                                           name="new_password" placeholder="New password" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('newPassword')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback"></div>
+                                <div class="password-strength mt-2">
+                                    <div class="progress" style="height: 5px;">
+                                        <div class="progress-bar" id="passwordStrength" style="width: 0%"></div>
+                                    </div>
+                                    <small class="text-muted" id="passwordStrengthText">Password strength</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="confirmPassword" class="form-label fw-semibold">Confirm Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gradient-success text-white">
+                                        <i class="fas fa-check"></i>
+                                    </span>
+                                    <input type="password" class="form-control" id="confirmPassword" 
+                                           name="confirm_password" placeholder="Confirm password" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirmPassword')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                Password must be at least 8 characters long and contain uppercase, lowercase, and number.
+                            </small>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-gradient-warning">
+                                <i class="fas fa-key me-2"></i>Change Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-gradient-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Your Statistics
+                    </h5>
+                </div>
+                <div class="card-body" id="userStats">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>Updating profile...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentUserData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadProfileData();
+    setupPasswordValidation();
+    setupFormValidation();
+});
+
+async function loadProfileData() {
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/auth/profile', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            currentUserData = data.data || data;
+            populateProfileForm(currentUserData);
+            loadRoleSpecificInfo(currentUserData);
+            loadUserStatistics(currentUserData);
+        } else {
+            const errorData = await response.json();
+            showAlert('danger', errorData.error || 'Failed to load profile data');
+        }
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        showAlert('danger', 'Error loading profile data');
+    } finally {
+        hideLoading();
+    }
+}
+
+function populateProfileForm(userData) {
+    document.getElementById('fullName').value = userData.full_name || '';
+    document.getElementById('username').value = userData.username || '';
+    document.getElementById('email').value = userData.email || '';
+    document.getElementById('role').value = (userData.role || '').charAt(0).toUpperCase() + (userData.role || '').slice(1);
+    document.getElementById('phone').value = userData.phone || '';
+    document.getElementById('age').value = userData.age || '';
+}
+
+function loadRoleSpecificInfo(userData) {
+    const roleContainer = document.getElementById('roleSpecificInfo');
+    const role = userData.role;
+    
+    let content = '';
+    
+    if (role === 'teacher') {
+        content = `
+            <h6 class="text-gradient-secondary mb-3">
+                <i class="fas fa-chalkboard-teacher me-2"></i>Teacher Information
+            </h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <i class="fas fa-book fa-2x text-primary mb-2"></i>
+                            <div class="fw-bold">${userData.stats?.total_courses || 0}</div>
+                            <small class="text-muted">Total Courses</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-2x text-success mb-2"></i>
+                            <div class="fw-bold">${userData.stats?.total_students || 0}</div>
+                            <small class="text-muted">Total Students</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (role === 'student') {
+        content = `
+            <h6 class="text-gradient-success mb-3">
+                <i class="fas fa-user-graduate me-2"></i>Student Information
+            </h6>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <i class="fas fa-book-open fa-2x text-primary mb-2"></i>
+                            <div class="fw-bold">${userData.stats?.enrolled_courses || 0}</div>
+                            <small class="text-muted">Enrolled Courses</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <i class="fas fa-graduation-cap fa-2x text-success mb-2"></i>
+                            <div class="fw-bold">${userData.stats?.completed_courses || 0}</div>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
+                            <div class="fw-bold">${userData.stats?.total_achievements || 0}</div>
+                            <small class="text-muted">Achievements</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (role === 'admin') {
+        content = `
+            <h6 class="text-gradient-primary mb-3">
+                <i class="fas fa-user-shield me-2"></i>Administrator Information
+            </h6>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                As an administrator, you have full access to manage all platform users and courses.
+            </div>
+        `;
+    }
+    
+    roleContainer.innerHTML = content;
+}
+
+function loadUserStatistics(userData) {
+    const statsContainer = document.getElementById('userStats');
+    const role = userData.role;
+    
+    let content = `
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-gradient-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <i class="fas fa-calendar text-white"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">Member Since</div>
+                        <div class="text-muted">${userData.created_at ? new Date(userData.created_at).toLocaleDateString() : 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-gradient-success rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                        <i class="fas fa-check-circle text-white"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">Account Status</div>
+                        <div class="text-muted">
+                            <span class="badge ${userData.is_active ? 'bg-gradient-success' : 'bg-gradient-danger'}">
+                                ${userData.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    statsContainer.innerHTML = content;
+}
+
+function setupPasswordValidation() {
+    const newPassword = document.getElementById('newPassword');
+    const confirmPassword = document.getElementById('confirmPassword');
+    const strengthBar = document.getElementById('passwordStrength');
+    const strengthText = document.getElementById('passwordStrengthText');
+    
+    newPassword.addEventListener('input', function() {
+        const password = this.value;
+        const strength = calculatePasswordStrength(password);
+        
+        strengthBar.style.width = strength.percentage + '%';
+        strengthBar.className = `progress-bar bg-${strength.color}`;
+        strengthText.textContent = strength.text;
+        
+        validatePasswordMatch();
+    });
+    
+    confirmPassword.addEventListener('input', validatePasswordMatch);
+}
+
+function calculatePasswordStrength(password) {
+    let score = 0;
+    
+    if (password.length >= 8) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    
+    const strengths = [
+        { text: 'Very Weak', color: 'danger', percentage: 20 },
+        { text: 'Weak', color: 'warning', percentage: 40 },
+        { text: 'Fair', color: 'info', percentage: 60 },
+        { text: 'Good', color: 'primary', percentage: 80 },
+        { text: 'Strong', color: 'success', percentage: 100 }
+    ];
+    
+    return strengths[Math.max(0, score - 1)] || strengths[0];
+}
+
+function validatePasswordMatch() {
+    const newPassword = document.getElementById('newPassword');
+    const confirmPassword = document.getElementById('confirmPassword');
+    
+    if (confirmPassword.value && newPassword.value !== confirmPassword.value) {
+        confirmPassword.setCustomValidity('Passwords do not match');
+        confirmPassword.classList.add('is-invalid');
+    } else {
+        confirmPassword.setCustomValidity('');
+        confirmPassword.classList.remove('is-invalid');
+    }
+}
+
+function setupFormValidation() {
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function() {
+        const phone = this.value.trim().replace(/[\s\-\(\)]/g, '');
+        const romanianPhoneRegex = /^(07\d{8}|02\d{8}|03\d{8})$/;
+
+        if (phone && !romanianPhoneRegex.test(phone)) {
+            this.setCustomValidity('Please enter a valid Romanian phone number (10 digits starting with 07, 02, or 03)');
+            this.classList.add('is-invalid');
+        } else {
+            this.setCustomValidity('');
+            this.classList.remove('is-invalid');
+        }
+    });
+    
+    const ageInput = document.getElementById('age');
+    ageInput.addEventListener('input', function() {
+        const age = parseInt(this.value);
+        if (this.value && (age < 13 || age > 120)) {
+            this.setCustomValidity('Age must be between 13 and 120');
+            this.classList.add('is-invalid');
+        } else {
+            this.setCustomValidity('');
+            this.classList.remove('is-invalid');
+        }
+    });
+}
+
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        full_name: formData.get('full_name'),
+        phone: formData.get('phone') || null,
+        age: formData.get('age') ? parseInt(formData.get('age')) : null
+    };
+    
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/auth/profile', {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showAlert('success', result.message || 'Profile updated successfully!');
+            
+            if (data.full_name && data.full_name !== currentUserData.full_name) {
+                const userNameElement = document.querySelector('.navbar .dropdown-toggle');
+                if (userNameElement) {
+                    userNameElement.innerHTML = `<i class="fas fa-user-circle me-1"></i>${data.full_name}`;
+                }
+            }
+            
+            loadProfileData(); 
+        } else {
+            const errorData = await response.json();
+            showAlert('danger', errorData.error || 'Failed to update profile');
+        }
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        showAlert('danger', 'Error updating profile');
+    } finally {
+        hideLoading();
+    }
+});
+
+document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        current_password: formData.get('current_password'),
+        new_password: formData.get('new_password')
+    };
+    
+    if (data.new_password !== formData.get('confirm_password')) {
+        showAlert('danger', 'New passwords do not match');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/auth/change-password', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showAlert('success', result.message || 'Password changed successfully!');
+            this.reset();
+            
+            document.getElementById('passwordStrength').style.width = '0%';
+            document.getElementById('passwordStrengthText').textContent = 'Password strength';
+        } else {
+            const errorData = await response.json();
+            showAlert('danger', errorData.error || 'Failed to change password');
+        }
+    } catch (error) {
+        console.error('Error changing password:', error);
+        showAlert('danger', 'Error changing password');
+    } finally {
+        hideLoading();
+    }
+});
+
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const button = input.nextElementSibling;
+    const icon = button.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+}
+
+function showAlert(type, message) {
+    const alertContainer = document.getElementById('alert-container') || createAlertContainer();
+    
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+function createAlertContainer() {
+    const container = document.createElement('div');
+    container.id = 'alert-container';
+    container.className = 'position-fixed top-0 end-0 p-3';
+    container.style.zIndex = '1060';
+    document.body.appendChild(container);
+    return container;
+}
+</script>
+{% endblock %}

@@ -59,6 +59,10 @@
                                     </a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('frontend.profile') }}">
+                                    <i class="fas fa-user-cog me-2"></i>Profile Settings
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-danger" href="{{ url_for('frontend.logout') }}">
                                     <i class="fas fa-sign-out-alt me-2"></i>Logout
                                 </a></li>

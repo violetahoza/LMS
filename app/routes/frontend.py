@@ -530,6 +530,62 @@ def export_courses():
         flash(f'Error exporting courses: {str(e)}', 'error')
         return redirect(url_for('frontend.admin_courses'))
 
+@bp.route('/profile')
+def profile():
+    """User profile page"""
+    if not session.get('access_token'):
+        flash('Please log in to access your profile.', 'error')
+        return redirect(url_for('frontend.login'))
+    
+    return render_template('profile.html')
+
+@bp.route('/profile/update', methods=['POST'])
+def update_profile():
+    """Update user profile - AJAX endpoint"""
+    if not session.get('access_token'):
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    try:
+        headers = get_auth_headers()
+        data = request.get_json()
+        
+        response = requests.put(f'{API_BASE_URL}/auth/profile', 
+                              headers=headers, 
+                              json=data)
+        
+        if response.status_code == 200:
+            result = response.json()
+            # Update session if name changed
+            if 'data' in result and 'user' in result['data']:
+                session['user_name'] = result['data']['user']['full_name']
+            return jsonify(result)
+        else:
+            error_data = response.json()
+            return jsonify(error_data), response.status_code
+    except Exception as e:
+        return jsonify({'error': f'Connection error: {str(e)}'}), 500
+
+@bp.route('/profile/change-password', methods=['POST'])
+def change_password():
+    """Change user password - AJAX endpoint"""
+    if not session.get('access_token'):
+        return jsonify({'error': 'Authentication required'}), 401
+    
+    try:
+        headers = get_auth_headers()
+        data = request.get_json()
+        
+        response = requests.post(f'{API_BASE_URL}/auth/change-password', 
+                               headers=headers, 
+                               json=data)
+        
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            error_data = response.json()
+            return jsonify(error_data), response.status_code
+    except Exception as e:
+        return jsonify({'error': f'Connection error: {str(e)}'}), 500
 
 @bp.route('/student/dashboard')
 def student_dashboard():
@@ -542,42 +598,72 @@ def student_dashboard():
 
 @bp.route('/teacher/dashboard')
 def teacher_dashboard():
-    """Teacher dashboard (placeholder)"""
+    """Teacher dashboard"""
     if not session.get('access_token') or session.get('user_role') != 'teacher':
         flash('Access denied. Teacher privileges required.', 'error')
         return redirect(url_for('frontend.login'))
     
     return render_template('teacher/dashboard.html')
 
-
-@bp.route('/debug/session')
-def debug_session():
-    """Debug session data"""
-    if not session.get('access_token'):
-        return jsonify({'error': 'No session data'})
+@bp.route('/teacher/courses')
+def teacher_courses():
+    """Teacher courses management"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.login'))
     
-    return jsonify({
-        'has_token': 'access_token' in session,
-        'user_role': session.get('user_role'),
-        'user_id': session.get('user_id'),
-        'user_name': session.get('user_name'),
-        'token_preview': session['access_token'][:20] + '...' if session.get('access_token') else None
-    })
+    return render_template('teacher/courses.html')
 
-@bp.route('/debug/test-api')
-def debug_test_api():
-    """Test API connection"""
-    if not session.get('access_token'):
-        return jsonify({'error': 'No session token'})
+@bp.route('/teacher/courses/create')
+def teacher_create_course():
+    """Create new course page"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.login'))
     
-    try:
-        headers = get_auth_headers()
-        response = requests.get(f'{API_BASE_URL}/admin/test-auth', headers=headers)
-        
-        return jsonify({
-            'status_code': response.status_code,
-            'response': response.json() if response.content else 'No content',
-            'headers_sent': headers
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)})
+    return render_template('teacher/create_course.html')
+
+@bp.route('/teacher/courses/<int:course_id>/content')
+def teacher_course_content(course_id):
+    """Manage course content"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.login'))
+    
+    return render_template('teacher/course_content.html', course_id=course_id)
+
+@bp.route('/teacher/courses/<int:course_id>/analytics')
+def teacher_course_analytics(course_id):
+    """Course analytics"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.login'))
+    
+    return render_template('teacher/course_analytics.html', course_id=course_id)
+
+@bp.route('/teacher/courses/<int:course_id>/students')
+def teacher_course_students(course_id):
+    """Course students management"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.login'))
+    
+    return render_template('teacher/course_students.html', course_id=course_id)
+
+@bp.route('/teacher/submissions')
+def teacher_submissions():
+    """Pending submissions for grading"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.login'))
+    
+    return render_template('teacher/submissions.html')
+
+@bp.route('/teacher/analytics')
+def teacher_analytics():
+    """Teacher analytics overview"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.login'))
+    
+    return render_template('teacher/analytics.html')

@@ -1,4 +1,3 @@
-# app/utils/decorators.py - Fixed version with string user ID support
 from functools import wraps
 from flask import jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity

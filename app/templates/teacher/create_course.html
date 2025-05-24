@@ -1,0 +1,529 @@
+{% extends "base.html" %}
+
+{% block title %}Create Course - Teacher - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="text-center mb-4">
+                <h1 class="display-6 fw-bold text-gradient-primary mb-2">Create New Course</h1>
+                <p class="text-muted">Design and launch your educational content</p>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="step-item active" id="step1">
+                                <div class="step-number">1</div>
+                                <div class="step-title">Basic Info</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="step-item" id="step2">
+                                <div class="step-number">2</div>
+                                <div class="step-title">Details</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="step-item" id="step3">
+                                <div class="step-number">3</div>
+                                <div class="step-title">Review</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-lg">
+                <div class="card-body p-4">
+                    <form id="createCourseForm">
+                        <div class="step-content" id="stepContent1">
+                            <h5 class="mb-4 text-gradient-primary">
+                                <i class="fas fa-info-circle me-2"></i>Basic Information
+                            </h5>
+                            
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="courseTitle" class="form-label fw-semibold">Course Title *</label>
+                                    <input type="text" class="form-control form-control-lg" id="courseTitle" 
+                                           name="title" placeholder="Enter an engaging course title" required>
+                                    <div class="form-text">Make it clear and descriptive</div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label for="courseDescription" class="form-label fw-semibold">Course Description *</label>
+                                    <textarea class="form-control" id="courseDescription" name="description" 
+                                              rows="4" placeholder="Describe what students will learn..." required></textarea>
+                                    <div class="form-text">Explain the course objectives and what students will achieve</div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="courseCategory" class="form-label fw-semibold">Category *</label>
+                                    <select class="form-select" id="courseCategory" name="category" required>
+                                        <option value="">Select a category</option>
+                                        <option value="Programming">Programming</option>
+                                        <option value="Web Development">Web Development</option>
+                                        <option value="Data Science">Data Science</option>
+                                        <option value="Database">Database</option>
+                                        <option value="AI/ML">AI/ML</option>
+                                        <option value="Mobile Development">Mobile Development</option>
+                                        <option value="DevOps">DevOps</option>
+                                        <option value="Design">Design</option>
+                                        <option value="Business">Business</option>
+                                        <option value="Marketing">Marketing</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="courseLevel" class="form-label fw-semibold">Difficulty Level</label>
+                                    <select class="form-select" id="courseLevel" name="level">
+                                        <option value="beginner">Beginner</option>
+                                        <option value="intermediate">Intermediate</option>
+                                        <option value="advanced">Advanced</option>
+                                        <option value="all">All Levels</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-content d-none" id="stepContent2">
+                            <h5 class="mb-4 text-gradient-secondary">
+                                <i class="fas fa-cog me-2"></i>Course Settings
+                            </h5>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="maxStudents" class="form-label fw-semibold">Maximum Students</label>
+                                    <input type="number" class="form-control" id="maxStudents" 
+                                           name="max_students" value="50" min="1" max="1000">
+                                    <div class="form-text">How many students can enroll?</div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="estimatedDuration" class="form-label fw-semibold">Estimated Duration</label>
+                                    <select class="form-select" id="estimatedDuration" name="duration">
+                                        <option value="1-2 weeks">1-2 weeks</option>
+                                        <option value="3-4 weeks">3-4 weeks</option>
+                                        <option value="1-2 months">1-2 months</option>
+                                        <option value="3-6 months">3-6 months</option>
+                                        <option value="6+ months">6+ months</option>
+                                        <option value="self-paced">Self-paced</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="startDate" class="form-label fw-semibold">Start Date (Optional)</label>
+                                    <input type="date" class="form-control" id="startDate" name="start_date">
+                                    <div class="form-text">When will the course begin?</div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label for="endDate" class="form-label fw-semibold">End Date (Optional)</label>
+                                    <input type="date" class="form-control" id="endDate" name="end_date">
+                                    <div class="form-text">When will the course end?</div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Prerequisites</label>
+                                    <textarea class="form-control" id="prerequisites" name="prerequisites" 
+                                              rows="3" placeholder="List any skills or knowledge students need before taking this course..."></textarea>
+                                    <div class="form-text">Help students understand what they need to know first</div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Learning Objectives</label>
+                                    <div id="objectivesContainer">
+                                        <div class="input-group mb-2">
+                                            <input type="text" class="form-control objective-input" 
+                                                   placeholder="What will students learn? (e.g., Build responsive websites)">
+                                            <button class="btn btn-outline-danger" type="button" onclick="removeObjective(this)">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addObjective()">
+                                        <i class="fas fa-plus me-2"></i>Add Learning Objective
+                                    </button>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="publishNow" name="is_published">
+                                        <label class="form-check-label" for="publishNow">
+                                            Publish course immediately
+                                        </label>
+                                        <div class="form-text">You can always publish later</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-content d-none" id="stepContent3">
+                            <h5 class="mb-4 text-gradient-success">
+                                <i class="fas fa-check-circle me-2"></i>Review & Create
+                            </h5>
+                            
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <div id="reviewContent">
+                                        <!-- Review content will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Next Steps:</strong> After creating your course, you can add lessons, quizzes, and assignments from the course management page.
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-outline-secondary" id="prevBtn" onclick="changeStep(-1)" style="display: none;">
+                                <i class="fas fa-arrow-left me-2"></i>Previous
+                            </button>
+                            <div></div>
+                            <button type="button" class="btn btn-gradient-primary" id="nextBtn" onclick="changeStep(1)">
+                                Next<i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                            <button type="submit" class="btn btn-gradient-success" id="submitBtn" style="display: none;">
+                                <i class="fas fa-plus me-2"></i>Create Course
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>Creating your course...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStep = 1;
+const totalSteps = 3;
+
+document.addEventListener('DOMContentLoaded', function() {
+    addObjective();
+    
+    setupFormValidation();
+    
+    setupDateValidation();
+});
+
+function changeStep(direction) {
+    if (direction === 1 && !validateCurrentStep()) {
+        return;
+    }
+    
+    currentStep += direction;
+    
+    if (currentStep < 1) currentStep = 1;
+    if (currentStep > totalSteps) currentStep = totalSteps;
+    
+    updateStepDisplay();
+    updateButtons();
+    
+    if (currentStep === 3) {
+        generateReview();
+    }
+}
+
+function updateStepDisplay() {
+    for (let i = 1; i <= totalSteps; i++) {
+        document.getElementById(`stepContent${i}`).classList.add('d-none');
+        const stepElement = document.getElementById(`step${i}`);
+        stepElement.classList.remove('active', 'completed');
+    }
+    
+    document.getElementById(`stepContent${currentStep}`).classList.remove('d-none');
+    
+    for (let i = 1; i <= totalSteps; i++) {
+        const stepElement = document.getElementById(`step${i}`);
+        if (i < currentStep) {
+            stepElement.classList.add('completed');
+        } else if (i === currentStep) {
+            stepElement.classList.add('active');
+        }
+    }
+}
+
+function updateButtons() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
+    
+    if (currentStep < totalSteps) {
+        nextBtn.style.display = 'block';
+        submitBtn.style.display = 'none';
+    } else {
+        nextBtn.style.display = 'none';
+        submitBtn.style.display = 'block';
+    }
+}
+
+function validateCurrentStep() {
+    const currentStepContent = document.getElementById(`stepContent${currentStep}`);
+    const requiredFields = currentStepContent.querySelectorAll('[required]');
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    });
+    
+    if (!isValid) {
+        showError('Please fill in all required fields');
+    }
+    
+    return isValid;
+}
+
+function addObjective() {
+    const container = document.getElementById('objectivesContainer');
+    const objectiveDiv = document.createElement('div');
+    objectiveDiv.className = 'input-group mb-2';
+    objectiveDiv.innerHTML = `
+        <input type="text" class="form-control objective-input" 
+               placeholder="What will students learn?">
+        <button class="btn btn-outline-danger" type="button" onclick="removeObjective(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    container.appendChild(objectiveDiv);
+}
+
+function removeObjective(button) {
+    const container = document.getElementById('objectivesContainer');
+    if (container.children.length > 1) {
+        button.parentElement.remove();
+    } else {
+        showError('At least one learning objective is required');
+    }
+}
+
+function generateReview() {
+    const formData = new FormData(document.getElementById('createCourseForm'));
+    const objectives = Array.from(document.querySelectorAll('.objective-input'))
+        .map(input => input.value.trim())
+        .filter(value => value);
+    
+    const reviewHTML = `
+        <h6 class="fw-bold mb-3">Course Overview</h6>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <strong>Title:</strong><br>
+                <span class="text-muted">${formData.get('title') || 'Not specified'}</span>
+            </div>
+            <div class="col-md-6">
+                <strong>Category:</strong><br>
+                <span class="badge bg-gradient-primary">${formData.get('category') || 'Not specified'}</span>
+            </div>
+            <div class="col-md-6">
+                <strong>Level:</strong><br>
+                <span class="text-muted">${formData.get('level') || 'Beginner'}</span>
+            </div>
+            <div class="col-md-6">
+                <strong>Max Students:</strong><br>
+                <span class="text-muted">${formData.get('max_students') || '50'}</span>
+            </div>
+            <div class="col-12">
+                <strong>Description:</strong><br>
+                <span class="text-muted">${formData.get('description') || 'No description'}</span>
+            </div>
+            ${formData.get('prerequisites') ? `
+            <div class="col-12">
+                <strong>Prerequisites:</strong><br>
+                <span class="text-muted">${formData.get('prerequisites')}</span>
+            </div>
+            ` : ''}
+            ${objectives.length > 0 ? `
+            <div class="col-12">
+                <strong>Learning Objectives:</strong><br>
+                <ul class="mb-0">
+                    ${objectives.map(obj => `<li>${obj}</li>`).join('')}
+                </ul>
+            </div>
+            ` : ''}
+            <div class="col-12">
+                <strong>Status:</strong><br>
+                <span class="badge ${formData.get('is_published') ? 'bg-gradient-success' : 'bg-gradient-warning'}">
+                    ${formData.get('is_published') ? 'Will be published' : 'Will be saved as draft'}
+                </span>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('reviewContent').innerHTML = reviewHTML;
+}
+
+function setupFormValidation() {
+    const form = document.getElementById('createCourseForm');
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await createCourse();
+    });
+    
+    const inputs = form.querySelectorAll('input, textarea, select');
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.hasAttribute('required') && !this.value.trim()) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+        
+        input.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid') && this.value.trim()) {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+}
+
+function setupDateValidation() {
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+    
+    function validateDates() {
+        if (startDate.value && endDate.value) {
+            if (new Date(endDate.value) <= new Date(startDate.value)) {
+                endDate.setCustomValidity('End date must be after start date');
+                endDate.classList.add('is-invalid');
+            } else {
+                endDate.setCustomValidity('');
+                endDate.classList.remove('is-invalid');
+            }
+        }
+    }
+    
+    startDate.addEventListener('change', validateDates);
+    endDate.addEventListener('change', validateDates);
+}
+
+let isSubmitting = false;
+
+async function createCourse() {
+    if (isSubmitting) return; 
+    isSubmitting = true;
+    
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+
+    try {
+        showLoading();
+        
+        const formData = new FormData(document.getElementById('createCourseForm'));
+        const objectives = Array.from(document.querySelectorAll('.objective-input'))
+            .map(input => input.value.trim())
+            .filter(value => value);
+        
+        const courseData = {
+            title: formData.get('title'),
+            description: formData.get('description'),
+            category: formData.get('category'),
+            max_students: parseInt(formData.get('max_students')) || 50,
+            start_date: formData.get('start_date') || null,
+            end_date: formData.get('end_date') || null,
+            is_published: formData.has('is_published'),
+            prerequisites: formData.get('prerequisites') || null,
+            learning_objectives: objectives,
+            level: formData.get('level') || 'beginner',
+            duration: formData.get('duration') || 'self-paced'
+        };
+        
+        const response = await fetch('/api/courses/', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(courseData)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            const course = result.data?.course || result.course;
+            
+            showSuccess('Course created successfully!');
+            
+            setTimeout(() => {
+                window.location.href = `/teacher/courses/${course.id}/content`;
+            }, 2000);
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to create course');
+            isSubmitting = false;
+            document.getElementById('submitBtn').disabled = false;
+        }
+    } catch (error) {
+        console.error('Error creating course:', error);
+        showError('Error creating course');
+        isSubmitting = false;
+        document.getElementById('submitBtn').disabled = false;
+    } finally {
+        hideLoading();
+    }
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+function showSuccess(message) {
+    const alertContainer = document.querySelector('.container');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,696 @@
+{% extends "base.html" %}
+
+{% block title %}My Courses - Teacher - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1">My Courses</h1>
+                    <p class="text-muted mb-0">Manage and monitor all your courses</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('frontend.teacher_create_course') }}" class="btn btn-gradient-primary">
+                        <i class="fas fa-plus me-2"></i>Create New Course
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="searchCourses" class="form-label fw-semibold">Search Courses</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="searchCourses" 
+                                       placeholder="Search by title or description">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="statusFilter" class="form-label fw-semibold">Status</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="published">Published</option>
+                                <option value="draft">Draft</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="sortBy" class="form-label fw-semibold">Sort By</label>
+                            <select class="form-select" id="sortBy">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="students">Most Students</option>
+                                <option value="title">Title A-Z</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="filterCourses()">
+                                <i class="fas fa-filter me-2"></i>Filter
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-outline-secondary w-100" onclick="refreshCourses()">
+                                <i class="fas fa-sync-alt me-2"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="coursesContainer">
+        <div class="text-center py-5" id="loadingState">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>Loading your courses...</div>
+        </div>
+    </div>
+
+    <div id="paginationContainer" class="d-none">
+    </div>
+</div>
+
+<div class="modal fade" id="courseDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title">Course Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="courseDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editCourseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-warning text-white">
+                <h5 class="modal-title">Edit Course</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCourseForm">
+                    <input type="hidden" id="editCourseId">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Course Title</label>
+                            <input type="text" class="form-control" id="editCourseTitle" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea class="form-control" id="editCourseDescription" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category</label>
+                            <select class="form-select" id="editCourseCategory">
+                                <option value="">Select Category</option>
+                                <option value="Programming">Programming</option>
+                                <option value="Web Development">Web Development</option>
+                                <option value="Data Science">Data Science</option>
+                                <option value="Database">Database</option>
+                                <option value="AI/ML">AI/ML</option>
+                                <option value="Mobile Development">Mobile Development</option>
+                                <option value="DevOps">DevOps</option>
+                                <option value="Design">Design</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Max Students</label>
+                            <input type="number" class="form-control" id="editCourseMaxStudents" min="1" max="1000">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Start Date (Optional)</label>
+                            <input type="date" class="form-control" id="editCourseStartDate">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">End Date (Optional)</label>
+                            <input type="date" class="form-control" id="editCourseEndDate">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editCoursePublished">
+                                <label class="form-check-label" for="editCoursePublished">
+                                    Published (visible to students)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-gradient-warning" onclick="saveEditCourse()">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentCourses = [];
+let currentPage = 1;
+let totalPages = 1;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCourses();
+    
+    let searchTimeout;
+    document.getElementById('searchCourses').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterCourses, 500);
+    });
+});
+
+async function loadCourses(page = 1) {
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/teacher/courses?page=${page}&per_page=12`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log(data); 
+            currentCourses = data.courses || [];
+            currentPage = data.page || 1;
+            totalPages = data.pages || 1;
+            
+            displayCourses(currentCourses);
+            updatePagination();
+        } else {
+            showError('Failed to load courses');
+        }
+    } catch (error) {
+        console.error('Error loading courses:', error);
+        showError('Error loading courses');
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayCourses(courses) {
+    const container = document.getElementById('coursesContainer');
+    
+    if (courses.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-book fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted">No courses found</h4>
+                <p class="text-muted">Create your first course to get started</p>
+                <a href="{{ url_for('frontend.teacher_create_course') }}" class="btn btn-gradient-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>Create New Course
+                </a>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="row g-4">';
+    
+    courses.forEach(course => {
+        const stats = course.statistics || {};
+        const statusBadge = course.is_published 
+            ? '<span class="badge bg-gradient-success">Published</span>' 
+            : '<span class="badge bg-gradient-warning">Draft</span>';
+        
+        content += `
+            <div class="col-lg-4 col-md-6">
+                <div class="card course-card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        ${statusBadge}
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                    data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="viewCourseDetails(${course.id})">
+                                    <i class="fas fa-eye me-2"></i>View Details
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="editCourse(${course.id})">
+                                    <i class="fas fa-edit me-2"></i>Edit Course
+                                </a></li>
+                                <li><a class="dropdown-item" href="/teacher/courses/${course.id}/content">
+                                    <i class="fas fa-list me-2"></i>Manage Content
+                                </a></li>
+                                <li><a class="dropdown-item" href="/teacher/courses/${course.id}/analytics">
+                                    <i class="fas fa-chart-bar me-2"></i>View Analytics
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" onclick="togglePublish(${course.id}, ${course.is_published})">
+                                    <i class="fas fa-${course.is_published ? 'eye-slash' : 'eye'} me-2"></i>
+                                    ${course.is_published ? 'Unpublish' : 'Publish'}
+                                </a></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteCourse(${course.id})">
+                                    <i class="fas fa-trash me-2"></i>Delete
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">${course.title}</h5>
+                        <p class="card-text text-muted">${course.description ? course.description.substring(0, 100) + '...' : 'No description'}</p>
+                        
+                        <div class="course-stats mb-3">
+                            <div class="row g-2 text-center">
+                                <div class="col-3">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-primary">${stats.total_students || 0}</div>
+                                        <small class="text-muted">Students</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-info">${stats.total_lessons || 0}</div>
+                                        <small class="text-muted">Lessons</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-success">${stats.total_quizzes || 0}</div>
+                                        <small class="text-muted">Quizzes</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-warning">${(stats.completion_rate || 0).toFixed(1)}%</div>
+                                        <small class="text-muted">Complete</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <a href="/teacher/courses/${course.id}/content" class="btn btn-outline-primary flex-fill">
+                                <i class="fas fa-list me-1"></i>Content
+                            </a>
+                            <a href="/teacher/courses/${course.id}/analytics" class="btn btn-outline-info flex-fill">
+                                <i class="fas fa-chart-bar me-1"></i>Analytics
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                ${course.category ? `<span class="badge bg-light text-dark">${course.category}</span>` : ''}
+                            </small>
+                            <small class="text-muted">
+                                Created ${new Date(course.created_at).toLocaleDateString()}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function updatePagination() {
+    const container = document.getElementById('paginationContainer');
+    
+    if (totalPages <= 1) {
+        container.classList.add('d-none');
+        return;
+    }
+    
+    container.classList.remove('d-none');
+    
+    let paginationHTML = '<nav aria-label="Courses pagination"><ul class="pagination justify-content-center">';
+    
+    paginationHTML += `
+        <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="loadCourses(${currentPage - 1})">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    `;
+    
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+            paginationHTML += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+        } else if (i <= 3 || i > totalPages - 3 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            paginationHTML += `<li class="page-item"><a class="page-link" href="#" onclick="loadCourses(${i})">${i}</a></li>`;
+        } else if (i === 4 || i === totalPages - 3) {
+            paginationHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+    
+    paginationHTML += `
+        <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="loadCourses(${currentPage + 1})">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    `;
+    
+    paginationHTML += '</ul></nav>';
+    container.innerHTML = paginationHTML;
+}
+
+function filterCourses() {
+    const search = document.getElementById('searchCourses').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    const sort = document.getElementById('sortBy').value;
+    
+    let filtered = [...currentCourses];
+    
+    if (search) {
+        filtered = filtered.filter(course => 
+            course.title.toLowerCase().includes(search) ||
+            (course.description && course.description.toLowerCase().includes(search))
+        );
+    }
+    
+    if (status) {
+        filtered = filtered.filter(course => {
+            if (status === 'published') return course.is_published;
+            if (status === 'draft') return !course.is_published;
+            return true;
+        });
+    }
+    
+    filtered.sort((a, b) => {
+        switch (sort) {
+            case 'newest':
+                return new Date(b.created_at) - new Date(a.created_at);
+            case 'oldest':
+                return new Date(a.created_at) - new Date(b.created_at);
+            case 'students':
+                return (b.statistics?.total_students || 0) - (a.statistics?.total_students || 0);
+            case 'title':
+                return a.title.localeCompare(b.title);
+            default:
+                return 0;
+        }
+    });
+    
+    displayCourses(filtered);
+}
+
+async function viewCourseDetails(courseId) {
+    try {
+        const response = await fetch(`/api/teacher/courses/${courseId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayCourseDetails(data.data || data);
+            new bootstrap.Modal(document.getElementById('courseDetailsModal')).show();
+        } else {
+            showError('Failed to load course details');
+        }
+    } catch (error) {
+        console.error('Error loading course details:', error);
+        showError('Error loading course details');
+    }
+}
+
+function displayCourseDetails(course) {
+    const content = document.getElementById('courseDetailsContent');
+    const stats = course.statistics || {};
+    
+    content.innerHTML = `
+        <div class="row g-4">
+            <div class="col-md-8">
+                <h4>${course.title}</h4>
+                <p class="text-muted">${course.description || 'No description available'}</p>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <strong>Category:</strong><br>
+                        <span class="badge bg-gradient-primary">${course.category || 'Uncategorized'}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong><br>
+                        <span class="badge ${course.is_published ? 'bg-gradient-success' : 'bg-gradient-warning'}">
+                            ${course.is_published ? 'Published' : 'Draft'}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Max Students:</strong><br>
+                        <span class="text-muted">${course.max_students}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Current Enrollment:</strong><br>
+                        <span class="text-muted">${course.current_students} students</span>
+                    </div>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6>Course Content</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-book text-primary me-2"></i>${course.lessons?.length || 0} Lessons</li>
+                            <li><i class="fas fa-question-circle text-info me-2"></i>${course.quizzes?.length || 0} Quizzes</li>
+                            <li><i class="fas fa-clipboard-list text-warning me-2"></i>${course.assignments?.length || 0} Assignments</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Performance</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-users text-success me-2"></i>${stats.total_students || 0} Total Students</li>
+                            <li><i class="fas fa-chart-line text-info me-2"></i>${(stats.completion_rate || 0).toFixed(1)}% Completion Rate</li>
+                            <li><i class="fas fa-clock text-warning me-2"></i>${stats.average_completion_days || 0} Avg Days to Complete</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Quick Actions</h6>
+                    </div>
+                    <div class="card-body d-grid gap-2">
+                        <a href="/teacher/courses/${course.id}/content" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Manage Content
+                        </a>
+                        <a href="/teacher/courses/${course.id}/analytics" class="btn btn-outline-info">
+                            <i class="fas fa-chart-bar me-2"></i>View Analytics
+                        </a>
+                        <a href="/teacher/courses/${course.id}/students" class="btn btn-outline-success">
+                            <i class="fas fa-users me-2"></i>View Students
+                        </a>
+                        <button class="btn btn-outline-warning" onclick="editCourse(${course.id})">
+                            <i class="fas fa-edit me-2"></i>Edit Course
+                        </button>
+                    </div>
+                </div>
+                
+                ${course.students && course.students.length > 0 ? `
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Recent Students</h6>
+                    </div>
+                    <div class="card-body">
+                        ${course.students.slice(0, 5).map(student => `
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <div class="fw-semibold">${student.full_name}</div>
+                                    <small class="text-muted">${(student.progress?.overall_percentage || 0).toFixed(1)}% complete</small>
+                                </div>
+                            </div>
+                        `).join('')}
+                        ${course.students.length > 5 ? `<small class="text-muted">+${course.students.length - 5} more students</small>` : ''}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+async function editCourse(courseId) {
+    try {
+        const response = await fetch(`/api/teacher/courses/${courseId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const course = data.data || data;
+            
+            document.getElementById('editCourseId').value = course.id;
+            document.getElementById('editCourseTitle').value = course.title;
+            document.getElementById('editCourseDescription').value = course.description || '';
+            document.getElementById('editCourseCategory').value = course.category || '';
+            document.getElementById('editCourseMaxStudents').value = course.max_students;
+            document.getElementById('editCourseStartDate').value = course.start_date ? course.start_date.split('T')[0] : '';
+            document.getElementById('editCourseEndDate').value = course.end_date ? course.end_date.split('T')[0] : '';
+            document.getElementById('editCoursePublished').checked = course.is_published;
+            
+            new bootstrap.Modal(document.getElementById('editCourseModal')).show();
+        } else {
+            showError('Failed to load course data');
+        }
+    } catch (error) {
+        console.error('Error loading course for edit:', error);
+        showError('Error loading course data');
+    }
+}
+
+async function saveEditCourse() {
+    const courseId = document.getElementById('editCourseId').value;
+    const formData = {
+        title: document.getElementById('editCourseTitle').value,
+        description: document.getElementById('editCourseDescription').value,
+        category: document.getElementById('editCourseCategory').value,
+        max_students: parseInt(document.getElementById('editCourseMaxStudents').value),
+        start_date: document.getElementById('editCourseStartDate').value || null,
+        end_date: document.getElementById('editCourseEndDate').value || null,
+        is_published: document.getElementById('editCoursePublished').checked
+    };
+    
+    try {
+        const response = await fetch(`/api/courses/${courseId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (response.ok) {
+            showSuccess('Course updated successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('editCourseModal')).hide();
+            loadCourses(currentPage);
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to update course');
+        }
+    } catch (error) {
+        console.error('Error updating course:', error);
+        showError('Error updating course');
+    }
+}
+
+async function togglePublish(courseId, isPublished) {
+    const action = isPublished ? 'unpublish' : 'publish';
+    if (!confirm(`Are you sure you want to ${action} this course?`)) return;
+    
+    try {
+        const response = await fetch(`/api/courses/${courseId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ is_published: !isPublished })
+        });
+        
+        if (response.ok) {
+            showSuccess(`Course ${action}ed successfully!`);
+            loadCourses(currentPage);
+        } else {
+            showError(`Failed to ${action} course`);
+        }
+    } catch (error) {
+        console.error(`Error ${action}ing course:`, error);
+        showError(`Error ${action}ing course`);
+    }
+}
+
+async function deleteCourse(courseId) {
+    if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) return;
+    
+    try {
+        const response = await fetch(`/api/courses/${courseId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showSuccess('Course deleted successfully!');
+            loadCourses(currentPage);
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to delete course');
+        }
+    } catch (error) {
+        console.error('Error deleting course:', error);
+        showError('Error deleting course');
+    }
+}
+
+function refreshCourses() {
+    loadCourses(currentPage);
+}
+
+function showLoading() {
+    const el = document.getElementById('loadingState');
+    if (el) el.classList.remove('d-none');
+}
+
+function hideLoading() {
+    const el = document.getElementById('loadingState');
+    if (el) el.classList.add('d-none');
+}
+
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+function showSuccess(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}
