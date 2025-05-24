@@ -48,10 +48,18 @@ class User(UserMixin, db.Model):
         return self.role == UserRole.STUDENT
     
     def can_access_course(self, course):
-        if self.is_admin() or self.is_teacher() and course.teacher_id == self.id:
+        """Check if user can access a course"""
+        if self.is_admin():
             return True
-        if self.is_student():
-            return self.enrollments.filter_by(course_id=course.id, status='active').first() is not None
+        elif self.is_teacher():
+            return course.teacher_id == self.id
+        elif self.is_student():
+            enrollment = Enrollment.query.filter_by(
+                student_id=self.id,
+                course_id=course.id,
+                status='active'
+            ).first()
+            return enrollment is not None
         return False
     
     def to_dict(self):
@@ -456,4 +464,38 @@ class Certificate(db.Model):
             'student_name': self.student.full_name if self.student else None,
             'certificate_code': self.certificate_code,
             'issued_at': self.issued_at.isoformat() if self.issued_at else None
+        }
+    
+class Message(db.Model):
+    """Message model for communication between users"""
+    __tablename__ = 'messages'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=True)
+    subject = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    read_at = db.Column(db.DateTime, nullable=True)
+    is_announcement = db.Column(db.Boolean, default=False, nullable=False)
+    
+    # Relationships
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
+    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_messages')
+    course = db.relationship('Course', backref='messages')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'sender_id': self.sender_id,
+            'recipient_id': self.recipient_id,
+            'course_id': self.course_id,
+            'subject': self.subject,
+            'content': self.content,
+            'sent_at': self.sent_at.isoformat() if self.sent_at else None,
+            'read_at': self.read_at.isoformat() if self.read_at else None,
+            'is_announcement': self.is_announcement,
+            'sender_name': self.sender.full_name if self.sender else None,
+            'recipient_name': self.recipient.full_name if self.recipient else None
         }

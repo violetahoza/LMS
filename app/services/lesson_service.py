@@ -348,7 +348,7 @@ class LessonService:
         total_completions = len([p for p in progress_records if p.completed_at])
         
         # Time spent analysis
-        time_spent_data = [p.time_spent_minutes for p in progress_records if p.time_spent_minutes > 0]
+        time_spent_data = [p.time_spent_minutes for p in progress_records if p.time_spent_minutes and p.time_spent_minutes > 0]
         avg_time_spent = sum(time_spent_data) / len(time_spent_data) if time_spent_data else 0
         
         # Completion timeline

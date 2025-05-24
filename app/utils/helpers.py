@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 import hashlib
 from flask import current_app
 import logging
+from typing import Dict, Any, List
+from sqlalchemy import func
 
 logger = logging.getLogger(__name__)
 
