@@ -27,6 +27,7 @@ class LessonService:
         for lesson in lessons:
             lesson_dict = lesson.to_dict()
             
+            # Add progress info for students
             if user.is_student():
                 progress = LessonProgress.query.filter_by(
                     student_id=user_id,
@@ -36,7 +37,24 @@ class LessonService:
                 lesson_dict['progress'] = {
                     'viewed': progress is not None,
                     'completed': progress.completed_at is not None if progress else False,
-                    'time_spent_minutes': progress.time_spent_minutes if progress else 0
+                    'time_spent_minutes': progress.time_spent_minutes if progress else 0,
+                    'last_viewed': progress.viewed_at.isoformat() if progress and progress.viewed_at else None
+                }
+            
+            # Add engagement stats for teachers
+            elif user.is_teacher() and course.teacher_id == user_id:
+                total_students = course.enrollments.filter_by(status='active').count()
+                views = LessonProgress.query.filter_by(lesson_id=lesson.id).count()
+                completions = LessonProgress.query.filter_by(
+                    lesson_id=lesson.id
+                ).filter(LessonProgress.completed_at.isnot(None)).count()
+                
+                lesson_dict['engagement'] = {
+                    'total_students': total_students,
+                    'views': views,
+                    'completions': completions,
+                    'view_rate': (views / total_students * 100) if total_students > 0 else 0,
+                    'completion_rate': (completions / total_students * 100) if total_students > 0 else 0
                 }
             
             lessons_data.append(lesson_dict)
@@ -62,13 +80,34 @@ class LessonService:
         
         lesson_data = lesson.to_dict()
         
+        # Track lesson view for students
         if user.is_student():
             progress = LessonService._track_lesson_view(user_id, lesson_id)
             lesson_data['progress'] = {
                 'viewed': True,
                 'completed': progress.completed_at is not None,
-                'time_spent_minutes': progress.time_spent_minutes
+                'time_spent_minutes': progress.time_spent_minutes,
+                'last_viewed': progress.viewed_at.isoformat() if progress.viewed_at else None
             }
+            
+            # Check prerequisites
+            if lesson.order_number > 1:
+                previous_lesson = Lesson.query.filter_by(
+                    course_id=lesson.course_id,
+                    order_number=lesson.order_number - 1
+                ).first()
+                
+                if previous_lesson:
+                    prev_progress = LessonProgress.query.filter_by(
+                        student_id=user_id,
+                        lesson_id=previous_lesson.id
+                    ).first()
+                    
+                    lesson_data['prerequisites_met'] = prev_progress is not None
+                else:
+                    lesson_data['prerequisites_met'] = True
+            else:
+                lesson_data['prerequisites_met'] = True
         
         return lesson_data
     
@@ -77,7 +116,7 @@ class LessonService:
         """Create a new lesson"""
         required_fields = ['course_id', 'title', 'content', 'order_number']
         for field in required_fields:
-            if field not in lesson_data:
+            if field not in lesson_data or not lesson_data[field]:
                 raise ValidationException(f'{field} is required')
         
         course = Course.query.get(lesson_data['course_id'])
@@ -87,13 +126,44 @@ class LessonService:
         if course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
+        # Validate order number
+        order_number = lesson_data['order_number']
+        if order_number < 1:
+            raise ValidationException("Order number must be positive")
+        
+        # Check if order number already exists
+        existing_lesson = Lesson.query.filter_by(
+            course_id=lesson_data['course_id'],
+            order_number=order_number
+        ).first()
+        
+        if existing_lesson:
+            # Shift other lessons down
+            lessons_to_shift = Lesson.query.filter(
+                Lesson.course_id == lesson_data['course_id'],
+                Lesson.order_number >= order_number
+            ).all()
+            
+            for lesson in lessons_to_shift:
+                lesson.order_number += 1
+        
+        # Validate lesson type and video URL
+        lesson_type = lesson_data.get('lesson_type', 'text')
+        video_url = lesson_data.get('video_url')
+        
+        if lesson_type in ['video', 'mixed'] and not video_url:
+            raise ValidationException(f"Video URL is required for {lesson_type} lessons")
+        
+        if lesson_type == 'text' and video_url:
+            lesson_data['video_url'] = None  # Clear video URL for text-only lessons
+        
         lesson = Lesson(
             course_id=lesson_data['course_id'],
-            title=lesson_data['title'],
-            content=lesson_data['content'],
-            order_number=lesson_data['order_number'],
-            lesson_type=lesson_data.get('lesson_type', 'text'),
-            video_url=lesson_data.get('video_url'),
+            title=lesson_data['title'].strip(),
+            content=lesson_data['content'].strip(),
+            order_number=order_number,
+            lesson_type=lesson_type,
+            video_url=video_url.strip() if video_url else None,
             duration_minutes=lesson_data.get('duration_minutes')
         )
         
@@ -115,10 +185,37 @@ class LessonService:
         if lesson.course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
+        # Validate order number if being changed
+        if 'order_number' in lesson_data:
+            new_order = lesson_data['order_number']
+            if new_order < 1:
+                raise ValidationException("Order number must be positive")
+            
+            # If order changed, handle reordering
+            if new_order != lesson.order_number:
+                LessonService._reorder_lessons(lesson.course_id, lesson.order_number, new_order)
+        
+        # Validate lesson type and video URL
+        if 'lesson_type' in lesson_data:
+            lesson_type = lesson_data['lesson_type']
+            video_url = lesson_data.get('video_url', lesson.video_url)
+            
+            if lesson_type in ['video', 'mixed'] and not video_url:
+                raise ValidationException(f"Video URL is required for {lesson_type} lessons")
+            
+            if lesson_type == 'text':
+                lesson_data['video_url'] = None  # Clear video URL for text-only lessons
+        
+        # Update allowed fields
         allowed_fields = ['title', 'content', 'order_number', 'lesson_type', 'video_url', 'duration_minutes']
         for field in allowed_fields:
             if field in lesson_data:
-                setattr(lesson, field, lesson_data[field])
+                value = lesson_data[field]
+                if field in ['title', 'content'] and value:
+                    value = value.strip()
+                elif field == 'video_url' and value:
+                    value = value.strip()
+                setattr(lesson, field, value)
         
         lesson.updated_at = datetime.utcnow()
         db.session.commit()
@@ -138,7 +235,25 @@ class LessonService:
         if lesson.course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
+        # Check if lesson has student progress
+        progress_count = LessonProgress.query.filter_by(lesson_id=lesson_id).count()
+        if progress_count > 0:
+            raise ValidationException(f'Cannot delete lesson with {progress_count} student views')
+        
+        course_id = lesson.course_id
+        order_number = lesson.order_number
+        
         db.session.delete(lesson)
+        
+        # Reorder remaining lessons
+        lessons_to_shift = Lesson.query.filter(
+            Lesson.course_id == course_id,
+            Lesson.order_number > order_number
+        ).all()
+        
+        for lesson in lessons_to_shift:
+            lesson.order_number -= 1
+        
         db.session.commit()
         
         return {'message': 'Lesson deleted successfully'}
@@ -164,6 +279,22 @@ class LessonService:
         if not enrollment:
             raise PermissionException("Not enrolled in this course")
         
+        # Check prerequisites
+        if lesson.order_number > 1:
+            previous_lesson = Lesson.query.filter_by(
+                course_id=lesson.course_id,
+                order_number=lesson.order_number - 1
+            ).first()
+            
+            if previous_lesson:
+                prev_progress = LessonProgress.query.filter_by(
+                    student_id=student_id,
+                    lesson_id=previous_lesson.id
+                ).first()
+                
+                if not prev_progress:
+                    raise ValidationException("Previous lesson must be viewed first")
+        
         # Update or create progress
         progress = LessonProgress.query.filter_by(
             student_id=student_id,
@@ -178,7 +309,7 @@ class LessonService:
             db.session.add(progress)
         
         progress.completed_at = datetime.utcnow()
-        if time_spent_minutes:
+        if time_spent_minutes and time_spent_minutes > 0:
             progress.time_spent_minutes = time_spent_minutes
         
         # Update course progress
@@ -192,9 +323,57 @@ class LessonService:
         db.session.commit()
         
         return {
+            'message': 'Lesson completed successfully',
             'lesson_completed': True,
             'course_progress': enrollment.progress_percentage,
             'course_completed': enrollment.status == 'completed'
+        }
+    
+    @staticmethod
+    def get_lesson_analytics(teacher_id: int, lesson_id: int) -> Dict[str, Any]:
+        """Get detailed analytics for a lesson"""
+        lesson = Lesson.query.get(lesson_id)
+        if not lesson:
+            raise NotFoundException("Lesson not found")
+        
+        if lesson.course.teacher_id != teacher_id:
+            raise PermissionException("Access denied")
+        
+        # Get all progress records for this lesson
+        progress_records = LessonProgress.query.filter_by(lesson_id=lesson_id).all()
+        
+        # Calculate statistics
+        total_enrolled = lesson.course.enrollments.filter_by(status='active').count()
+        total_views = len(progress_records)
+        total_completions = len([p for p in progress_records if p.completed_at])
+        
+        # Time spent analysis
+        time_spent_data = [p.time_spent_minutes for p in progress_records if p.time_spent_minutes > 0]
+        avg_time_spent = sum(time_spent_data) / len(time_spent_data) if time_spent_data else 0
+        
+        # Completion timeline
+        completion_timeline = []
+        for progress in progress_records:
+            if progress.completed_at:
+                completion_timeline.append({
+                    'student_name': progress.student.full_name,
+                    'completed_at': progress.completed_at.isoformat(),
+                    'time_spent': progress.time_spent_minutes
+                })
+        
+        completion_timeline.sort(key=lambda x: x['completed_at'])
+        
+        return {
+            'lesson': lesson.to_dict(),
+            'statistics': {
+                'total_enrolled': total_enrolled,
+                'total_views': total_views,
+                'total_completions': total_completions,
+                'view_rate': (total_views / total_enrolled * 100) if total_enrolled > 0 else 0,
+                'completion_rate': (total_completions / total_enrolled * 100) if total_enrolled > 0 else 0,
+                'average_time_spent': avg_time_spent
+            },
+            'completion_timeline': completion_timeline
         }
     
     @staticmethod
@@ -212,6 +391,7 @@ class LessonService:
             )
             db.session.add(progress)
         else:
+            # Update view time
             progress.viewed_at = datetime.utcnow()
         
         db.session.commit()
@@ -223,6 +403,9 @@ class LessonService:
         course = Course.query.get(course_id)
         total_lessons = course.lessons.count()
         
+        if total_lessons == 0:
+            return True
+        
         completed_lessons = LessonProgress.query.filter_by(
             student_id=student_id
         ).join(Lesson).filter(
@@ -231,3 +414,64 @@ class LessonService:
         ).count()
         
         return completed_lessons == total_lessons
+    
+    @staticmethod
+    def _reorder_lessons(course_id: int, old_order: int, new_order: int):
+        """Reorder lessons when order number changes"""
+        if old_order == new_order:
+            return
+        
+        if old_order < new_order:
+            # Moving down: shift lessons up between old and new position
+            lessons_to_shift = Lesson.query.filter(
+                Lesson.course_id == course_id,
+                Lesson.order_number > old_order,
+                Lesson.order_number <= new_order
+            ).all()
+            
+            for lesson in lessons_to_shift:
+                lesson.order_number -= 1
+        else:
+            # Moving up: shift lessons down between new and old position
+            lessons_to_shift = Lesson.query.filter(
+                Lesson.course_id == course_id,
+                Lesson.order_number >= new_order,
+                Lesson.order_number < old_order
+            ).all()
+            
+            for lesson in lessons_to_shift:
+                lesson.order_number += 1
+    
+    @staticmethod
+    def duplicate_lesson(teacher_id: int, lesson_id: int) -> Dict[str, Any]:
+        """Duplicate an existing lesson"""
+        lesson = Lesson.query.get(lesson_id)
+        if not lesson:
+            raise NotFoundException("Lesson not found")
+        
+        if lesson.course.teacher_id != teacher_id:
+            raise PermissionException("Access denied")
+        
+        # Find next available order number
+        max_order = db.session.query(db.func.max(Lesson.order_number)).filter_by(
+            course_id=lesson.course_id
+        ).scalar() or 0
+        
+        # Create duplicate
+        new_lesson = Lesson(
+            course_id=lesson.course_id,
+            title=f"{lesson.title} (Copy)",
+            content=lesson.content,
+            order_number=max_order + 1,
+            lesson_type=lesson.lesson_type,
+            video_url=lesson.video_url,
+            duration_minutes=lesson.duration_minutes
+        )
+        
+        db.session.add(new_lesson)
+        db.session.commit()
+        
+        return {
+            'message': 'Lesson duplicated successfully',
+            'lesson': new_lesson.to_dict()
+        }

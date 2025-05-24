@@ -42,6 +42,9 @@ class QuizService:
                     'has_passed': any(a.score >= quiz.passing_score for a in attempts if a.score is not None)
                 }
             
+            # Add question count
+            quiz_dict['question_count'] = quiz.questions.count()
+            
             quizzes_data.append(quiz_dict)
         
         return {
@@ -51,7 +54,7 @@ class QuizService:
     
     @staticmethod
     def get_quiz(user_id: int, quiz_id: int) -> Dict[str, Any]:
-        """Get a specific quiz"""
+        """Get a specific quiz with questions"""
         user = User.query.get(user_id)
         quiz = Quiz.query.get(quiz_id)
         
@@ -63,16 +66,27 @@ class QuizService:
         
         quiz_data = quiz.to_dict()
         
-        # Add questions for teachers
+        # Always include questions for teachers
         if user.is_teacher() and quiz.course.teacher_id == user_id:
             questions = quiz.questions.order_by(Question.order_number).all()
-            quiz_data['questions'] = []
-            for question in questions:
-                q_dict = question.to_dict()
-                # Include answer options with correct answers for teachers
-                if question.question_type in ['multiple_choice', 'true_false']:
-                    q_dict['answer_options'] = [opt.to_dict() for opt in question.answer_options]
-                quiz_data['questions'].append(q_dict)
+            quiz_data['questions'] = [
+                {
+                    'id': q.id,
+                    'question_text': q.question_text,
+                    'question_type': q.question_type,
+                    'points': q.points,
+                    'order_number': q.order_number,
+                    'answer_options': [
+                        {
+                            'id': opt.id,
+                            'option_text': opt.option_text,
+                            'is_correct': opt.is_correct
+                        }
+                        for opt in q.answer_options
+                    ] if q.question_type in ['multiple_choice', 'true_false'] else []
+                }
+                for q in questions
+            ]
         
         # Add attempt info for students
         if user.is_student():
@@ -151,6 +165,11 @@ class QuizService:
         if quiz.course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
+        # Check if quiz has attempts
+        attempt_count = quiz.attempts.count()
+        if attempt_count > 0:
+            raise ValidationException(f'Cannot delete quiz with {attempt_count} student attempts')
+        
         db.session.delete(quiz)
         db.session.commit()
         
@@ -171,6 +190,22 @@ class QuizService:
             if field not in question_data:
                 raise ValidationException(f'{field} is required')
         
+        # Check if order number already exists
+        existing_question = Question.query.filter_by(
+            quiz_id=quiz_id,
+            order_number=question_data['order_number']
+        ).first()
+        
+        if existing_question:
+            # Shift other questions down
+            questions_to_shift = Question.query.filter(
+                Question.quiz_id == quiz_id,
+                Question.order_number >= question_data['order_number']
+            ).all()
+            
+            for q in questions_to_shift:
+                q.order_number += 1
+        
         question = Question(
             quiz_id=quiz_id,
             question_text=question_data['question_text'],
@@ -188,19 +223,31 @@ class QuizService:
             if not options:
                 raise ValidationException("Options are required for this question type")
             
+            # Validate that at least one option is correct
+            if not any(opt.get('is_correct', False) for opt in options):
+                raise ValidationException("At least one option must be marked as correct")
+            
             for option in options:
+                if not option.get('text', '').strip():
+                    continue
+                    
                 answer_option = AnswerOption(
                     question_id=question.id,
-                    option_text=option['text'],
+                    option_text=option['text'].strip(),
                     is_correct=option.get('is_correct', False)
                 )
                 db.session.add(answer_option)
         
         db.session.commit()
         
+        # Return question with options
+        question_dict = question.to_dict()
+        if question.question_type in ['multiple_choice', 'true_false']:
+            question_dict['answer_options'] = [opt.to_dict() for opt in question.answer_options]
+        
         return {
             'message': 'Question added successfully',
-            'question': question.to_dict()
+            'question': question_dict
         }
     
     @staticmethod
@@ -228,20 +275,33 @@ class QuizService:
             # Delete existing options
             AnswerOption.query.filter_by(question_id=question.id).delete()
             
+            # Validate that at least one option is correct
+            options = question_data['options']
+            if not any(opt.get('is_correct', False) for opt in options):
+                raise ValidationException("At least one option must be marked as correct")
+            
             # Add new options
-            for option in question_data['options']:
+            for option in options:
+                if not option.get('text', '').strip():
+                    continue
+                    
                 answer_option = AnswerOption(
                     question_id=question.id,
-                    option_text=option['text'],
+                    option_text=option['text'].strip(),
                     is_correct=option.get('is_correct', False)
                 )
                 db.session.add(answer_option)
         
         db.session.commit()
         
+        # Return updated question with options
+        question_dict = question.to_dict()
+        if question.question_type in ['multiple_choice', 'true_false']:
+            question_dict['answer_options'] = [opt.to_dict() for opt in question.answer_options]
+        
         return {
             'message': 'Question updated successfully',
-            'question': question.to_dict()
+            'question': question_dict
         }
     
     @staticmethod
@@ -258,7 +318,24 @@ class QuizService:
         if not question or question.quiz_id != quiz_id:
             raise NotFoundException("Question not found")
         
+        # Check if quiz has attempts
+        attempt_count = quiz.attempts.count()
+        if attempt_count > 0:
+            raise ValidationException(f'Cannot delete question from quiz with {attempt_count} student attempts')
+        
+        order_number = question.order_number
+        
         db.session.delete(question)
+        
+        # Shift remaining questions up
+        questions_to_shift = Question.query.filter(
+            Question.quiz_id == quiz_id,
+            Question.order_number > order_number
+        ).all()
+        
+        for q in questions_to_shift:
+            q.order_number -= 1
+        
         db.session.commit()
         
         return {'message': 'Question deleted successfully'}
@@ -400,6 +477,7 @@ class QuizService:
             'question_statistics': question_stats
         }
     
+    # Helper methods remain the same...
     @staticmethod
     def create_quiz_attempt(quiz_id: int, student_id: int):
         """Create a new quiz attempt"""

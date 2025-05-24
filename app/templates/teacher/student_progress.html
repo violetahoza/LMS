@@ -1,0 +1,715 @@
+<!-- app/templates/teacher/student_progress.html -->
+{% extends "base.html" %}
+
+{% block title %}Student Progress - Teacher - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1" id="pageTitle">Student Progress</h1>
+                    <p class="text-muted mb-0">Detailed progress tracking and analytics</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary me-2" onclick="window.history.back()">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </button>
+                    <button class="btn btn-outline-info me-2" onclick="exportProgress()">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                    <button class="btn btn-gradient-primary" onclick="sendMessage()">
+                        <i class="fas fa-envelope me-2"></i>Message Student
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Info Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-info text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar bg-white bg-opacity-25 rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-user fa-2x text-white"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-1" id="studentName">Loading...</h4>
+                                    <p class="mb-0 opacity-75" id="studentEmail">Loading...</p>
+                                    <small class="opacity-75" id="courseInfo">Loading course information...</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="d-flex justify-content-md-end gap-3">
+                                <div class="text-center">
+                                    <div class="h4 mb-0" id="overallProgress">0%</div>
+                                    <small class="opacity-75">Overall Progress</small>
+                                </div>
+                                <div class="text-center">
+                                    <div class="h4 mb-0" id="lastActivity">-</div>
+                                    <small class="opacity-75">Last Activity</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Cards -->
+    <div class="row g-4 mb-5" id="progressCards">
+        <div class="col-xl-4 col-md-6">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="progress-circle mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <svg viewBox="0 0 42 42" class="circular-chart">
+                            <path class="circle-bg" d="M 21 21 m -15.915 0 a 15.915 15.915 0 1 0 31.83 0 a 15.915 15.915 0 1 0 -31.83 0"
+                                  stroke="#e2e8f0" stroke-width="3" fill="none" />
+                            <path class="circle" id="lessonsCircle" d="M 21 21 m -15.915 0 a 15.915 15.915 0 1 0 31.83 0 a 15.915 15.915 0 1 0 -31.83 0"
+                                  stroke="#3b82f6" stroke-width="3" fill="none" stroke-linecap="round" 
+                                  stroke-dasharray="0, 100" />
+                            <text x="21" y="21" class="percentage" id="lessonsPercentage">0%</text>
+                        </svg>
+                    </div>
+                    <h5 class="text-primary">Lessons Progress</h5>
+                    <p class="mb-0"><span id="completedLessons">0</span> of <span id="totalLessons">0</span> completed</p>
+                    <small class="text-muted">Time spent: <span id="timeSpent">0 min</span></small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-4 col-md-6">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="progress-circle mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <svg viewBox="0 0 42 42" class="circular-chart">
+                            <path class="circle-bg" d="M 21 21 m -15.915 0 a 15.915 15.915 0 1 0 31.83 0 a 15.915 15.915 0 1 0 -31.83 0"
+                                  stroke="#e2e8f0" stroke-width="3" fill="none" />
+                            <path class="circle" id="quizzesCircle" d="M 21 21 m -15.915 0 a 15.915 15.915 0 1 0 31.83 0 a 15.915 15.915 0 1 0 -31.83 0"
+                                  stroke="#f59e0b" stroke-width="3" fill="none" stroke-linecap="round" 
+                                  stroke-dasharray="0, 100" />
+                            <text x="21" y="21" class="percentage" id="quizzesPercentage">0%</text>
+                        </svg>
+                    </div>
+                    <h5 class="text-warning">Quiz Performance</h5>
+                    <p class="mb-0"><span id="passedQuizzes">0</span> of <span id="totalQuizzes">0</span> passed</p>
+                    <small class="text-muted">Average: <span id="quizAverage">0%</span></small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-4 col-md-6">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="progress-circle mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <svg viewBox="0 0 42 42" class="circular-chart">
+                            <path class="circle-bg" d="M 21 21 m -15.915 0 a 15.915 15.915 0 1 0 31.83 0 a 15.915 15.915 0 1 0 -31.83 0"
+                                  stroke="#e2e8f0" stroke-width="3" fill="none" />
+                            <path class="circle" id="assignmentsCircle" d="M 21 21 m -15.915 0 a 15.915 15.915 0 1 0 31.83 0 a 15.915 15.915 0 1 0 -31.83 0"
+                                  stroke="#10b981" stroke-width="3" fill="none" stroke-linecap="round" 
+                                  stroke-dasharray="0, 100" />
+                            <text x="21" y="21" class="percentage" id="assignmentsPercentage">0%</text>
+                        </svg>
+                    </div>
+                    <h5 class="text-success">Assignments</h5>
+                    <p class="mb-0"><span id="submittedAssignments">0</span> of <span id="totalAssignments">0</span> submitted</p>
+                    <small class="text-muted">Average: <span id="assignmentAverage">0%</span></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Progress Tabs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header border-bottom-0">
+                    <ul class="nav nav-tabs card-header-tabs" id="progressTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="lessons-tab" data-bs-toggle="tab" data-bs-target="#lessons" type="button" role="tab">
+                                <i class="fas fa-book-open me-2"></i>Lessons
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="quizzes-tab" data-bs-toggle="tab" data-bs-target="#quizzes" type="button" role="tab">
+                                <i class="fas fa-question-circle me-2"></i>Quizzes
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments" type="button" role="tab">
+                                <i class="fas fa-tasks me-2"></i>Assignments
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline" type="button" role="tab">
+                                <i class="fas fa-clock me-2"></i>Activity Timeline
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card-body">
+                    <div class="tab-content" id="progressTabsContent">
+                        <!-- Lessons Tab -->
+                        <div class="tab-pane fade show active" id="lessons" role="tabpanel">
+                            <div id="lessonsContainer">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quizzes Tab -->
+                        <div class="tab-pane fade" id="quizzes" role="tabpanel">
+                            <div id="quizzesContainer">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-warning" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Assignments Tab -->
+                        <div class="tab-pane fade" id="assignments" role="tabpanel">
+                            <div id="assignmentsContainer">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Tab -->
+                        <div class="tab-pane fade" id="timeline" role="tabpanel">
+                            <div id="timelineContainer">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-info" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Message Modal -->
+<div class="modal fade" id="messageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title">Send Message</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="messageForm">
+                    <input type="hidden" id="recipientId">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">To:</label>
+                        <div class="p-2 bg-light rounded" id="recipientInfo">
+                            <!-- Recipient info will be loaded here -->
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="messageSubject" class="form-label fw-semibold">Subject</label>
+                        <input type="text" class="form-control" id="messageSubject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="messageContent" class="form-label fw-semibold">Message</label>
+                        <textarea class="form-control" id="messageContent" rows="6" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-gradient-primary" onclick="sendMessageNow()">
+                    <i class="fas fa-paper-plane me-2"></i>Send Message
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const studentId = {{ student_id }};
+const courseId = {{ course_id if course_id else 'null' }};
+let progressData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadStudentProgress();
+});
+
+async function loadStudentProgress() {
+    try {
+        let url = `/api/student/progress?student_id=${studentId}`;
+        if (courseId) {
+            url += `&course_id=${courseId}`;
+        }
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            progressData = data.data || data;
+            updateProgressDisplay(progressData);
+        } else {
+            showError('Failed to load student progress');
+        }
+    } catch (error) {
+        console.error('Error loading progress:', error);
+        showError('Error loading progress data');
+    }
+}
+
+function updateProgressDisplay(data) {
+    // Update student info
+    const student = data.student;
+    document.getElementById('studentName').textContent = student.full_name;
+    document.getElementById('studentEmail').textContent = student.email;
+    
+    if (data.course) {
+        document.getElementById('courseInfo').textContent = `Course: ${data.course.title}`;
+        document.getElementById('pageTitle').textContent = `${student.full_name} - ${data.course.title}`;
+    } else {
+        document.getElementById('courseInfo').textContent = 'All Courses';
+        document.getElementById('pageTitle').textContent = `${student.full_name} - Progress Overview`;
+    }
+    
+    // Update progress for single course
+    if (data.progress) {
+        updateSingleCourseProgress(data.progress);
+    } else if (data.courses && data.courses.length > 0) {
+        // For multiple courses, show aggregated data
+        updateMultipleCourseProgress(data.courses);
+    }
+}
+
+function updateSingleCourseProgress(progress) {
+    // Update overall progress
+    document.getElementById('overallProgress').textContent = `${progress.overall_percentage.toFixed(1)}%`;
+    
+    // Update last activity
+    if (progress.last_activity) {
+        const lastActivity = new Date(progress.last_activity);
+        document.getElementById('lastActivity').textContent = formatRelativeTime(lastActivity);
+    }
+    
+    // Update lessons progress
+    const lessons = progress.lessons;
+    document.getElementById('completedLessons').textContent = lessons.completed;
+    document.getElementById('totalLessons').textContent = lessons.total;
+    document.getElementById('timeSpent').textContent = `${progress.time_spent_minutes} min`;
+    updateCircularProgress('lessonsCircle', 'lessonsPercentage', lessons.percentage);
+    
+    // Update quizzes progress
+    const quizzes = progress.quizzes;
+    document.getElementById('passedQuizzes').textContent = quizzes.passed;
+    document.getElementById('totalQuizzes').textContent = quizzes.total;
+    document.getElementById('quizAverage').textContent = `${quizzes.average_score.toFixed(1)}%`;
+    const quizPercentage = quizzes.total > 0 ? (quizzes.passed / quizzes.total * 100) : 0;
+    updateCircularProgress('quizzesCircle', 'quizzesPercentage', quizPercentage);
+    
+    // Update assignments progress
+    const assignments = progress.assignments;
+    document.getElementById('submittedAssignments').textContent = assignments.submitted;
+    document.getElementById('totalAssignments').textContent = assignments.total;
+    document.getElementById('assignmentAverage').textContent = `${assignments.average_score.toFixed(1)}%`;
+    const assignmentPercentage = assignments.total > 0 ? (assignments.submitted / assignments.total * 100) : 0;
+    updateCircularProgress('assignmentsCircle', 'assignmentsPercentage', assignmentPercentage);
+    
+    // Load detailed data for tabs
+    displayDetailedLessons(progress.detailed_lessons || []);
+    displayDetailedQuizzes(progress.quizzes.details || []);
+    displayDetailedAssignments(progress.assignments.details || []);
+}
+
+function updateMultipleCourseProgress(courses) {
+    // Aggregate data across all courses
+    let totalLessons = 0, completedLessons = 0, totalTime = 0;
+    let totalQuizzes = 0, passedQuizzes = 0, totalQuizScore = 0;
+    let totalAssignments = 0, submittedAssignments = 0, totalAssignmentScore = 0;
+    
+    courses.forEach(courseData => {
+        const progress = courseData.progress;
+        totalLessons += progress.lessons.total;
+        completedLessons += progress.lessons.completed;
+        totalTime += progress.time_spent_minutes;
+        
+        totalQuizzes += progress.quizzes.total;
+        passedQuizzes += progress.quizzes.passed;
+        totalQuizScore += progress.quizzes.average_score * progress.quizzes.total;
+        
+        totalAssignments += progress.assignments.total;
+        submittedAssignments += progress.assignments.submitted;
+        totalAssignmentScore += progress.assignments.average_score * progress.assignments.submitted;
+    });
+    
+    // Calculate averages
+    const avgQuizScore = totalQuizzes > 0 ? totalQuizScore / totalQuizzes : 0;
+    const avgAssignmentScore = submittedAssignments > 0 ? totalAssignmentScore / submittedAssignments : 0;
+    const overallProgress = courses.reduce((sum, c) => sum + c.progress.overall_percentage, 0) / courses.length;
+    
+    // Update display
+    document.getElementById('overallProgress').textContent = `${overallProgress.toFixed(1)}%`;
+    document.getElementById('completedLessons').textContent = completedLessons;
+    document.getElementById('totalLessons').textContent = totalLessons;
+    document.getElementById('timeSpent').textContent = `${totalTime} min`;
+    
+    const lessonPercentage = totalLessons > 0 ? (completedLessons / totalLessons * 100) : 0;
+    updateCircularProgress('lessonsCircle', 'lessonsPercentage', lessonPercentage);
+    
+    document.getElementById('passedQuizzes').textContent = passedQuizzes;
+    document.getElementById('totalQuizzes').textContent = totalQuizzes;
+    document.getElementById('quizAverage').textContent = `${avgQuizScore.toFixed(1)}%`;
+    
+    const quizPercentage = totalQuizzes > 0 ? (passedQuizzes / totalQuizzes * 100) : 0;
+    updateCircularProgress('quizzesCircle', 'quizzesPercentage', quizPercentage);
+    
+    document.getElementById('submittedAssignments').textContent = submittedAssignments;
+    document.getElementById('totalAssignments').textContent = totalAssignments;
+    document.getElementById('assignmentAverage').textContent = `${avgAssignmentScore.toFixed(1)}%`;
+    
+    const assignmentPercentage = totalAssignments > 0 ? (submittedAssignments / totalAssignments * 100) : 0;
+    updateCircularProgress('assignmentsCircle', 'assignmentsPercentage', assignmentPercentage);
+}
+
+function updateCircularProgress(circleId, textId, percentage) {
+    const circle = document.getElementById(circleId);
+    const text = document.getElementById(textId);
+    
+    const circumference = 2 * Math.PI * 15.915;
+    const strokeDasharray = `${(percentage / 100) * circumference}, ${circumference}`;
+    
+    circle.style.strokeDasharray = strokeDasharray;
+    text.textContent = `${Math.round(percentage)}%`;
+}
+
+function displayDetailedLessons(lessons) {
+    const container = document.getElementById('lessonsContainer');
+    
+    if (lessons.length === 0) {
+        container.innerHTML = '<div class="text-center py-4 text-muted">No lessons available</div>';
+        return;
+    }
+    
+    let content = '<div class="table-responsive"><table class="table table-hover">';
+    content += `
+        <thead>
+            <tr>
+                <th>Lesson</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Time Spent</th>
+                <th class="text-center">Last Viewed</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    lessons.forEach(lessonData => {
+        const lesson = lessonData.lesson;
+        const statusBadge = lessonData.completed ? 
+            '<span class="badge bg-success">Completed</span>' : 
+            lessonData.viewed ? 
+                '<span class="badge bg-warning">Viewed</span>' : 
+                '<span class="badge bg-secondary">Not Started</span>';
+        
+        const lastViewed = lessonData.last_viewed ? 
+            formatRelativeTime(new Date(lessonData.last_viewed)) : 
+            'Never';
+        
+        content += `
+            <tr>
+                <td>
+                    <div class="fw-semibold">${lesson.title}</div>
+                    <small class="text-muted">Lesson ${lesson.order_number}</small>
+                </td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">${lessonData.time_spent || 0} min</td>
+                <td class="text-center">
+                    <small class="text-muted">${lastViewed}</small>
+                </td>
+            </tr>
+        `;
+    });
+    
+    content += '</tbody></table></div>';
+    container.innerHTML = content;
+}
+
+function displayDetailedQuizzes(quizzes) {
+    const container = document.getElementById('quizzesContainer');
+    
+    if (quizzes.length === 0) {
+        container.innerHTML = '<div class="text-center py-4 text-muted">No quizzes attempted</div>';
+        return;
+    }
+    
+    let content = '<div class="table-responsive"><table class="table table-hover">';
+    content += `
+        <thead>
+            <tr>
+                <th>Quiz</th>
+                <th class="text-center">Score</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Attempts</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    quizzes.forEach(quiz => {
+        const scoreClass = quiz.score >= 80 ? 'text-success' : quiz.score >= 60 ? 'text-warning' : 'text-danger';
+        const statusBadge = quiz.passed ? 
+            '<span class="badge bg-success">Passed</span>' : 
+            '<span class="badge bg-danger">Failed</span>';
+        
+        content += `
+            <tr>
+                <td>
+                    <div class="fw-semibold">${quiz.quiz_title}</div>
+                </td>
+                <td class="text-center">
+                    <span class="fw-bold ${scoreClass}">${quiz.score.toFixed(1)}%</span>
+                </td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">${quiz.attempts}</td>
+            </tr>
+        `;
+    });
+    
+    content += '</tbody></table></div>';
+    container.innerHTML = content;
+}
+
+function displayDetailedAssignments(assignments) {
+    const container = document.getElementById('assignmentsContainer');
+    
+    if (assignments.length === 0) {
+        container.innerHTML = '<div class="text-center py-4 text-muted">No assignments submitted</div>';
+        return;
+    }
+    
+    let content = '<div class="table-responsive"><table class="table table-hover">';
+    content += `
+        <thead>
+            <tr>
+                <th>Assignment</th>
+                <th class="text-center">Grade</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Submitted</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    assignments.forEach(assignment => {
+        const gradeDisplay = assignment.grade !== null ? 
+            `${assignment.grade}/${assignment.total_points || 100} (${assignment.percentage?.toFixed(1) || 0}%)` : 
+            'Not graded';
+        
+        const statusBadge = assignment.status === 'graded' ? 
+            '<span class="badge bg-success">Graded</span>' : 
+            assignment.status === 'submitted' ? 
+                '<span class="badge bg-warning">Pending</span>' : 
+                '<span class="badge bg-danger">Returned</span>';
+        
+        const submittedDate = assignment.submitted_at ? 
+            new Date(assignment.submitted_at).toLocaleDateString() : 
+            'Not submitted';
+        
+        content += `
+            <tr>
+                <td>
+                    <div class="fw-semibold">${assignment.assignment_title}</div>
+                    ${assignment.feedback ? `<small class="text-muted">${assignment.feedback.substring(0, 50)}...</small>` : ''}
+                </td>
+                <td class="text-center">${gradeDisplay}</td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">
+                    <small class="text-muted">${submittedDate}</small>
+                </td>
+            </tr>
+        `;
+    });
+    
+    content += '</tbody></table></div>';
+    container.innerHTML = content;
+}
+
+function sendMessage() {
+    if (!progressData || !progressData.student) {
+        showError('Student information not loaded');
+        return;
+    }
+    
+    const student = progressData.student;
+    document.getElementById('recipientId').value = student.id;
+    document.getElementById('recipientInfo').innerHTML = `
+        <div class="fw-semibold">${student.full_name}</div>
+        <small class="text-muted">${student.email}</small>
+    `;
+    
+    // Pre-fill subject if viewing single course
+    if (progressData.course) {
+        document.getElementById('messageSubject').value = `Regarding ${progressData.course.title}`;
+    }
+    
+    new bootstrap.Modal(document.getElementById('messageModal')).show();
+}
+
+async function sendMessageNow() {
+    const recipientId = document.getElementById('recipientId').value;
+    const subject = document.getElementById('messageSubject').value;
+    const content = document.getElementById('messageContent').value;
+    
+    if (!subject.trim() || !content.trim()) {
+        showError('Subject and message content are required');
+        return;
+    }
+    
+    try {
+        const messageData = {
+            recipient_id: parseInt(recipientId),
+            subject: subject.trim(),
+            content: content.trim()
+        };
+        
+        if (courseId) {
+            messageData.course_id = courseId;
+        }
+        
+        const response = await fetch('/api/student/messages/send', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(messageData)
+        });
+        
+        if (response.ok) {
+            showSuccess('Message sent successfully');
+            bootstrap.Modal.getInstance(document.getElementById('messageModal')).hide();
+            document.getElementById('messageForm').reset();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to send message');
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+        showError('Error sending message');
+    }
+}
+
+function exportProgress() {
+    if (!progressData) {
+        showError('No data to export');
+        return;
+    }
+    
+    // Generate CSV export
+    let csvContent = '';
+    
+    if (progressData.progress) {
+        // Single course export
+        const student = progressData.student;
+        const course = progressData.course;
+        const progress = progressData.progress;
+        
+        csvContent = `Student Progress Report\n`;
+        csvContent += `Student: ${student.full_name}\n`;
+        csvContent += `Email: ${student.email}\n`;
+        csvContent += `Course: ${course.title}\n`;
+        csvContent += `Generated: ${new Date().toLocaleDateString()}\n\n`;
+        
+        csvContent += `Overall Progress: ${progress.overall_percentage.toFixed(1)}%\n`;
+        csvContent += `Time Spent: ${progress.time_spent_minutes} minutes\n\n`;
+        
+        csvContent += `Lessons Progress:\n`;
+        csvContent += `Completed: ${progress.lessons.completed}/${progress.lessons.total}\n`;
+        csvContent += `Percentage: ${progress.lessons.percentage.toFixed(1)}%\n\n`;
+        
+        csvContent += `Quiz Performance:\n`;
+        csvContent += `Passed: ${progress.quizzes.passed}/${progress.quizzes.total}\n`;
+        csvContent += `Average Score: ${progress.quizzes.average_score.toFixed(1)}%\n\n`;
+        
+        csvContent += `Assignment Performance:\n`;
+        csvContent += `Submitted: ${progress.assignments.submitted}/${progress.assignments.total}\n`;
+        csvContent += `Average Score: ${progress.assignments.average_score.toFixed(1)}%\n`;
+    }
+    
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `student_progress_${progressData.student.full_name.replace(/\s+/g, '_')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+function formatRelativeTime(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffDays > 0) {
+        return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    } else if (diffHours > 0) {
+        return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    } else if (diffMinutes > 0) {
+        return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+    } else {
+        return 'Just now';
+    }
+}
+
+function showSuccess(message) {
+    showAlert('success', message);
+}
+
+function showError(message) {
+    showAlert('danger', message);
+}
+
+function showAlert(type, message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}

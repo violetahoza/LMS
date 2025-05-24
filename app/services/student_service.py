@@ -1,329 +1,148 @@
 # app/services/student_service.py
 from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from sqlalchemy import desc, func
-from app.models import db, User, Enrollment, LessonProgress, QuizAttempt, AssignmentSubmission, Certificate, Assignment
-from app.services.achievement_service import AchievementService
-from app.services.certificate_service import CertificateService
+from app.models import db, User, Course, Enrollment, Lesson, Quiz, Assignment, QuizAttempt, AssignmentSubmission, LessonProgress, UserRole
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 
 class StudentService:
-    """Service for student-specific operations"""
+    """Service for student-related operations and progress tracking"""
     
     @staticmethod
-    def get_dashboard(student_id: int) -> Dict[str, Any]:
+    def get_student_dashboard(student_id: int) -> Dict[str, Any]:
         """Get student dashboard data"""
         user = User.query.get(student_id)
         if not user or not user.is_student():
-            raise PermissionException("Only students can access dashboard")
+            raise PermissionException("Only students can access this dashboard")
         
-        # Get enrollments
-        active_enrollments = Enrollment.query.filter_by(
-            student_id=student_id,
-            status='active'
-        ).all()
+        # Get enrolled courses
+        enrollments = user.enrollments.filter_by(status='active').all()
         
-        completed_enrollments = Enrollment.query.filter_by(
-            student_id=student_id,
-            status='completed'
-        ).all()
+        # Calculate overall statistics
+        total_courses = len(enrollments)
+        completed_courses = user.enrollments.filter_by(status='completed').count()
         
-        # Calculate overall progress
-        total_progress = 0
-        if active_enrollments:
-            total_progress = sum(e.progress_percentage for e in active_enrollments) / len(active_enrollments)
-        
-        # Get recent activity
+        # Recent activity
         recent_lessons = LessonProgress.query.filter_by(
             student_id=student_id
-        ).order_by(desc(LessonProgress.viewed_at)).limit(5).all()
+        ).filter(
+            LessonProgress.viewed_at >= datetime.utcnow() - timedelta(days=7)
+        ).count()
         
         recent_quiz_attempts = QuizAttempt.query.filter_by(
             student_id=student_id
-        ).order_by(desc(QuizAttempt.started_at)).limit(5).all()
+        ).filter(
+            QuizAttempt.started_at >= datetime.utcnow() - timedelta(days=7)
+        ).count()
         
-        # Get achievements
-        achievements_data = AchievementService.get_student_achievements(student_id)
+        # Upcoming deadlines
+        upcoming_assignments = []
+        for enrollment in enrollments:
+            assignments = Assignment.query.filter_by(course_id=enrollment.course_id).filter(
+                Assignment.due_date >= datetime.utcnow(),
+                Assignment.due_date <= datetime.utcnow() + timedelta(days=7)
+            ).all()
+            
+            for assignment in assignments:
+                # Check if already submitted
+                submission = AssignmentSubmission.query.filter_by(
+                    assignment_id=assignment.id,
+                    student_id=student_id
+                ).first()
+                
+                if not submission:
+                    upcoming_assignments.append({
+                        'id': assignment.id,
+                        'title': assignment.title,
+                        'course_title': enrollment.course.title,
+                        'due_date': assignment.due_date.isoformat() if assignment.due_date else None,
+                        'days_left': (assignment.due_date - datetime.utcnow()).days if assignment.due_date else None
+                    })
         
-        # Get upcoming assignments
-        upcoming_assignments = StudentService._get_upcoming_assignments(student_id)
+        # Sort by due date
+        upcoming_assignments.sort(key=lambda x: x['due_date'] if x['due_date'] else '')
         
-        # Format recent activity
-        recent_activity = StudentService._format_recent_activity(recent_lessons, recent_quiz_attempts)
+        # Course progress
+        course_progress = []
+        for enrollment in enrollments[:5]:  # Top 5 courses
+            progress = StudentService.calculate_course_progress(student_id, enrollment.course_id)
+            course_progress.append({
+                'course': enrollment.course.to_dict(),
+                'progress': progress
+            })
         
         return {
             'stats': {
-                'active_courses': len(active_enrollments),
-                'completed_courses': len(completed_enrollments),
-                'overall_progress': round(total_progress, 1),
-                'total_achievements': achievements_data['total_achievements'],
-                'achievement_points': achievements_data['total_points']
+                'total_courses': total_courses,
+                'completed_courses': completed_courses,
+                'completion_rate': (completed_courses / total_courses * 100) if total_courses > 0 else 0,
+                'recent_lessons': recent_lessons,
+                'recent_quiz_attempts': recent_quiz_attempts
             },
-            'active_courses': [
-                {
-                    'id': e.course.id,
-                    'title': e.course.title,
-                    'progress': e.progress_percentage,
-                    'teacher': e.course.teacher.full_name,
-                    'enrolled_at': e.enrolled_at.isoformat() if e.enrolled_at else None
-                }
-                for e in active_enrollments
-            ],
-            'recent_activity': recent_activity,
-            'upcoming_assignments': upcoming_assignments,
-            'achievements': achievements_data['achievements'][:5]
+            'upcoming_assignments': upcoming_assignments[:5],
+            'course_progress': course_progress
         }
     
     @staticmethod
-    def get_progress(student_id: int) -> Dict[str, Any]:
-        """Get detailed student progress"""
-        user = User.query.get(student_id)
-        if not user or not user.is_student():
-            raise PermissionException("Only students can access progress")
+    def get_student_progress(teacher_id: int, student_id: int, course_id: Optional[int] = None) -> Dict[str, Any]:
+        """Get detailed student progress (for teachers)"""
+        teacher = User.query.get(teacher_id)
+        student = User.query.get(student_id)
         
-        enrollments = Enrollment.query.filter_by(student_id=student_id).all()
-        progress_data = []
+        if not teacher or not teacher.is_teacher():
+            raise PermissionException("Only teachers can access student progress")
         
-        for enrollment in enrollments:
-            course = enrollment.course
+        if not student or not student.is_student():
+            raise NotFoundException("Student not found")
+        
+        if course_id:
+            # Check if teacher owns the course
+            course = Course.query.get(course_id)
+            if not course or course.teacher_id != teacher_id:
+                raise PermissionException("Access denied to this course")
             
-            # Get lesson progress
-            lesson_progress = StudentService._get_lesson_progress(student_id, course.id)
+            # Get detailed progress for specific course
+            progress = StudentService.get_detailed_course_progress(student_id, course_id)
             
-            # Get quiz progress
-            quiz_progress = StudentService._get_quiz_progress(student_id, course)
-            
-            # Get assignment progress
-            assignment_progress = StudentService._get_assignment_progress(student_id, course)
-            
-            progress_data.append({
+            return {
+                'student': student.to_dict(),
                 'course': course.to_dict(),
-                'enrollment': enrollment.to_dict(),
-                'lesson_progress': lesson_progress,
-                'quiz_progress': quiz_progress,
-                'assignment_progress': assignment_progress
-            })
-        
-        return {
-            'courses': progress_data,
-            'total_courses': len(progress_data)
-        }
-    
-    @staticmethod
-    def get_achievements(student_id: int) -> Dict[str, Any]:
-        """Get student achievements"""
-        user = User.query.get(student_id)
-        if not user or not user.is_student():
-            raise PermissionException("Only students can access achievements")
-        
-        earned_achievements = AchievementService.get_student_achievements(student_id)
-        available_achievements = AchievementService.get_available_achievements(student_id)
-        
-        return {
-            'earned': earned_achievements,
-            'available': available_achievements
-        }
-    
-    @staticmethod
-    def get_certificates(student_id: int) -> Dict[str, Any]:
-        """Get student certificates"""
-        user = User.query.get(student_id)
-        if not user or not user.is_student():
-            raise PermissionException("Only students can access certificates")
-        
-        certificates = CertificateService.get_student_certificates(student_id)
-        
-        return {
-            'certificates': certificates,
-            'total': len(certificates)
-        }
-    
-    @staticmethod
-    def request_certificate(student_id: int, course_id: int) -> Dict[str, Any]:
-        """Request certificate for completed course"""
-        user = User.query.get(student_id)
-        if not user or not user.is_student():
-            raise PermissionException("Only students can request certificates")
-        
-        # Check if already has certificate
-        existing_cert = Certificate.query.filter_by(
-            student_id=student_id,
-            course_id=course_id
-        ).first()
-        
-        if existing_cert:
-            return {
-                'message': 'Certificate already exists',
-                'certificate': existing_cert.to_dict()
+                'progress': progress
             }
-        
-        # Generate certificate
-        certificate = CertificateService.generate_certificate(student_id, course_id)
-        
-        return {
-            'message': 'Certificate generated successfully',
-            'certificate': certificate.to_dict()
-        }
-    
-    @staticmethod
-    def get_study_streak(student_id: int) -> Dict[str, Any]:
-        """Get student study streak information"""
-        user = User.query.get(student_id)
-        if not user or not user.is_student():
-            raise PermissionException("Only students can access study streak")
-        
-        # Get lesson progress ordered by date
-        lesson_progress = LessonProgress.query.filter_by(
-            student_id=student_id
-        ).order_by(desc(LessonProgress.viewed_at)).all()
-        
-        if not lesson_progress:
-            return {
-                'current_streak': 0,
-                'longest_streak': 0,
-                'last_activity': None,
-                'total_study_days': 0
-            }
-        
-        # Get unique dates with activity
-        dates_with_activity = set()
-        for progress in lesson_progress:
-            if progress.viewed_at:
-                dates_with_activity.add(progress.viewed_at.date())
-        
-        sorted_dates = sorted(dates_with_activity, reverse=True)
-        
-        # Calculate current streak
-        current_streak = StudentService._calculate_current_streak(sorted_dates)
-        
-        # Calculate longest streak
-        longest_streak = StudentService._calculate_longest_streak(sorted_dates)
-        
-        return {
-            'current_streak': current_streak,
-            'longest_streak': longest_streak,
-            'last_activity': sorted_dates[0].isoformat() if sorted_dates else None,
-            'total_study_days': len(dates_with_activity)
-        }
-    
-    @staticmethod
-    def get_course_recommendations(student_id: int) -> Dict[str, Any]:
-        """Get course recommendations for student"""
-        user = User.query.get(student_id)
-        if not user or not user.is_student():
-            raise PermissionException("Only students can access recommendations")
-        
-        # Get student's categories of interest
-        enrolled_courses = db.session.query(Enrollment.course_id).filter_by(
-            student_id=student_id
-        ).subquery()
-        
-        from app.models import Course
-        student_categories = db.session.query(
-            func.distinct(Course.category)
-        ).join(enrolled_courses, Course.id == enrolled_courses.c.course_id).all()
-        
-        student_categories = [cat[0] for cat in student_categories if cat[0]]
-        
-        # Get recommended courses
-        recommendations_query = Course.query.filter(
-            Course.is_published == True,
-            ~Course.id.in_(db.session.query(enrolled_courses.c.course_id))
-        )
-        
-        # Prioritize courses in same categories
-        if student_categories:
-            recommendations_query = recommendations_query.filter(
-                Course.category.in_(student_categories)
-            )
-        
-        recommendations = recommendations_query.limit(5).all()
-        
-        # If not enough recommendations, add popular courses
-        if len(recommendations) < 5:
-            popular_courses = Course.query.filter(
-                Course.is_published == True,
-                ~Course.id.in_(db.session.query(enrolled_courses.c.course_id)),
-                ~Course.id.in_([r.id for r in recommendations])
-            ).join(Enrollment).group_by(Course.id).order_by(
-                desc(func.count(Enrollment.id))
-            ).limit(5 - len(recommendations)).all()
+        else:
+            # Get progress across all teacher's courses where student is enrolled
+            teacher_courses = teacher.taught_courses.all()
+            course_progresses = []
             
-            recommendations.extend(popular_courses)
-        
-        recommendations_data = []
-        for course in recommendations:
-            course_data = course.to_dict()
-            course_data['recommendation_reason'] = (
-                f"Based on your interest in {course.category}" 
-                if course.category in student_categories 
-                else "Popular course"
-            )
-            recommendations_data.append(course_data)
-        
-        return {
-            'recommendations': recommendations_data,
-            'total': len(recommendations_data)
-        }
-    
-    @staticmethod
-    def _get_upcoming_assignments(student_id: int) -> List[Dict[str, Any]]:
-        """Get upcoming assignments for student"""
-        week_from_now = datetime.utcnow() + timedelta(days=7)
-        
-        upcoming_assignments = Assignment.query.join(
-            Enrollment, Assignment.course_id == Enrollment.course_id
-        ).filter(
-            Enrollment.student_id == student_id,
-            Enrollment.status == 'active',
-            Assignment.due_date <= week_from_now,
-            Assignment.due_date >= datetime.utcnow()
-        ).order_by(Assignment.due_date).all()
-        
-        return [
-            {
-                'id': a.id,
-                'title': a.title,
-                'course': a.course.title,
-                'due_date': a.due_date.isoformat() if a.due_date else None,
-                'days_remaining': (a.due_date - datetime.utcnow()).days if a.due_date else 0
+            for course in teacher_courses:
+                enrollment = Enrollment.query.filter_by(
+                    student_id=student_id,
+                    course_id=course.id
+                ).first()
+                
+                if enrollment:
+                    progress = StudentService.calculate_course_progress(student_id, course.id)
+                    course_progresses.append({
+                        'course': course.to_dict(),
+                        'enrollment': enrollment.to_dict(),
+                        'progress': progress
+                    })
+            
+            return {
+                'student': student.to_dict(),
+                'courses': course_progresses,
+                'total_courses': len(course_progresses)
             }
-            for a in upcoming_assignments
-        ]
     
     @staticmethod
-    def _format_recent_activity(recent_lessons: List, recent_quiz_attempts: List) -> List[Dict[str, Any]]:
-        """Format recent activity for dashboard"""
-        recent_activity = []
-        
-        for lesson in recent_lessons:
-            recent_activity.append({
-                'type': 'lesson',
-                'title': f"Viewed: {lesson.lesson.title}",
-                'course': lesson.lesson.course.title,
-                'timestamp': lesson.viewed_at.isoformat() if lesson.viewed_at else None
-            })
-        
-        for attempt in recent_quiz_attempts:
-            recent_activity.append({
-                'type': 'quiz',
-                'title': f"Quiz: {attempt.quiz.title}",
-                'course': attempt.quiz.course.title,
-                'score': attempt.score,
-                'timestamp': attempt.started_at.isoformat() if attempt.started_at else None
-            })
-        
-        # Sort by timestamp and limit
-        recent_activity.sort(key=lambda x: x['timestamp'] or '', reverse=True)
-        return recent_activity[:10]
-    
-    @staticmethod
-    def _get_lesson_progress(student_id: int, course_id: int) -> Dict[str, Any]:
-        """Get lesson progress for a course"""
-        from app.models import Course, Lesson
+    def calculate_course_progress(student_id: int, course_id: int) -> Dict[str, Any]:
+        """Calculate student progress for a specific course"""
         course = Course.query.get(course_id)
-        total_lessons = course.lessons.count()
+        if not course:
+            raise NotFoundException("Course not found")
         
+        # Lesson progress
+        total_lessons = course.lessons.count()
         completed_lessons = LessonProgress.query.filter_by(
             student_id=student_id
         ).join(Lesson).filter(
@@ -331,95 +150,306 @@ class StudentService:
             LessonProgress.completed_at.isnot(None)
         ).count()
         
-        return {
-            'completed': completed_lessons,
-            'total': total_lessons,
-            'percentage': (completed_lessons / total_lessons * 100) if total_lessons > 0 else 0
-        }
-    
-    @staticmethod
-    def _get_quiz_progress(student_id: int, course) -> List[Dict[str, Any]]:
-        """Get quiz progress for a course"""
-        quiz_progress = []
+        viewed_lessons = LessonProgress.query.filter_by(
+            student_id=student_id
+        ).join(Lesson).filter(
+            Lesson.course_id == course_id
+        ).count()
         
-        for quiz in course.quizzes.all():
+        # Quiz progress
+        course_quizzes = course.quizzes.all()
+        quiz_scores = []
+        total_quiz_score = 0
+        passed_quizzes = 0
+        
+        for quiz in course_quizzes:
             best_attempt = QuizAttempt.query.filter_by(
                 student_id=student_id,
                 quiz_id=quiz.id,
                 status='completed'
             ).order_by(desc(QuizAttempt.score)).first()
             
-            quiz_progress.append({
-                'quiz_id': quiz.id,
-                'quiz_title': quiz.title,
-                'best_score': best_attempt.score if best_attempt else None,
-                'passed': best_attempt.score >= quiz.passing_score if best_attempt else False,
-                'attempts': QuizAttempt.query.filter_by(
-                    student_id=student_id, quiz_id=quiz.id
-                ).count()
-            })
+            if best_attempt:
+                quiz_scores.append({
+                    'quiz_id': quiz.id,
+                    'quiz_title': quiz.title,
+                    'score': best_attempt.score,
+                    'passed': best_attempt.score >= quiz.passing_score,
+                    'attempts': QuizAttempt.query.filter_by(
+                        student_id=student_id,
+                        quiz_id=quiz.id
+                    ).count()
+                })
+                total_quiz_score += best_attempt.score
+                if best_attempt.score >= quiz.passing_score:
+                    passed_quizzes += 1
         
-        return quiz_progress
-    
-    @staticmethod
-    def _get_assignment_progress(student_id: int, course) -> List[Dict[str, Any]]:
-        """Get assignment progress for a course"""
-        assignment_progress = []
+        # Assignment progress
+        course_assignments = course.assignments.all()
+        assignment_grades = []
+        total_assignment_score = 0
+        submitted_assignments = 0
+        graded_assignments = 0
         
-        for assignment in course.assignments.all():
+        for assignment in course_assignments:
             submission = AssignmentSubmission.query.filter_by(
                 student_id=student_id,
                 assignment_id=assignment.id
             ).first()
             
-            assignment_progress.append({
-                'assignment_id': assignment.id,
-                'assignment_title': assignment.title,
-                'submitted': submission is not None,
-                'grade': submission.grade if submission else None,
-                'status': submission.status if submission else 'not_submitted'
+            if submission:
+                submitted_assignments += 1
+                assignment_data = {
+                    'assignment_id': assignment.id,
+                    'assignment_title': assignment.title,
+                    'submitted_at': submission.submitted_at.isoformat() if submission.submitted_at else None,
+                    'status': submission.status,
+                    'grade': submission.grade,
+                    'feedback': submission.feedback
+                }
+                
+                if submission.grade is not None:
+                    graded_assignments += 1
+                    # Convert to percentage
+                    percentage = (submission.grade / assignment.total_points) * 100
+                    assignment_data['percentage'] = percentage
+                    total_assignment_score += percentage
+                
+                assignment_grades.append(assignment_data)
+        
+        # Calculate averages
+        lesson_progress_percentage = (completed_lessons / total_lessons * 100) if total_lessons > 0 else 0
+        quiz_average = (total_quiz_score / len(quiz_scores)) if quiz_scores else 0
+        assignment_average = (total_assignment_score / graded_assignments) if graded_assignments > 0 else 0
+        
+        # Overall progress (weighted average)
+        weights = {'lessons': 0.3, 'quizzes': 0.4, 'assignments': 0.3}
+        overall_percentage = (
+            lesson_progress_percentage * weights['lessons'] +
+            quiz_average * weights['quizzes'] +
+            assignment_average * weights['assignments']
+        )
+        
+        # Time spent
+        total_time_spent = db.session.query(func.sum(LessonProgress.time_spent_minutes)).filter_by(
+            student_id=student_id
+        ).join(Lesson).filter(
+            Lesson.course_id == course_id
+        ).scalar() or 0
+        
+        return {
+            'lessons': {
+                'total': total_lessons,
+                'viewed': viewed_lessons,
+                'completed': completed_lessons,
+                'percentage': lesson_progress_percentage
+            },
+            'quizzes': {
+                'total': len(course_quizzes),
+                'attempted': len(quiz_scores),
+                'passed': passed_quizzes,
+                'average_score': quiz_average,
+                'details': quiz_scores
+            },
+            'assignments': {
+                'total': len(course_assignments),
+                'submitted': submitted_assignments,
+                'graded': graded_assignments,
+                'average_score': assignment_average,
+                'details': assignment_grades
+            },
+            'overall_percentage': overall_percentage,
+            'time_spent_minutes': total_time_spent,
+            'last_activity': StudentService.get_last_activity(student_id, course_id)
+        }
+    
+    @staticmethod
+    def get_detailed_course_progress(student_id: int, course_id: int) -> Dict[str, Any]:
+        """Get very detailed progress including individual items"""
+        basic_progress = StudentService.calculate_course_progress(student_id, course_id)
+        
+        course = Course.query.get(course_id)
+        
+        # Detailed lesson progress
+        lessons_detail = []
+        for lesson in course.lessons.order_by(Lesson.order_number).all():
+            progress = LessonProgress.query.filter_by(
+                student_id=student_id,
+                lesson_id=lesson.id
+            ).first()
+            
+            lessons_detail.append({
+                'lesson': lesson.to_dict(),
+                'viewed': progress is not None,
+                'completed': progress.completed_at is not None if progress else False,
+                'time_spent': progress.time_spent_minutes if progress else 0,
+                'last_viewed': progress.viewed_at.isoformat() if progress and progress.viewed_at else None
             })
         
-        return assignment_progress
+        # Add detailed info to basic progress
+        basic_progress['detailed_lessons'] = lessons_detail
+        
+        return basic_progress
     
     @staticmethod
-    def _calculate_current_streak(sorted_dates: List) -> int:
-        """Calculate current study streak"""
-        if not sorted_dates:
-            return 0
+    def get_last_activity(student_id: int, course_id: int) -> Optional[str]:
+        """Get student's last activity in a course"""
+        # Check lesson views
+        last_lesson = LessonProgress.query.filter_by(
+            student_id=student_id
+        ).join(Lesson).filter(
+            Lesson.course_id == course_id
+        ).order_by(desc(LessonProgress.viewed_at)).first()
         
-        today = datetime.utcnow().date()
-        current_streak = 0
+        # Check quiz attempts
+        last_quiz = QuizAttempt.query.filter_by(
+            student_id=student_id
+        ).join(Quiz).filter(
+            Quiz.course_id == course_id
+        ).order_by(desc(QuizAttempt.started_at)).first()
         
-        # Check if studied today or yesterday
-        if sorted_dates[0] == today or sorted_dates[0] == today - timedelta(days=1):
-            current_streak = 1
-            last_date = sorted_dates[0]
+        # Check assignment submissions
+        last_assignment = AssignmentSubmission.query.filter_by(
+            student_id=student_id
+        ).join(Assignment).filter(
+            Assignment.course_id == course_id
+        ).order_by(desc(AssignmentSubmission.submitted_at)).first()
+        
+        # Find most recent activity
+        activities = []
+        if last_lesson:
+            activities.append(last_lesson.viewed_at)
+        if last_quiz:
+            activities.append(last_quiz.started_at)
+        if last_assignment:
+            activities.append(last_assignment.submitted_at)
+        
+        if activities:
+            return max(activities).isoformat()
+        
+        return None
+
+
+class MessageService:
+    """Service for messaging between teachers and students"""
+    
+    @staticmethod
+    def send_message(sender_id: int, recipient_id: int, subject: str, content: str, course_id: Optional[int] = None) -> Dict[str, Any]:
+        """Send a message between users"""
+        # Note: This is a placeholder implementation
+        # In a real application, you'd have a Message model
+        
+        sender = User.query.get(sender_id)
+        recipient = User.query.get(recipient_id)
+        
+        if not sender or not recipient:
+            raise NotFoundException("User not found")
+        
+        # Validate permissions
+        if course_id:
+            course = Course.query.get(course_id)
+            if not course:
+                raise NotFoundException("Course not found")
             
-            # Count consecutive days
-            for i in range(1, len(sorted_dates)):
-                if (last_date - sorted_dates[i]).days == 1:
-                    current_streak += 1
-                    last_date = sorted_dates[i]
-                else:
-                    break
+            # Check if both users have access to the course
+            if sender.is_teacher() and course.teacher_id != sender_id:
+                raise PermissionException("Teacher does not own this course")
+            
+            if recipient.is_student():
+                enrollment = Enrollment.query.filter_by(
+                    student_id=recipient_id,
+                    course_id=course_id,
+                    status='active'
+                ).first()
+                if not enrollment:
+                    raise PermissionException("Student not enrolled in this course")
         
-        return current_streak
+        # For now, we'll return a success message
+        # In a real implementation, you'd save to a messages table
+        return {
+            'message': 'Message sent successfully',
+            'data': {
+                'sender': sender.full_name,
+                'recipient': recipient.full_name,
+                'subject': subject,
+                'course': course.title if course_id else None,
+                'sent_at': datetime.utcnow().isoformat()
+            }
+        }
     
     @staticmethod
-    def _calculate_longest_streak(sorted_dates: List) -> int:
-        """Calculate longest study streak"""
-        if not sorted_dates:
-            return 0
+    def get_conversations(user_id: int, course_id: Optional[int] = None) -> Dict[str, Any]:
+        """Get user's message conversations"""
+        # Placeholder implementation
+        # In a real app, you'd query actual message threads
         
-        longest_streak = 1
-        temp_streak = 1
+        user = User.query.get(user_id)
+        if not user:
+            raise NotFoundException("User not found")
         
-        for i in range(1, len(sorted_dates)):
-            if (sorted_dates[i-1] - sorted_dates[i]).days == 1:
-                temp_streak += 1
-            else:
-                longest_streak = max(longest_streak, temp_streak)
-                temp_streak = 1
+        # Return mock data for now
+        conversations = []
         
-        return max(longest_streak, temp_streak)
+        if user.is_teacher():
+            # Get students from teacher's courses
+            courses = user.taught_courses.all()
+            if course_id:
+                courses = [c for c in courses if c.id == course_id]
+            
+            for course in courses:
+                enrollments = course.enrollments.filter_by(status='active').limit(5).all()
+                for enrollment in enrollments:
+                    conversations.append({
+                        'id': f"conv_{course.id}_{enrollment.student_id}",
+                        'participant': enrollment.student.to_dict(),
+                        'course': course.to_dict(),
+                        'last_message': 'Click to start conversation',
+                        'last_message_at': None,
+                        'unread_count': 0
+                    })
+        
+        elif user.is_student():
+            # Get teachers from enrolled courses
+            enrollments = user.enrollments.filter_by(status='active').all()
+            if course_id:
+                enrollments = [e for e in enrollments if e.course_id == course_id]
+            
+            for enrollment in enrollments:
+                conversations.append({
+                    'id': f"conv_{enrollment.course_id}_{enrollment.course.teacher_id}",
+                    'participant': enrollment.course.teacher.to_dict(),
+                    'course': enrollment.course.to_dict(),
+                    'last_message': 'Click to start conversation',
+                    'last_message_at': None,
+                    'unread_count': 0
+                })
+        
+        return {
+            'conversations': conversations,
+            'total': len(conversations)
+        }
+    
+    @staticmethod
+    def create_announcement(teacher_id: int, course_id: int, title: str, content: str) -> Dict[str, Any]:
+        """Create a course announcement"""
+        # Placeholder implementation
+        teacher = User.query.get(teacher_id)
+        course = Course.query.get(course_id)
+        
+        if not teacher or not teacher.is_teacher():
+            raise PermissionException("Only teachers can create announcements")
+        
+        if not course or course.teacher_id != teacher_id:
+            raise PermissionException("Access denied to this course")
+        
+        # In a real implementation, you'd save to an announcements table
+        return {
+            'message': 'Announcement created successfully',
+            'data': {
+                'title': title,
+                'content': content,
+                'course': course.title,
+                'created_by': teacher.full_name,
+                'created_at': datetime.utcnow().isoformat()
+            }
+        }
