@@ -294,49 +294,85 @@ function showSystemSettings() {
     alert('System settings functionality coming soon!');
 }
 
-const ctx = document.getElementById('userChart').getContext('2d');
-const userChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        datasets: [{
-            label: 'New Users',
-            data: [12, 19, 3, 5, 2, 3, 7],
-            borderColor: 'rgb(139, 92, 246)',
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-            tension: 0.4,
-            fill: true
-        }, {
-            label: 'Active Users',
-            data: [45, 52, 38, 65, 59, 80, 74],
-            borderColor: 'rgb(236, 72, 153)',
-            backgroundColor: 'rgba(236, 72, 153, 0.1)',
-            tension: 0.4,
-            fill: true
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'top',
+let userChart;
+
+async function loadUserChart(days = 7) {
+    try {
+        const response = await fetch(`/api/admin/reports/user-activity-overview?days=${days}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`
             }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                grid: {
-                    color: 'rgba(0, 0, 0, 0.05)'
+        });
+
+        if (!response.ok) throw new Error('Failed to load chart data');
+
+        const data = await response.json();
+
+        const chartData = {
+            labels: data.labels,
+            datasets: [
+                {
+                    label: 'New Users',
+                    data: data.new_users,
+                    borderColor: 'rgb(139, 92, 246)',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Active Users',
+                    data: data.active_users,
+                    borderColor: 'rgb(236, 72, 153)',
+                    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                    tension: 0.4,
+                    fill: true
                 }
-            },
-            x: {
-                grid: {
-                    color: 'rgba(0, 0, 0, 0.05)'
+            ]
+        };
+
+        const config = {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                    },
+                    x: {
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                    }
                 }
             }
+        };
+
+        if (userChart) {
+            userChart.destroy();
         }
+
+        userChart = new Chart(document.getElementById('userChart').getContext('2d'), config);
+
+    } catch (error) {
+        console.error('Chart error:', error);
     }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadUserChart();
+
+    document.querySelectorAll('.btn-group button').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.btn-group button').forEach(b => b.classList.remove('active'));
+            button.classList.add('active');
+            const days = parseInt(button.textContent);
+            loadUserChart(days);
+        });
+    });
 });
 
 setInterval(function() {

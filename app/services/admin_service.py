@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
-from sqlalchemy import func, desc, or_
+from sqlalchemy import func, cast, Date, desc, or_
 from app.models import db, User, Course, Enrollment, Quiz, QuizAttempt, Assignment, Achievement
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from app.utils.helpers import calculate_course_statistics
@@ -650,3 +650,55 @@ class AdminService:
                 'points_value': achievement.points_value
             }
         }
+    
+    @staticmethod
+    def get_user_overview_chart(days: int = 30) -> Dict[str, Any]:
+        """Return new user counts for dashboard chart. Active users not tracked."""
+        try:
+            today = datetime.utcnow().date()
+            start_date = today - timedelta(days=days - 1)
+
+            # Labels: list of days in ISO format
+            labels = [(start_date + timedelta(days=i)).isoformat() for i in range(days)]
+
+            # New users per day
+            new_users = db.session.query(
+                cast(User.created_at, Date).label("date"),
+                func.count(User.id)
+            ).filter(
+                User.created_at >= start_date
+            ).group_by("date").all()
+
+            new_users_map = {d.isoformat(): count for d, count in new_users}
+
+            return {
+                "labels": labels,
+                "new_users": [new_users_map.get(day, 0) for day in labels],
+                "active_users": [0 for _ in labels]  # filler data until you track real activity
+            }
+
+        except Exception as e:
+            print(f"Error in get_user_overview_chart: {str(e)}")
+            return {
+                "labels": [],
+                "new_users": [],
+                "active_users": []
+            }
+        
+
+    @staticmethod
+    def get_course_categories_distribution() -> Dict[str, int]:
+        """Return a mapping of course categories and their counts"""
+        try:
+            result = db.session.query(
+                Course.category,
+                func.count(Course.id)
+            ).filter(
+                Course.is_published == True  # or remove this filter to include drafts
+            ).group_by(Course.category).all()
+
+            return {category or "Uncategorized": count for category, count in result}
+
+        except Exception as e:
+            print(f"Error in get_course_categories_distribution: {str(e)}")
+            return {}

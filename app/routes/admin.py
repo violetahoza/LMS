@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-
+from sqlalchemy import func
+from datetime import datetime, timedelta
+from collections import defaultdict
 from app.services.admin_service import AdminService
 from app.utils.base_controller import BaseController
 from app.utils.decorators import admin_required
@@ -323,3 +325,30 @@ def test_auth():
         return jsonify({
             'error': f'Auth test failed: {str(e)}'
         }), 500
+    
+@bp.route('/reports/user-activity-overview', methods=['GET'])
+@admin_required()
+def get_user_activity_overview():
+    """Get user overview chart data for dashboard"""
+    days = request.args.get('days', 30, type=int)
+    try:
+        data = AdminService.get_user_overview_chart(days)
+        return jsonify(data), 200
+    except Exception as e:
+        print(f"User activity report error: {str(e)}")
+        return jsonify({
+            "labels": [],
+            "new_users": [],
+            "active_users": []
+        }), 200
+
+@bp.route('/reports/course-categories', methods=['GET'])
+@admin_required()
+def get_course_categories():
+    """Return course category distribution"""
+    try:
+        data = AdminService.get_course_categories_distribution()
+        return jsonify(data), 200
+    except Exception as e:
+        print(f"Course category distribution error: {str(e)}")
+        return jsonify({}), 500

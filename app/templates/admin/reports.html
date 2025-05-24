@@ -267,17 +267,23 @@ const performanceData = {{ performance_data.courses|tojson if performance_data.c
 
 function prepareCategoryData() {
     const categories = {};
+
     performanceData.forEach(course => {
         const category = course.category || 'General';
         categories[category] = (categories[category] || 0) + 1;
     });
-    
-    return {
-        labels: Object.keys(categories),
-        data: Object.values(categories),
-        colors: ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#EF4444', '#3B82F6']
-    };
+
+    const labels = Object.keys(categories);
+    const data = Object.values(categories);
+
+    const colors = labels.map((_, i) => {
+        const palette = ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#6366F1', '#22C55E'];
+        return palette[i % palette.length];
+    });
+
+    return { labels, data, colors };
 }
+
 
 function prepareEngagementData() {
     const totalStudents = performanceData.reduce((sum, course) => sum + course.total_students, 0);
@@ -361,46 +367,60 @@ let activityChart = new Chart(activityCtx, {
     }
 });
 
-const categoryData = prepareCategoryData();
-const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-const categoryChart = new Chart(categoryCtx, {
-    type: 'doughnut',
-    data: {
-        labels: categoryData.labels,
-        datasets: [{
-            data: categoryData.data,
-            backgroundColor: categoryData.colors,
-            borderWidth: 0,
-            hoverOffset: 4
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    usePointStyle: true,
-                    padding: 15
-                }
+async function loadCategoryChart() {
+    try {
+        const res = await fetch('/api/admin/reports/course-categories', {
+            headers: { 'Authorization': `Bearer {{ session.access_token }}` }
+        });
+        const data = await res.json();
+
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+        const colors = ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#EF4444', '#3B82F6'];
+
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
             },
-            tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                titleColor: '#fff',
-                bodyColor: '#fff',
-                cornerRadius: 8,
-                callbacks: {
-                    label: function(context) {
-                        const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
-                        const percentage = ((context.parsed / total) * 100).toFixed(1);
-                        return `${context.label}: ${context.parsed} courses (${percentage}%)`;
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return `${context.label}: ${context.parsed} courses (${percentage}%)`;
+                            }
+                        }
                     }
                 }
             }
-        }
+        });
+    } catch (err) {
+        console.error('Failed to load category chart:', err);
     }
-});
+}
 
 const engagementData = prepareEngagementData();
 const engagementCtx = document.getElementById('engagementChart').getContext('2d');
@@ -526,6 +546,7 @@ function exportTableToCSV() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    loadCategoryChart();
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);

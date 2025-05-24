@@ -601,7 +601,7 @@ def teacher_dashboard():
     """Teacher dashboard"""
     if not session.get('access_token') or session.get('user_role') != 'teacher':
         flash('Access denied. Teacher privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     return render_template('teacher/dashboard.html')
 
@@ -619,7 +619,7 @@ def teacher_create_course():
     """Create new course page"""
     if not session.get('access_token') or session.get('user_role') != 'teacher':
         flash('Access denied. Teacher privileges required.', 'error')
-        return redirect(url_for('frontend.login'))
+        return redirect(url_for('frontend.index'))
     
     return render_template('teacher/create_course.html')
 
