@@ -1,4 +1,3 @@
-# app/services/quiz_service.py
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from app.models import db, Quiz, QuizAttempt, Question, AnswerOption, StudentAnswer, User, Course, Enrollment
@@ -28,7 +27,6 @@ class QuizService:
         for quiz in quizzes:
             quiz_dict = quiz.to_dict()
             
-            # Add attempt info for students
             if user.is_student():
                 attempts = QuizAttempt.query.filter_by(
                     student_id=user_id,
@@ -42,7 +40,6 @@ class QuizService:
                     'has_passed': any(a.score >= quiz.passing_score for a in attempts if a.score is not None)
                 }
             
-            # Add question count
             quiz_dict['question_count'] = quiz.questions.count()
             
             quizzes_data.append(quiz_dict)
@@ -66,7 +63,6 @@ class QuizService:
         
         quiz_data = quiz.to_dict()
         
-        # Always include questions for teachers
         if user.is_teacher() and quiz.course.teacher_id == user_id:
             questions = quiz.questions.order_by(Question.order_number).all()
             quiz_data['questions'] = [
@@ -88,7 +84,6 @@ class QuizService:
                 for q in questions
             ]
         
-        # Add attempt info for students
         if user.is_student():
             can_retake, message = QuizService.can_retake_quiz(user_id, quiz_id)
             quiz_data['can_take'] = can_retake
@@ -141,7 +136,6 @@ class QuizService:
         if quiz.course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
-        # Update allowed fields
         allowed_fields = ['title', 'description', 'total_points', 'passing_score', 'time_limit_minutes', 'max_attempts']
         for field in allowed_fields:
             if field in quiz_data:
@@ -165,7 +159,6 @@ class QuizService:
         if quiz.course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
-        # Check if quiz has attempts
         attempt_count = quiz.attempts.count()
         if attempt_count > 0:
             raise ValidationException(f'Cannot delete quiz with {attempt_count} student attempts')
@@ -190,14 +183,12 @@ class QuizService:
             if field not in question_data:
                 raise ValidationException(f'{field} is required')
         
-        # Check if order number already exists
         existing_question = Question.query.filter_by(
             quiz_id=quiz_id,
             order_number=question_data['order_number']
         ).first()
         
         if existing_question:
-            # Shift other questions down
             questions_to_shift = Question.query.filter(
                 Question.quiz_id == quiz_id,
                 Question.order_number >= question_data['order_number']
@@ -217,13 +208,11 @@ class QuizService:
         db.session.add(question)
         db.session.flush()  # Get question ID
         
-        # Add answer options for multiple choice and true/false
         if question_data['question_type'] in ['multiple_choice', 'true_false']:
             options = question_data.get('options', [])
             if not options:
                 raise ValidationException("Options are required for this question type")
             
-            # Validate that at least one option is correct
             if not any(opt.get('is_correct', False) for opt in options):
                 raise ValidationException("At least one option must be marked as correct")
             
@@ -240,7 +229,6 @@ class QuizService:
         
         db.session.commit()
         
-        # Return question with options
         question_dict = question.to_dict()
         if question.question_type in ['multiple_choice', 'true_false']:
             question_dict['answer_options'] = [opt.to_dict() for opt in question.answer_options]
@@ -264,23 +252,18 @@ class QuizService:
         if not question or question.quiz_id != quiz_id:
             raise NotFoundException("Question not found")
         
-        # Update question fields
         allowed_fields = ['question_text', 'question_type', 'points', 'order_number']
         for field in allowed_fields:
             if field in question_data:
                 setattr(question, field, question_data[field])
         
-        # Update options if provided
         if 'options' in question_data and question.question_type in ['multiple_choice', 'true_false']:
-            # Delete existing options
             AnswerOption.query.filter_by(question_id=question.id).delete()
             
-            # Validate that at least one option is correct
             options = question_data['options']
             if not any(opt.get('is_correct', False) for opt in options):
                 raise ValidationException("At least one option must be marked as correct")
             
-            # Add new options
             for option in options:
                 if not option.get('text', '').strip():
                     continue
@@ -294,7 +277,6 @@ class QuizService:
         
         db.session.commit()
         
-        # Return updated question with options
         question_dict = question.to_dict()
         if question.question_type in ['multiple_choice', 'true_false']:
             question_dict['answer_options'] = [opt.to_dict() for opt in question.answer_options]
@@ -318,7 +300,6 @@ class QuizService:
         if not question or question.quiz_id != quiz_id:
             raise NotFoundException("Question not found")
         
-        # Check if quiz has attempts
         attempt_count = quiz.attempts.count()
         if attempt_count > 0:
             raise ValidationException(f'Cannot delete question from quiz with {attempt_count} student attempts')
@@ -327,7 +308,6 @@ class QuizService:
         
         db.session.delete(question)
         
-        # Shift remaining questions up
         questions_to_shift = Question.query.filter(
             Question.quiz_id == quiz_id,
             Question.order_number > order_number
@@ -356,15 +336,12 @@ class QuizService:
         if not enrollment:
             raise PermissionException("Not enrolled in this course")
         
-        # Check if can take quiz
         can_take, message = QuizService.can_retake_quiz(student_id, quiz_id)
         if not can_take:
             raise ValidationException(message)
         
-        # Create quiz attempt
         attempt = QuizService.create_quiz_attempt(quiz_id, student_id)
         
-        # Get questions (without answers)
         questions = QuizService.get_quiz_questions(quiz_id, include_answers=False)
         
         return {
@@ -384,16 +361,13 @@ class QuizService:
         if attempt.student_id != student_id:
             raise PermissionException("Access denied")
         
-        # Validate answers
         questions = attempt.quiz.questions.all()
         valid, errors = validate_quiz_answers(questions, answers)
         if not valid:
             raise ValidationException(f"Invalid answers: {', '.join(errors)}")
         
-        # Submit and grade
         result = QuizService.submit_quiz_attempt(attempt_id, answers)
         
-        # Check for achievements
         achievements = AchievementService.check_quiz_achievement(student_id, attempt_id)
         
         response = {
@@ -422,13 +396,11 @@ class QuizService:
         if not attempt:
             raise NotFoundException("Quiz attempt not found")
         
-        # Check access
         if user.is_student() and attempt.student_id != user_id:
             raise PermissionException("Access denied")
         elif user.is_teacher() and attempt.quiz.course.teacher_id != user_id:
             raise PermissionException("Access denied")
         
-        # Get detailed results
         results = QuizService._get_detailed_results(attempt_id)
         return results
     
@@ -442,7 +414,6 @@ class QuizService:
         if quiz.course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
-        # Get all completed attempts
         attempts = QuizAttempt.query.filter_by(
             quiz_id=quiz_id,
             status='completed'
@@ -450,7 +421,6 @@ class QuizService:
         
         stats = calculate_quiz_statistics(attempts)
         
-        # Get question-level statistics
         question_stats = []
         for question in quiz.questions:
             correct_count = 0
@@ -477,7 +447,6 @@ class QuizService:
             'question_statistics': question_stats
         }
     
-    # Helper methods remain the same...
     @staticmethod
     def create_quiz_attempt(quiz_id: int, student_id: int):
         """Create a new quiz attempt"""
@@ -485,7 +454,6 @@ class QuizService:
         if not quiz:
             raise ValueError("Quiz not found")
         
-        # Check if student has reached max attempts
         existing_attempts = QuizAttempt.query.filter_by(
             quiz_id=quiz_id,
             student_id=student_id
@@ -494,7 +462,6 @@ class QuizService:
         if existing_attempts >= quiz.max_attempts:
             raise ValueError(f"Maximum attempts ({quiz.max_attempts}) reached")
         
-        # Create new attempt
         attempt = QuizAttempt(
             quiz_id=quiz_id,
             student_id=student_id,
@@ -548,7 +515,6 @@ class QuizService:
         if attempt.status != 'in_progress':
             raise ValueError("Quiz has already been submitted")
         
-        # Check time limit
         if attempt.quiz.time_limit_minutes:
             time_spent = calculate_time_spent(attempt.started_at)
             if time_spent > attempt.quiz.time_limit_minutes:
@@ -556,7 +522,6 @@ class QuizService:
                 db.session.commit()
                 raise ValueError("Time limit exceeded")
         
-        # Save and grade answers
         total_points = 0
         earned_points = 0
         
@@ -572,7 +537,6 @@ class QuizService:
                 question_id=question.id
             )
             
-            # Grade based on question type
             if question.question_type in ['multiple_choice', 'true_false']:
                 student_answer.selected_option_id = answer_value
                 selected_option = AnswerOption.query.get(answer_value)
@@ -586,13 +550,11 @@ class QuizService:
             
             elif question.question_type == 'short_answer':
                 student_answer.answer_text = answer_value
-                # Short answer questions need manual grading
                 student_answer.is_correct = None
                 student_answer.points_earned = 0
             
             db.session.add(student_answer)
         
-        # Calculate score
         attempt.score = (earned_points / total_points * 100) if total_points > 0 else 0
         attempt.submitted_at = datetime.utcnow()
         attempt.time_spent_minutes = calculate_time_spent(attempt.started_at, attempt.submitted_at)
@@ -637,15 +599,12 @@ class QuizService:
             }
             
             if question.question_type in ['multiple_choice', 'true_false']:
-                # Get student's selected option
                 if answer.selected_option:
                     question_data['student_answer'] = answer.selected_option.option_text
                 
-                # Get correct option(s)
                 correct_options = [opt.option_text for opt in question.answer_options if opt.is_correct]
                 question_data['correct_answer'] = correct_options[0] if correct_options else None
                 
-                # Include all options
                 question_data['options'] = [
                     {
                         'id': opt.id,
@@ -689,7 +648,6 @@ class QuizService:
         if attempts >= quiz.max_attempts:
             return False, f"Maximum attempts ({quiz.max_attempts}) reached"
         
-        # Check if there's an in-progress attempt
         in_progress = QuizAttempt.query.filter_by(
             student_id=student_id,
             quiz_id=quiz_id,

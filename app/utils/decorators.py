@@ -37,7 +37,6 @@ def admin_required():
         def decorated_function(*args, **kwargs):
             user_id_str = get_jwt_identity()
             
-            # Convert string to int
             try:
                 user_id = int(user_id_str)
             except (ValueError, TypeError):
@@ -63,7 +62,6 @@ def student_required():
         def decorated_function(*args, **kwargs):
             user_id_str = get_jwt_identity()
             
-            # Convert string to int
             try:
                 user_id = int(user_id_str)
             except (ValueError, TypeError):

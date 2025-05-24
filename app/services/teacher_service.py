@@ -1,4 +1,3 @@
-# app/services/teacher_service.py
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from sqlalchemy import desc, func
@@ -8,7 +7,8 @@ from app.utils.helpers import calculate_course_statistics, calculate_quiz_statis
 from collections import defaultdict
 import io
 import csv
-from flask import make_response
+from flask import make_response, jsonify
+
 class TeacherService:
     """Service for teacher-specific operations"""
     
@@ -19,14 +19,11 @@ class TeacherService:
         if not user or not user.is_teacher():
             raise PermissionException("Only teachers can access this dashboard")
         
-        # Get teacher's courses
         courses = user.taught_courses.all()
         
-        # Calculate statistics
         total_courses = len(courses)
         published_courses = len([c for c in courses if c.is_published])
         
-        # Student statistics
         total_students = 0
         active_students = 0
         for course in courses:
@@ -34,7 +31,6 @@ class TeacherService:
             total_students += len(enrollments)
             active_students += len([e for e in enrollments if e.status == 'active'])
         
-        # Recent activity (last 7 days)
         week_ago = datetime.utcnow() - timedelta(days=7)
         recent_enrollments = 0
         recent_submissions = 0
@@ -49,9 +45,8 @@ class TeacherService:
                     AssignmentSubmission.submitted_at >= week_ago
                 ).count()
         
-        # Top performing courses
         course_performance = []
-        for course in courses[:5]:  # Top 5 courses
+        for course in courses[:5]:  
             stats = calculate_course_statistics(course)
             course_performance.append({
                 'id': course.id,
@@ -62,7 +57,6 @@ class TeacherService:
                 'quizzes': stats['total_quizzes']
             })
         
-        # Recent quiz attempts
         recent_quiz_attempts = []
         for course in courses:
             for quiz in course.quizzes:
@@ -141,7 +135,6 @@ class TeacherService:
         course_data = course.to_dict()
         course_data['statistics'] = calculate_course_statistics(course)
         
-        # Get course content
         lessons = course.lessons.order_by(Lesson.order_number).all()
         course_data['lessons'] = [lesson.to_dict() for lesson in lessons]
         
@@ -151,13 +144,11 @@ class TeacherService:
         assignments = course.assignments.all()
         course_data['assignments'] = [assignment.to_dict() for assignment in assignments]
         
-        # Get enrolled students
         enrollments = course.enrollments.filter_by(status='active').all()
         students = []
         for enrollment in enrollments:
             student_data = enrollment.student.to_dict()
             student_data['enrollment'] = enrollment.to_dict()
-            # Calculate student progress
             student_data['progress'] = TeacherService._calculate_student_progress(
                 enrollment.student_id, course_id
             )
@@ -174,7 +165,6 @@ class TeacherService:
         if not user or not user.is_teacher():
             raise PermissionException("Only teachers can access submissions")
         
-        # Get all courses for this teacher
         courses = user.taught_courses.all()
         
         pending_submissions = []
@@ -189,7 +179,6 @@ class TeacherService:
                     submission_data['course'] = course.to_dict()
                     pending_submissions.append(submission_data)
         
-        # Sort by submission date
         pending_submissions.sort(key=lambda x: x['submitted_at'], reverse=True)
         
         return {
@@ -211,13 +200,10 @@ class TeacherService:
         if quiz.course.teacher_id != teacher_id:
             raise PermissionException("Access denied to this quiz")
         
-        # Get all attempts
         attempts = quiz.attempts.filter_by(status='completed').all()
         
-        # Calculate statistics
         stats = calculate_quiz_statistics(attempts)
         
-        # Question-level analytics
         question_analytics = []
         for question in quiz.questions:
             correct_count = 0
@@ -235,7 +221,6 @@ class TeacherService:
                     if student_answer.is_correct:
                         correct_count += 1
                     
-                    # Track answer distribution for multiple choice
                     if question.question_type in ['multiple_choice', 'true_false']:
                         option_id = student_answer.selected_option_id
                         if option_id:
@@ -250,7 +235,6 @@ class TeacherService:
                 'answer_distribution': answer_distribution
             })
         
-        # Student performance
         student_performance = []
         for attempt in attempts:
             student_performance.append({
@@ -281,7 +265,6 @@ class TeacherService:
         if course.teacher_id != teacher_id:
             raise PermissionException("Access denied to this course")
         
-        # Get all enrolled students
         enrollments = course.enrollments.filter_by(status='active').all()
         
         student_reports = []
@@ -289,7 +272,6 @@ class TeacherService:
             student = enrollment.student
             progress = TeacherService._calculate_student_progress(student.id, course_id)
             
-            # Get recent activity
             recent_lessons = LessonProgress.query.filter_by(
                 student_id=student.id
             ).join(Lesson).filter(
@@ -314,7 +296,6 @@ class TeacherService:
                 }
             })
         
-        # Sort by progress percentage
         student_reports.sort(key=lambda x: x['progress']['overall_percentage'], reverse=True)
         
         return {
@@ -337,7 +318,6 @@ class TeacherService:
         if course.teacher_id != teacher_id:
             raise PermissionException("Access denied to this course")
         
-        # Enrollment trends (last 30 days)
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
         enrollment_data = []
         
@@ -351,7 +331,6 @@ class TeacherService:
                 'enrollments': count
             })
         
-        # Lesson engagement
         lesson_engagement = []
         for lesson in course.lessons:
             views = LessonProgress.query.filter_by(lesson_id=lesson.id).count()
@@ -366,7 +345,6 @@ class TeacherService:
                 'completion_rate': (completions / views * 100) if views > 0 else 0
             })
         
-        # Quiz performance over time
         quiz_performance = []
         for quiz in course.quizzes:
             attempts = quiz.attempts.filter_by(status='completed').all()
@@ -392,7 +370,6 @@ class TeacherService:
         """Calculate comprehensive student progress for a course"""
         course = Course.query.get(course_id)
         
-        # Lesson progress
         total_lessons = course.lessons.count()
         completed_lessons = LessonProgress.query.filter_by(
             student_id=student_id
@@ -401,7 +378,6 @@ class TeacherService:
             LessonProgress.completed_at.isnot(None)
         ).count()
         
-        # Quiz progress
         quiz_scores = []
         for quiz in course.quizzes:
             best_attempt = QuizAttempt.query.filter_by(
@@ -418,7 +394,6 @@ class TeacherService:
                     'passed': best_attempt.score >= quiz.passing_score
                 })
         
-        # Assignment progress
         assignment_grades = []
         for assignment in course.assignments:
             submission = AssignmentSubmission.query.filter_by(
@@ -434,7 +409,6 @@ class TeacherService:
                     'status': submission.status
                 })
         
-        # Calculate overall progress
         lesson_progress = (completed_lessons / total_lessons * 100) if total_lessons > 0 else 0
         quiz_average = sum(q['score'] for q in quiz_scores) / len(quiz_scores) if quiz_scores else 0
         assignment_average = sum(a['grade'] for a in assignment_grades if a['grade']) / len([a for a in assignment_grades if a['grade']]) if assignment_grades else 0
@@ -471,7 +445,6 @@ class TeacherService:
         lesson_engagement = []
         quiz_performance = []
 
-        # For enrollment trends
         enrollment_trends_counter = defaultdict(int)
         start_date = datetime.utcnow() - timedelta(days=30)
 
@@ -486,7 +459,6 @@ class TeacherService:
             lesson_engagement += stats.get("lesson_engagement", [])
             quiz_performance += stats.get("quiz_performance", [])
 
-            # Count enrollments per day
             enrollments = course.enrollments.filter(
                 Enrollment.enrolled_at >= start_date
             ).all()
@@ -494,7 +466,6 @@ class TeacherService:
                 day = e.enrolled_at.date().isoformat()
                 enrollment_trends_counter[day] += 1
 
-        # Build time series list
         enrollment_trends = []
         for i in range(30):
             date = (start_date + timedelta(days=i)).date().isoformat()
@@ -551,26 +522,22 @@ class TeacherService:
         if course.teacher_id != teacher_id:
             raise PermissionException("Access denied to this course")
         
-        # Get student reports
         report_data = TeacherService.get_student_progress_report(teacher_id, course_id)
         
         output = io.StringIO()
         writer = csv.writer(output)
         
-        # Write header
         writer.writerow([
             'Student Name', 'Email', 'Enrollment Date', 'Progress %', 
             'Lessons Completed', 'Quiz Average', 'Assignment Average',
             'Last Activity', 'Status'
         ])
         
-        # Write data
         for report in report_data['student_reports']:
             student = report['student']
             enrollment = report['enrollment']
             progress = report['progress']
             
-            # Calculate last activity safely
             last_activity = 'Never'
             if enrollment.get('enrolled_at'):
                 try:
@@ -583,7 +550,6 @@ class TeacherService:
                 except (TypeError, AttributeError):
                     last_activity = 'Never'
             
-            # Safe data extraction with defaults
             lessons = progress.get('lessons', {})
             completed_lessons = lessons.get('completed', 0)
             total_lessons = lessons.get('total', 0)
@@ -600,7 +566,6 @@ class TeacherService:
                 enrollment.get('status', 'unknown')
             ])
         
-        # Return the CSV content as a string
         output.seek(0)
         csv_content = output.getvalue()
         output.close()

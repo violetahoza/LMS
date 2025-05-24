@@ -1,4 +1,3 @@
-# app/routes/quizzes.py
 from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -131,7 +130,6 @@ def submit_quiz(attempt_id):
     data = request.get_json()
     answers = data.get('answers', {})
     
-    # Handle the submission and achievement checking in the service
     return BaseController.handle_request(
         QuizService.submit_quiz_with_achievements,
         int(user_id),

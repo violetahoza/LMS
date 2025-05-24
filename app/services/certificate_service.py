@@ -21,7 +21,6 @@ class CertificateService:
         
         course = Course.query.get(course_id)
         
-        # Check if all lessons are completed
         from app.models import Lesson, LessonProgress
         total_lessons = course.lessons.count()
         completed_lessons = LessonProgress.query.filter_by(
@@ -34,7 +33,6 @@ class CertificateService:
         if completed_lessons < total_lessons:
             return False, f"Only {completed_lessons}/{total_lessons} lessons completed"
         
-        # Check if all required quizzes are passed
         from app.models import Quiz, QuizAttempt
         required_quizzes = course.quizzes.all()
         
@@ -48,7 +46,6 @@ class CertificateService:
             if not best_attempt or best_attempt.score < quiz.passing_score:
                 return False, f"Quiz '{quiz.title}' not passed"
         
-        # Check if all assignments are submitted
         from app.models import Assignment, AssignmentSubmission
         required_assignments = course.assignments.all()
         
@@ -66,7 +63,6 @@ class CertificateService:
     @staticmethod
     def generate_certificate(student_id, course_id):
         """Generate a certificate for course completion"""
-        # Check if certificate already exists
         existing_cert = Certificate.query.filter_by(
             student_id=student_id,
             course_id=course_id
@@ -75,12 +71,10 @@ class CertificateService:
         if existing_cert:
             return existing_cert
         
-        # Verify completion
         is_complete, message = CertificateService.check_course_completion(student_id, course_id)
         if not is_complete:
             raise ValueError(message)
         
-        # Generate certificate
         certificate = Certificate(
             student_id=student_id,
             course_id=course_id,
@@ -141,7 +135,6 @@ class CertificateService:
         if not course:
             raise ValueError("Course not found")
         
-        # Get all completed enrollments
         completed_enrollments = Enrollment.query.filter_by(
             course_id=course_id,
             status='completed'

@@ -1,4 +1,3 @@
-# app/routes/auth.py
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_login import login_user, logout_user
@@ -24,11 +23,9 @@ def register():
         }), 201
         
     except ValueError as e:
-        # Handle validation errors with specific field mapping
         error_msg = str(e)
         field_errors = {}
         
-        # Map specific errors to fields
         if 'email is already registered' in error_msg.lower() or 'this email is already registered' in error_msg.lower():
             field_errors['email'] = 'This email is already registered'
         elif 'username is already taken' in error_msg.lower() or 'this username is already taken' in error_msg.lower():
@@ -52,7 +49,6 @@ def register():
         elif 'full_name is required' in error_msg.lower():
             field_errors['full_name'] = 'Full name is required'
         else:
-            # Generic validation error - don't map to specific field
             return jsonify({'error': error_msg}), 400
             
         return jsonify({

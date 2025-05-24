@@ -555,7 +555,6 @@ def update_profile():
         
         if response.status_code == 200:
             result = response.json()
-            # Update session if name changed
             if 'data' in result and 'user' in result['data']:
                 session['user_name'] = result['data']['user']['full_name']
             return jsonify(result)
@@ -740,7 +739,6 @@ def message_conversation(partner_id):
     
     return render_template('messages/conversation.html', partner_id=partner_id)
 
-# Update the existing teacher student progress route to properly handle course_id
 @bp.route('/teacher/student/<int:student_id>/progress')
 def teacher_student_progress(student_id):
     """View individual student progress"""

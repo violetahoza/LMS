@@ -22,9 +22,7 @@ def validate_password(password):
 
 def validate_phone(phone):
     """Validate phone number format"""
-    # Remove common separators
     cleaned = re.sub(r'[\s\-\(\)]', '', phone)
-    # Check if it's a valid phone number (10-15 digits)
     pattern = r'^\+?\d{10,15}$'
     return re.match(pattern, cleaned) is not None
 
@@ -63,11 +61,8 @@ def validate_file_size(file_size, max_size):
 
 def sanitize_filename(filename):
     """Sanitize filename for safe storage"""
-    # Get the file extension
     name, ext = os.path.splitext(filename)
-    # Secure the filename
     name = secure_filename(name)
-    # Add timestamp to make it unique
     timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
     return f"{name}_{timestamp}{ext}"
 

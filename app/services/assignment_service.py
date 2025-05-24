@@ -1,4 +1,3 @@
-# app/services/assignment_service.py
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from werkzeug.datastructures import FileStorage
@@ -29,7 +28,6 @@ class AssignmentService:
         for assignment in assignments:
             assignment_dict = assignment.to_dict()
             
-            # Add submission info for students
             if user.is_student():
                 submission = AssignmentSubmission.query.filter_by(
                     student_id=user_id,
@@ -44,7 +42,6 @@ class AssignmentService:
                     not submission
                 )
             
-            # Add submission count for teachers
             elif user.is_teacher() and course.teacher_id == user_id:
                 assignment_dict['submission_count'] = assignment.submissions.count()
                 assignment_dict['graded_count'] = assignment.submissions.filter_by(status='graded').count()
@@ -70,7 +67,6 @@ class AssignmentService:
         
         assignment_data = assignment.to_dict()
         
-        # Add submission info for students
         if user.is_student():
             submission = AssignmentSubmission.query.filter_by(
                 student_id=user_id,
@@ -103,7 +99,6 @@ class AssignmentService:
         if course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
-        # Parse due date
         due_date = None
         if assignment_data.get('due_date'):
             try:
@@ -138,13 +133,11 @@ class AssignmentService:
         if assignment.course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
-        # Update allowed fields
         allowed_fields = ['title', 'description', 'total_points']
         for field in allowed_fields:
             if field in assignment_data:
                 setattr(assignment, field, assignment_data[field])
         
-        # Update due date
         if 'due_date' in assignment_data:
             if assignment_data['due_date']:
                 try:
@@ -194,7 +187,6 @@ class AssignmentService:
         if not assignment:
             raise NotFoundException("Assignment not found")
         
-        # Check enrollment
         enrollment = Enrollment.query.filter_by(
             student_id=student_id,
             course_id=assignment.course_id,
@@ -204,32 +196,26 @@ class AssignmentService:
         if not enrollment:
             raise PermissionException("Not enrolled in this course")
         
-        # Check if already submitted
         existing_submission = AssignmentSubmission.query.filter_by(
             student_id=student_id,
             assignment_id=assignment_id
         ).first()
         
-        # Check if can submit/resubmit
         if existing_submission and existing_submission.status not in ['returned']:
             raise ValidationException("Assignment already submitted")
         
-        # Check due date
         if assignment.due_date and assignment.due_date < datetime.utcnow():
             raise ValidationException("Assignment is past due date")
         
         if not submission_text and not file:
             raise ValidationException("Either text submission or file is required")
         
-        # Handle file upload
         file_path = None
         if file and file.filename:
             file_path = AssignmentService._handle_file_upload(file, max_file_size)
         
         try:
-            # Create or update submission
             if existing_submission:
-                # Update existing submission
                 if existing_submission.file_path and file_path:
                     delete_file(existing_submission.file_path)
                 
@@ -244,7 +230,6 @@ class AssignmentService:
                 
                 submission = existing_submission
             else:
-                # Create new submission
                 submission = AssignmentSubmission(
                     assignment_id=assignment_id,
                     student_id=student_id,
@@ -300,7 +285,6 @@ class AssignmentService:
         if submission.assignment.course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
-        # Validate grade
         if grade < 0 or grade > submission.assignment.total_points:
             raise ValidationException(f'Grade must be between 0 and {submission.assignment.total_points}')
         
@@ -344,12 +328,10 @@ class AssignmentService:
         """Handle file upload for assignment submission"""
         from flask import current_app
         
-        # Validate file type
         allowed_extensions = current_app.config.get('ALLOWED_EXTENSIONS', {'pdf', 'doc', 'docx', 'txt'})
         if not allowed_file(file.filename, allowed_extensions):
             raise ValidationException('File type not allowed')
         
-        # Validate file size
         file.seek(0, os.SEEK_END)
         file_size = file.tell()
         file.seek(0)
@@ -358,7 +340,6 @@ class AssignmentService:
         if not is_valid:
             raise ValidationException(message)
         
-        # Save file
         upload_dir = create_upload_directory('assignments')
         filename = sanitize_filename(file.filename)
         file_path = os.path.join(upload_dir, filename)

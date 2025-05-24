@@ -1,4 +1,3 @@
-# app/services/course_service.py
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from sqlalchemy import or_
@@ -16,16 +15,13 @@ class CourseService:
         if not user:
             raise NotFoundException("User not found")
         
-        # Base query
         query = Course.query
         
-        # Filter based on user role
         if user.is_teacher():
             query = query.filter_by(teacher_id=user_id)
         elif user.is_student():
             query = query.filter_by(is_published=True)
         
-        # Apply filters
         if category:
             query = query.filter_by(category=category)
         
@@ -37,7 +33,6 @@ class CourseService:
                 )
             )
         
-        # Paginate results
         pagination = query.paginate(
             page=page, 
             per_page=per_page, 
@@ -46,7 +41,6 @@ class CourseService:
         
         courses = [course.to_dict() for course in pagination.items]
         
-        # Add enrollment status for students
         if user.is_student():
             CourseService._add_enrollment_status(courses, user_id)
         
@@ -72,7 +66,6 @@ class CourseService:
         
         course_data = course.to_dict()
         
-        # Add additional info based on user role
         if user.is_student():
             enrollment = Enrollment.query.filter_by(
                 student_id=user_id, 
@@ -82,7 +75,6 @@ class CourseService:
             if enrollment:
                 course_data['enrollment'] = enrollment.to_dict()
         
-        # Add content counts
         course_data['lesson_count'] = course.lessons.count()
         course_data['quiz_count'] = course.quizzes.count()
         course_data['assignment_count'] = course.assignments.count()
@@ -97,7 +89,6 @@ class CourseService:
             if field not in course_data or not course_data[field]:
                 raise ValidationException(f'{field} is required')
         
-        # Parse dates
         start_date = None
         end_date = None
         
@@ -142,13 +133,11 @@ class CourseService:
         if course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
-        # Update allowed fields
         allowed_fields = ['title', 'description', 'category', 'max_students', 'is_published']
         for field in allowed_fields:
             if field in course_data:
                 setattr(course, field, course_data[field])
         
-        # Update dates
         if 'start_date' in course_data:
             course.start_date = datetime.fromisoformat(course_data['start_date']) if course_data['start_date'] else None
         if 'end_date' in course_data:
@@ -172,7 +161,6 @@ class CourseService:
         if course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
         
-        # Check if course has active enrollments
         active_enrollments = course.enrollments.filter_by(status='active').count()
         if active_enrollments > 0:
             raise ValidationException(f'Cannot delete course with {active_enrollments} active enrollments')
@@ -196,7 +184,6 @@ class CourseService:
         if not course.is_published:
             raise ValidationException("Course is not published")
         
-        # Check if already enrolled
         existing_enrollment = Enrollment.query.filter_by(
             student_id=student_id,
             course_id=course_id
@@ -206,7 +193,6 @@ class CourseService:
             if existing_enrollment.status == 'active':
                 raise ValidationException("Already enrolled in this course")
             elif existing_enrollment.status == 'dropped':
-                # Re-enroll
                 existing_enrollment.status = 'active'
                 existing_enrollment.enrolled_at = datetime.utcnow()
                 db.session.commit()
@@ -215,11 +201,9 @@ class CourseService:
                     'enrollment': existing_enrollment.to_dict()
                 }
         
-        # Check if course is full
         if course.is_full():
             raise ValidationException("Course is full")
         
-        # Create new enrollment
         enrollment = Enrollment(
             student_id=student_id,
             course_id=course_id,

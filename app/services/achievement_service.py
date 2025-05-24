@@ -12,10 +12,8 @@ class AchievementService:
         if not student or not student.is_student():
             return []
         
-        # Get all achievements
         achievements = Achievement.query.all()
         
-        # Get already earned achievements
         earned_achievement_ids = set(
             sa.achievement_id for sa in StudentAchievement.query.filter_by(
                 student_id=student_id
@@ -25,16 +23,13 @@ class AchievementService:
         newly_earned = []
         
         for achievement in achievements:
-            # Skip if already earned
             if achievement.id in earned_achievement_ids:
                 continue
             
-            # Check if criteria is met based on trigger type
             if trigger_type and achievement.criteria_type != trigger_type:
                 continue
             
             if check_achievement_criteria(student, achievement):
-                # Award achievement
                 student_achievement = StudentAchievement(
                     student_id=student_id,
                     achievement_id=achievement.id
@@ -50,7 +45,6 @@ class AchievementService:
     @staticmethod
     def check_course_completion_achievement(student_id, course_id):
         """Check for course completion achievements"""
-        # Check if student completed the course
         enrollment = Enrollment.query.filter_by(
             student_id=student_id,
             course_id=course_id,
@@ -88,7 +82,6 @@ class AchievementService:
     @staticmethod
     def check_streak_achievement(student_id):
         """Check for streak achievements"""
-        # Get recent lesson progress
         recent_progress = LessonProgress.query.filter_by(
             student_id=student_id
         ).filter(
@@ -98,7 +91,6 @@ class AchievementService:
         if not recent_progress:
             return []
         
-        # Calculate streak
         streak = 1
         last_date = recent_progress[0].viewed_at.date()
         
@@ -110,7 +102,6 @@ class AchievementService:
             else:
                 break
         
-        # Check streak achievements
         streak_achievements = Achievement.query.filter_by(
             criteria_type='streak'
         ).filter(
@@ -194,7 +185,6 @@ class AchievementService:
     @staticmethod
     def get_leaderboard(limit=10):
         """Get achievement leaderboard"""
-        # Query to get students with their total achievement points
         leaderboard = db.session.query(
             User.id,
             User.full_name,

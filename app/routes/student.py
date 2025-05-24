@@ -1,5 +1,4 @@
-# app/routes/student.py 
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app.services.student_service import StudentService
@@ -30,44 +29,37 @@ def get_student_progress():
     if not current_user:
         return {'error': 'User not found'}, 404
     
-    # Get student_id from query params (for teachers) or use current user (for students)
     student_id = request.args.get('student_id', type=int)
     course_id = request.args.get('course_id', type=int)
     
     if current_user.is_student():
-        # Students can only access their own progress
         if student_id and student_id != current_user_id:
             return {'error': 'Access denied'}, 403
         student_id = current_user_id
         
         if course_id:
-            # Single course progress for student
             return BaseController.handle_request(
                 TeacherService.get_individual_student_progress,
-                current_user_id,  # Use as teacher_id parameter (won't be used in validation)
+                current_user_id,  #
                 student_id,
                 course_id
             )
         else:
-            # All courses progress for student
             return BaseController.handle_request(
                 StudentService.get_progress,
                 student_id
             )
             
     elif current_user.is_teacher():
-        # Teachers need to specify student_id and course_id
         if not student_id:
             return {'error': 'student_id parameter required for teachers'}, 400
         if not course_id:
             return {'error': 'course_id parameter required for teachers'}, 400
             
-        # Verify teacher has access to the course
         course = Course.query.get(course_id)
         if not course or course.teacher_id != current_user_id:
             return {'error': 'Access denied to this course'}, 403
             
-        # Verify student is enrolled in the course
         enrollment = Enrollment.query.filter_by(
             student_id=student_id,
             course_id=course_id
@@ -163,28 +155,23 @@ def get_student_progress_by_teacher():
     if not current_user:
         return jsonify({'error': 'User not found'}), 404
     
-    # Get student_id from query params (for teachers) or use current user (for students)
     student_id = request.args.get('student_id', type=int)
     course_id = request.args.get('course_id', type=int)
     
     if current_user.is_student():
-        # Students can only access their own progress
         if student_id and student_id != current_user_id:
             return jsonify({'error': 'Access denied'}), 403
         student_id = current_user_id
     elif current_user.is_teacher():
-        # Teachers need to specify student_id and course_id
         if not student_id:
             return jsonify({'error': 'student_id parameter required for teachers'}), 400
         if not course_id:
             return jsonify({'error': 'course_id parameter required for teachers'}), 400
             
-        # Verify teacher has access to the course
         course = Course.query.get(course_id)
         if not course or course.teacher_id != current_user_id:
             return jsonify({'error': 'Access denied to this course'}), 403
             
-        # Verify student is enrolled in the course
         enrollment = Enrollment.query.filter_by(
             student_id=student_id,
             course_id=course_id
@@ -194,9 +181,7 @@ def get_student_progress_by_teacher():
     else:
         return jsonify({'error': 'Access denied'}), 403
     
-    # Get the progress data
     if course_id:
-        # Single course progress
         return BaseController.handle_request(
             TeacherService.get_individual_student_progress,
             current_user_id if current_user.is_teacher() else student_id,
@@ -204,7 +189,6 @@ def get_student_progress_by_teacher():
             course_id
         )
     else:
-        # All courses progress (for students only)
         return BaseController.handle_request(
             StudentService.get_progress,
             student_id

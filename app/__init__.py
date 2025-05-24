@@ -6,7 +6,6 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from config import config
 
-# Initialize extensions
 db = SQLAlchemy()
 jwt = JWTManager()
 
@@ -18,21 +17,16 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     
-    # Initialize extensions with app
     db.init_app(app)
     jwt.init_app(app)
     CORS(app, origins=app.config.get('CORS_ORIGINS', ['http://localhost:3000']))
     
-    # Setup logging
     setup_logging(app)
     
-    # Register blueprints
     register_blueprints(app)
     
-    # Create upload directories
     create_directories(app)
     
-    # Create tables if they don't exist
     with app.app_context():
         try:
             db.create_all()
@@ -45,10 +39,8 @@ def create_app(config_name=None):
 def register_blueprints(app):
     """Register all blueprints"""
     try:
-        # Import routes
         from app.routes import auth, courses, lessons, quizzes, assignments, admin, student, teacher, messages
         
-        # Register API blueprints
         app.register_blueprint(auth.bp)
         app.register_blueprint(courses.bp)
         app.register_blueprint(lessons.bp)
@@ -68,11 +60,9 @@ def register_blueprints(app):
 def setup_logging(app):
     """Setup application logging"""
     if not app.debug and not app.testing:
-        # Create logs directory if it doesn't exist
         if not os.path.exists('logs'):
             os.mkdir('logs')
         
-        # Configure file handler
         file_handler = logging.FileHandler('logs/app.log')
         file_handler.setFormatter(logging.Formatter(
             '%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s'
@@ -89,7 +79,6 @@ def create_directories(app):
     if not os.path.exists(upload_folder):
         os.makedirs(upload_folder)
     
-    # Create subdirectories
     subdirs = ['assignments', 'avatars', 'course_materials']
     for subdir in subdirs:
         path = os.path.join(upload_folder, subdir)

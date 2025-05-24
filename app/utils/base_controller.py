@@ -1,4 +1,3 @@
-# app/utils/base_controller.py
 from flask import jsonify
 from app.models import db
 import logging

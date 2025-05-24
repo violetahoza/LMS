@@ -8,18 +8,14 @@ from flask import Flask, jsonify
 
 def create_application():
     """Create Flask application with proper configuration"""
-    # Get environment
     config_name = os.environ.get('FLASK_ENV', 'development')
     
-    # Create app
     from app import create_app
     app = create_app(config_name)
     
-    # Register frontend routes
     from app.routes import frontend
     app.register_blueprint(frontend.bp)
     
-    # Add global error handlers
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({
@@ -29,7 +25,6 @@ def create_application():
     
     @app.errorhandler(500)
     def internal_error(error):
-        # Import db here to avoid circular imports
         from app import db
         db.session.rollback()
         return jsonify({
@@ -58,7 +53,6 @@ def create_application():
             'message': 'The request was well-formed but was unable to be followed due to semantic errors.'
         }), 422
     
-    # Add health check endpoint
     @app.route('/health')
     def health_check():
         return jsonify({
@@ -67,7 +61,6 @@ def create_application():
             'version': '1.0.0'
         }), 200
     
-    # Add API info endpoint
     @app.route('/api')
     def api_info():
         return jsonify({
@@ -87,11 +80,9 @@ def create_application():
     
     return app
 
-# Create the application
 app = create_application()
 
 if __name__ == '__main__':
-    # Run the application
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
     
@@ -111,17 +102,14 @@ if __name__ == '__main__':
     print("  GET  /api             - API information")
     print("=" * 50)
     
-    # Initialize database and admin user
     with app.app_context():
         try:
             from app import db
             from app.models import User, UserRole
             
-            # Create tables
             db.create_all()
             print("✅ Database tables created/verified")
             
-            # Check for admin user
             admin = User.query.filter_by(username='admin').first()
             if not admin:
                 print("🔧 Creating admin user...")

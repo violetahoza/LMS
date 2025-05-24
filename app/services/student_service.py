@@ -1,4 +1,3 @@
-# app/services/student_service.py
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from sqlalchemy import desc, func
@@ -17,7 +16,6 @@ class StudentService:
         if not user or not user.is_student():
             raise PermissionException("Only students can access dashboard")
         
-        # Get enrollments
         active_enrollments = Enrollment.query.filter_by(
             student_id=student_id,
             status='active'
@@ -28,12 +26,10 @@ class StudentService:
             status='completed'
         ).all()
         
-        # Calculate overall progress
         total_progress = 0
         if active_enrollments:
             total_progress = sum(e.progress_percentage for e in active_enrollments) / len(active_enrollments)
         
-        # Get recent activity
         recent_lessons = LessonProgress.query.filter_by(
             student_id=student_id
         ).order_by(desc(LessonProgress.viewed_at)).limit(5).all()
@@ -42,13 +38,10 @@ class StudentService:
             student_id=student_id
         ).order_by(desc(QuizAttempt.started_at)).limit(5).all()
         
-        # Get achievements
         achievements_data = AchievementService.get_student_achievements(student_id)
         
-        # Get upcoming assignments
         upcoming_assignments = StudentService._get_upcoming_assignments(student_id)
         
-        # Format recent activity
         recent_activity = StudentService._format_recent_activity(recent_lessons, recent_quiz_attempts)
         
         return {
@@ -87,13 +80,10 @@ class StudentService:
         for enrollment in enrollments:
             course = enrollment.course
             
-            # Get lesson progress
             lesson_progress = StudentService._get_lesson_progress(student_id, course.id)
             
-            # Get quiz progress
             quiz_progress = StudentService._get_quiz_progress(student_id, course)
             
-            # Get assignment progress
             assignment_progress = StudentService._get_assignment_progress(student_id, course)
             
             progress_data.append({
@@ -145,7 +135,6 @@ class StudentService:
         if not user or not user.is_student():
             raise PermissionException("Only students can request certificates")
         
-        # Check if already has certificate
         existing_cert = Certificate.query.filter_by(
             student_id=student_id,
             course_id=course_id
@@ -157,7 +146,6 @@ class StudentService:
                 'certificate': existing_cert.to_dict()
             }
         
-        # Generate certificate
         certificate = CertificateService.generate_certificate(student_id, course_id)
         
         return {
@@ -172,7 +160,6 @@ class StudentService:
         if not user or not user.is_student():
             raise PermissionException("Only students can access study streak")
         
-        # Get lesson progress ordered by date
         lesson_progress = LessonProgress.query.filter_by(
             student_id=student_id
         ).order_by(desc(LessonProgress.viewed_at)).all()
@@ -185,7 +172,6 @@ class StudentService:
                 'total_study_days': 0
             }
         
-        # Get unique dates with activity
         dates_with_activity = set()
         for progress in lesson_progress:
             if progress.viewed_at:
@@ -193,10 +179,8 @@ class StudentService:
         
         sorted_dates = sorted(dates_with_activity, reverse=True)
         
-        # Calculate current streak
         current_streak = StudentService._calculate_current_streak(sorted_dates)
         
-        # Calculate longest streak
         longest_streak = StudentService._calculate_longest_streak(sorted_dates)
         
         return {
@@ -213,7 +197,6 @@ class StudentService:
         if not user or not user.is_student():
             raise PermissionException("Only students can access recommendations")
         
-        # Get student's categories of interest
         enrolled_courses = db.session.query(Enrollment.course_id).filter_by(
             student_id=student_id
         ).subquery()
@@ -225,13 +208,11 @@ class StudentService:
         
         student_categories = [cat[0] for cat in student_categories if cat[0]]
         
-        # Get recommended courses
         recommendations_query = Course.query.filter(
             Course.is_published == True,
             ~Course.id.in_(db.session.query(enrolled_courses.c.course_id))
         )
         
-        # Prioritize courses in same categories
         if student_categories:
             recommendations_query = recommendations_query.filter(
                 Course.category.in_(student_categories)
@@ -239,7 +220,6 @@ class StudentService:
         
         recommendations = recommendations_query.limit(5).all()
         
-        # If not enough recommendations, add popular courses
         if len(recommendations) < 5:
             popular_courses = Course.query.filter(
                 Course.is_published == True,
@@ -313,7 +293,6 @@ class StudentService:
                 'timestamp': attempt.started_at.isoformat() if attempt.started_at else None
             })
         
-        # Sort by timestamp and limit
         recent_activity.sort(key=lambda x: x['timestamp'] or '', reverse=True)
         return recent_activity[:10]
     
@@ -391,12 +370,10 @@ class StudentService:
         today = datetime.utcnow().date()
         current_streak = 0
         
-        # Check if studied today or yesterday
         if sorted_dates[0] == today or sorted_dates[0] == today - timedelta(days=1):
             current_streak = 1
             last_date = sorted_dates[0]
             
-            # Count consecutive days
             for i in range(1, len(sorted_dates)):
                 if (last_date - sorted_dates[i]).days == 1:
                     current_streak += 1

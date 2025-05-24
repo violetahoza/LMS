@@ -1,4 +1,3 @@
-# app/services/auth_service.py - Fixed version with string user IDs
 from datetime import datetime
 from typing import Dict, Any, Tuple
 from flask_jwt_extended import create_access_token, create_refresh_token
@@ -12,40 +11,33 @@ class AuthService:
     @staticmethod
     def register_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
         """Register a new user"""
-        # Validate required fields
         required_fields = ['username', 'email', 'password', 'full_name', 'role']
         for field in required_fields:
             if field not in user_data or not user_data[field]:
                 raise ValidationException(f'{field} is required')
         
-        # Validate email format
         if not validate_email(user_data['email']):
             raise ValidationException('Invalid email format')
         
-        # Validate password strength
         is_valid, message = validate_password(user_data['password'])
         if not is_valid:
             raise ValidationException(message)
         
-        # Validate username
         is_valid, message = validate_username(user_data['username'])
         if not is_valid:
             raise ValidationException(message)
         
-        # Check if user already exists
         if User.query.filter_by(email=user_data['email']).first():
             raise ValidationException('Email already registered')
         
         if User.query.filter_by(username=user_data['username']).first():
             raise ValidationException('Username already taken')
         
-        # Validate role
         try:
             role = UserRole(user_data['role'].lower())
         except ValueError:
             raise ValidationException('Invalid role. Must be admin, teacher, or student')
         
-        # Validate optional fields
         if 'phone' in user_data and user_data['phone'] and not validate_phone(user_data['phone']):
             raise ValidationException('Invalid phone number format')
         
@@ -57,7 +49,6 @@ class AuthService:
             except ValueError:
                 raise ValidationException('Age must be a valid number')
         
-        # Create new user
         user = User(
             username=user_data['username'],
             email=user_data['email'],
@@ -90,7 +81,6 @@ class AuthService:
         if not user.is_active:
             raise ValidationException('Account is deactivated')
         
-        # Create tokens with string user ID (FIXED!)
         access_token = create_access_token(identity=str(user.id))
         refresh_token = create_refresh_token(identity=str(user.id))
         
@@ -104,7 +94,6 @@ class AuthService:
     @staticmethod
     def refresh_token(user_id: str) -> Dict[str, Any]:
         """Refresh access token"""
-        # Convert string back to int for database query
         try:
             user_id_int = int(user_id)
         except ValueError:
@@ -125,7 +114,6 @@ class AuthService:
     @staticmethod
     def get_user_profile(user_id: str) -> Dict[str, Any]:
         """Get user profile with statistics"""
-        # Convert string back to int for database query
         try:
             user_id_int = int(user_id)
         except ValueError:
@@ -137,7 +125,6 @@ class AuthService:
         
         profile_data = user.to_dict()
         
-        # Add additional stats based on role
         if user.is_student():
             enrollments = user.enrollments.all()
             profile_data['stats'] = {
@@ -146,7 +133,6 @@ class AuthService:
                 'total_achievements': user.achievements.count()
             }
         elif user.is_teacher():
-            # Calculate total students across all courses
             total_students = 0
             for course in user.taught_courses:
                 total_students += course.get_enrollment_count()
@@ -162,7 +148,6 @@ class AuthService:
     @staticmethod
     def update_profile(user_id: str, profile_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update user profile"""
-        # Convert string back to int for database query
         try:
             user_id_int = int(user_id)
         except ValueError:
@@ -172,7 +157,6 @@ class AuthService:
         if not user:
             raise NotFoundException('User not found')
         
-        # Update allowed fields
         allowed_fields = ['full_name', 'phone', 'age']
         for field in allowed_fields:
             if field in profile_data:
@@ -200,7 +184,6 @@ class AuthService:
     @staticmethod
     def change_password(user_id: str, current_password: str, new_password: str) -> Dict[str, str]:
         """Change user password"""
-        # Convert string back to int for database query
         try:
             user_id_int = int(user_id)
         except ValueError:
@@ -216,7 +199,6 @@ class AuthService:
         if not user.check_password(current_password):
             raise ValidationException('Current password is incorrect')
         
-        # Validate new password
         is_valid, message = validate_password(new_password)
         if not is_valid:
             raise ValidationException(message)

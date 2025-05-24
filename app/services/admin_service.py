@@ -14,26 +14,21 @@ class AdminService:
     def get_dashboard() -> Dict[str, Any]:
         """Get admin dashboard statistics"""
         try:
-            # User statistics
             total_users = User.query.count()
             total_students = User.query.filter_by(role='student').count()
             total_teachers = User.query.filter_by(role='teacher').count()
             active_users = User.query.filter_by(is_active=True).count()
             
-            # Course statistics
             total_courses = Course.query.count()
             published_courses = Course.query.filter_by(is_published=True).count()
             
-            # Enrollment statistics
             total_enrollments = Enrollment.query.count()
             active_enrollments = Enrollment.query.filter_by(status='active').count()
             completed_enrollments = Enrollment.query.filter_by(status='completed').count()
             
-            # Quiz statistics
             total_quizzes = Quiz.query.count()
             total_quiz_attempts = QuizAttempt.query.count()
             
-            # Recent activity (last 7 days)
             week_ago = datetime.utcnow() - timedelta(days=7)
             recent_users = User.query.filter(User.created_at >= week_ago).count()
             recent_enrollments = Enrollment.query.filter(Enrollment.enrolled_at >= week_ago).count()
@@ -79,12 +74,10 @@ class AdminService:
         try:
             query = User.query
             
-            # Apply role filter
             if role and role.strip():
                 print(f"Applying role filter: {role}")
                 query = query.filter_by(role=role.strip())
             
-            # Apply status filter - FIXED!
             if status and status.strip():
                 print(f"Applying status filter: {status}")
                 if status.strip().lower() == 'active':
@@ -92,7 +85,6 @@ class AdminService:
                 elif status.strip().lower() == 'inactive':
                     query = query.filter_by(is_active=False)
             
-            # Apply search filter
             if search and search.strip():
                 print(f"Applying search filter: {search}")
                 search_term = f"%{search.strip()}%"
@@ -104,14 +96,11 @@ class AdminService:
                     )
                 )
             
-            # Order by creation date
             query = query.order_by(desc(User.created_at))
             
-            # Get total count before pagination
             total = query.count()
             print(f"Total users found: {total}")
             
-            # Paginate
             pagination = query.paginate(
                 page=page,
                 per_page=per_page,
@@ -147,7 +136,6 @@ class AdminService:
         user_data = user.to_dict()
         
         try:
-            # Add detailed statistics based on role
             if user.is_student():
                 enrollments = user.enrollments.all()
                 user_data['detailed_stats'] = {
@@ -168,7 +156,7 @@ class AdminService:
                     'total_quizzes': sum(course.quizzes.count() for course in courses),
                     'total_assignments': sum(course.assignments.count() for course in courses)
                 }
-            else:  # admin
+            else:  
                 user_data['detailed_stats'] = {
                     'total_users_managed': User.query.count(),
                     'total_courses_managed': Course.query.count(),
@@ -187,17 +175,14 @@ class AdminService:
         if not user:
             raise NotFoundException("User not found")
         
-        # Don't allow editing other admins unless you're the same admin
         if user.is_admin() and user.id != admin_id:
             raise PermissionException("Cannot edit other admin users")
         
-        # Update allowed fields
         allowed_fields = ['full_name', 'email', 'phone', 'age', 'is_active']
         
         for field in allowed_fields:
             if field in user_data:
                 if field == 'email':
-                    # Check if email is already taken by another user
                     existing_user = User.query.filter_by(email=user_data['email']).first()
                     if existing_user and existing_user.id != user_id:
                         raise ValidationException('Email already taken by another user')
@@ -228,7 +213,6 @@ class AdminService:
         if not user:
             raise NotFoundException("User not found")
         
-        # Don't allow deactivating other admins
         if user.is_admin() and user.id != admin_id:
             raise PermissionException("Cannot deactivate other admin users")
         
@@ -249,7 +233,6 @@ class AdminService:
         try:
             query = User.query
             
-            # Apply same filters as get_users
             if role and role.strip():
                 query = query.filter_by(role=role.strip())
             
@@ -271,17 +254,14 @@ class AdminService:
             
             users = query.order_by(desc(User.created_at)).all()
             
-            # Create CSV content
             output = io.StringIO()
             writer = csv.writer(output)
             
-            # Write header
             writer.writerow([
                 'ID', 'Username', 'Email', 'Full Name', 'Role', 
                 'Phone', 'Age', 'Active', 'Created At', 'Updated At'
             ])
             
-            # Write user data
             for user in users:
                 writer.writerow([
                     user.id,
@@ -318,12 +298,10 @@ class AdminService:
         try:
             query = Course.query
             
-            # Apply category filter
             if category and category.strip():
                 print(f"Applying category filter: {category}")
                 query = query.filter_by(category=category.strip())
             
-            # Apply status filter - FIXED!
             if status and status.strip():
                 print(f"Applying status filter: {status}")
                 if status.strip().lower() == 'published':
@@ -331,7 +309,6 @@ class AdminService:
                 elif status.strip().lower() == 'draft':
                     query = query.filter_by(is_published=False)
             
-            # Apply search filter
             if search and search.strip():
                 print(f"Applying search filter: {search}")
                 search_term = f"%{search.strip()}%"
@@ -342,10 +319,8 @@ class AdminService:
                     )
                 )
             
-            # Order by creation date
             query = query.order_by(desc(Course.created_at))
             
-            # Get total count before pagination
             total = query.count()
             print(f"Total courses found: {total}")
             
@@ -396,7 +371,6 @@ class AdminService:
         try:
             query = Course.query
             
-            # Apply same filters as get_all_courses
             if category and category.strip():
                 query = query.filter_by(category=category.strip())
             
@@ -417,17 +391,14 @@ class AdminService:
             
             courses = query.order_by(desc(Course.created_at)).all()
             
-            # Create CSV content
             output = io.StringIO()
             writer = csv.writer(output)
             
-            # Write header
             writer.writerow([
                 'ID', 'Title', 'Description', 'Category', 'Teacher', 
                 'Students', 'Lessons', 'Quizzes', 'Assignments', 'Status', 'Created At'
             ])
             
-            # Write course data
             for course in courses:
                 try:
                     stats = calculate_course_statistics(course)
@@ -487,7 +458,6 @@ class AdminService:
         try:
             start_date = datetime.utcnow() - timedelta(days=days)
             
-            # User registrations over time
             user_registrations = db.session.query(
                 func.date(User.created_at).label('date'),
                 func.count(User.id).label('count')
@@ -497,7 +467,6 @@ class AdminService:
                 func.date(User.created_at)
             ).order_by('date').all()
             
-            # Course enrollments over time
             enrollments = db.session.query(
                 func.date(Enrollment.enrolled_at).label('date'),
                 func.count(Enrollment.id).label('count')
@@ -507,7 +476,6 @@ class AdminService:
                 func.date(Enrollment.enrolled_at)
             ).order_by('date').all()
             
-            # Quiz attempts over time
             quiz_attempts = db.session.query(
                 func.date(QuizAttempt.started_at).label('date'),
                 func.count(QuizAttempt.id).label('count')
@@ -552,7 +520,6 @@ class AdminService:
                 try:
                     stats = calculate_course_statistics(course)
                     
-                    # Get average quiz scores for the course
                     avg_quiz_score = db.session.query(
                         func.avg(QuizAttempt.score)
                     ).join(Quiz).filter(
@@ -576,7 +543,6 @@ class AdminService:
                     print(f"Error processing course {course.id}: {str(e)}")
                     continue
             
-            # Sort by completion rate
             course_performance.sort(key=lambda x: x['completion_rate'], reverse=True)
             
             return {
@@ -658,10 +624,8 @@ class AdminService:
             today = datetime.utcnow().date()
             start_date = today - timedelta(days=days - 1)
 
-            # Labels: list of days in ISO format
             labels = [(start_date + timedelta(days=i)).isoformat() for i in range(days)]
 
-            # New users per day
             new_users = db.session.query(
                 cast(User.created_at, Date).label("date"),
                 func.count(User.id)
@@ -674,7 +638,7 @@ class AdminService:
             return {
                 "labels": labels,
                 "new_users": [new_users_map.get(day, 0) for day in labels],
-                "active_users": [0 for _ in labels]  # filler data until you track real activity
+                "active_users": [0 for _ in labels]  
             }
 
         except Exception as e:

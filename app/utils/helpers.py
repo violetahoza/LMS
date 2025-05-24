@@ -172,7 +172,6 @@ def check_achievement_criteria(user, achievement):
     
     elif achievement.criteria_type == 'streak':
         # Check for consecutive days of activity
-        # This is a simplified version - you might want to implement more sophisticated logic
         return False
     
     elif achievement.criteria_type == 'participation':
@@ -198,7 +197,6 @@ def parse_datetime(date_string):
     if isinstance(date_string, datetime):
         return date_string
     
-    # Try different formats
     formats = [
         '%Y-%m-%d %H:%M:%S',
         '%Y-%m-%dT%H:%M:%S',

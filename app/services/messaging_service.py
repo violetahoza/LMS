@@ -1,4 +1,3 @@
-# app/services/messaging_service.py
 from datetime import datetime
 from typing import Dict, Any, List
 from sqlalchemy import or_, desc
@@ -27,7 +26,6 @@ class MessagingService:
         if not recipient:
             raise ValidationException("Recipient not found")
         
-        # Verify messaging permissions
         if not MessagingService._can_message(sender, recipient, course_id):
             raise PermissionException("You cannot send messages to this user")
         
@@ -94,11 +92,9 @@ class MessagingService:
         if not message:
             raise NotFoundException("Message not found")
         
-        # Check if user has permission to read this message
         if message.sender_id != user_id and message.recipient_id != user_id:
             raise PermissionException("Access denied")
         
-        # Mark as read if user is the recipient
         if message.recipient_id == user_id and message.read_at is None:
             message.read_at = datetime.utcnow()
             db.session.commit()
@@ -132,11 +128,9 @@ class MessagingService:
         if not user:
             raise NotFoundException("User not found")
         
-        # Get all users who have exchanged messages with this user
         sent_to = db.session.query(Message.recipient_id).filter_by(sender_id=user_id).distinct().subquery()
         received_from = db.session.query(Message.sender_id).filter_by(recipient_id=user_id).distinct().subquery()
         
-        # Get conversation partners
         conversation_partners = db.session.query(User).filter(
             or_(
                 User.id.in_(sent_to),
@@ -146,7 +140,6 @@ class MessagingService:
         
         conversations = []
         for partner in conversation_partners:
-            # Get latest message between these two users
             latest_message = Message.query.filter(
                 or_(
                     db.and_(Message.sender_id == user_id, Message.recipient_id == partner.id),
@@ -154,7 +147,6 @@ class MessagingService:
                 )
             ).order_by(desc(Message.sent_at)).first()
             
-            # Get unread count from this partner
             unread_count = Message.query.filter_by(
                 sender_id=partner.id,
                 recipient_id=user_id,
@@ -168,7 +160,6 @@ class MessagingService:
                     'unread_count': unread_count
                 })
         
-        # Sort by latest message date
         conversations.sort(key=lambda x: x['latest_message']['sent_at'], reverse=True)
         
         return {
@@ -185,7 +176,6 @@ class MessagingService:
         if not user or not partner:
             raise NotFoundException("User not found")
         
-        # Get messages between these two users
         query = Message.query.filter(
             or_(
                 db.and_(Message.sender_id == user_id, Message.recipient_id == partner_id),
@@ -201,7 +191,6 @@ class MessagingService:
         
         messages = [message.to_dict() for message in pagination.items]
         
-        # Mark unread messages from partner as read
         unread_messages = Message.query.filter_by(
             sender_id=partner_id,
             recipient_id=user_id,
@@ -226,17 +215,14 @@ class MessagingService:
     @staticmethod
     def _can_message(sender: User, recipient: User, course_id: int = None) -> bool:
         """Check if sender can message recipient"""
-        # Admins can message anyone
         if sender.is_admin():
             return True
         
-        # Teachers and students in the same course can message each other
         if course_id:
             course = Course.query.get(course_id)
             if not course:
                 return False
             
-            # Teacher can message students in their course
             if sender.is_teacher() and course.teacher_id == sender.id:
                 if recipient.is_student():
                     enrollment = Enrollment.query.filter_by(
@@ -245,7 +231,6 @@ class MessagingService:
                     ).first()
                     return enrollment is not None
             
-            # Students can message their teachers
             if sender.is_student() and recipient.is_teacher():
                 if course.teacher_id == recipient.id:
                     enrollment = Enrollment.query.filter_by(
@@ -254,16 +239,13 @@ class MessagingService:
                     ).first()
                     return enrollment is not None
         
-        # Find any shared courses
         if sender.is_teacher() and recipient.is_student():
-            # Check if student is enrolled in any of teacher's courses
             shared_courses = Course.query.filter_by(teacher_id=sender.id).join(
                 Enrollment, Course.id == Enrollment.course_id
             ).filter_by(student_id=recipient.id).first()
             return shared_courses is not None
         
         if sender.is_student() and recipient.is_teacher():
-            # Check if sender is enrolled in any of recipient's courses
             shared_courses = Course.query.filter_by(teacher_id=recipient.id).join(
                 Enrollment, Course.id == Enrollment.course_id
             ).filter_by(student_id=sender.id).first()

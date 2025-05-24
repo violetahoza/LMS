@@ -52,7 +52,7 @@ def create_course():
     )
 
 @bp.route('/<int:course_id>', methods=['PUT'])
-@jwt_required()  # Changed from teacher_required to jwt_required to allow admin access
+@jwt_required()  
 def update_course(course_id):
     """Update a course (teachers and admins)"""
     user_id_str = get_jwt_identity()
@@ -89,7 +89,7 @@ def update_course(course_id):
     )
 
 @bp.route('/<int:course_id>', methods=['DELETE'])
-@jwt_required()  # Changed to allow admin access
+@jwt_required()  
 def delete_course(course_id):
     """Delete a course (teachers and admins)"""
     user_id_str = get_jwt_identity()
@@ -102,7 +102,6 @@ def delete_course(course_id):
             success_message="Course deleted successfully"
         )
     
-    # Check if user exists and has permission
     user = User.query.get(user_id)
     if not user:
         return BaseController.handle_request(
@@ -110,7 +109,6 @@ def delete_course(course_id):
             success_message="Course deleted successfully"
         )
     
-    # Allow teachers and admins to delete courses
     if not (user.is_teacher() or user.is_admin()):
         return BaseController.handle_request(
             lambda: (_ for _ in ()).throw(PermissionError("Access denied. Teacher or admin role required")),
@@ -167,7 +165,7 @@ def get_enrolled_courses():
     )
 
 @bp.route('/<int:course_id>/students', methods=['GET'])
-@jwt_required()  # Changed to allow admin access
+@jwt_required() 
 def get_course_students(course_id):
     """Get students enrolled in a course (teachers and admins)"""
     user_id_str = get_jwt_identity()
@@ -180,7 +178,6 @@ def get_course_students(course_id):
             success_message="Students retrieved successfully"
         )
     
-    # Check if user exists and has permission
     user = User.query.get(user_id)
     if not user:
         return BaseController.handle_request(
@@ -188,7 +185,6 @@ def get_course_students(course_id):
             success_message="Students retrieved successfully"
         )
     
-    # Allow teachers and admins to view course students
     if not (user.is_teacher() or user.is_admin()):
         return BaseController.handle_request(
             lambda: (_ for _ in ()).throw(PermissionError("Access denied. Teacher or admin role required")),

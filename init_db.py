@@ -10,13 +10,11 @@ from sqlalchemy.exc import OperationalError
 import pymysql
 from dotenv import load_dotenv
 
-# Add the project directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from app.models import db, User, UserRole, Course, Lesson, Enrollment, Quiz, Question, AnswerOption, Assignment, Achievement
 from config import config
 
-# Load environment variables
 load_dotenv()
 
 def create_database():
@@ -27,14 +25,11 @@ def create_database():
     db_host = os.environ.get('DB_HOST')
     db_port = os.environ.get('DB_PORT')
     
-    # Connect to MySQL server without specifying a database
     connection_string = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}"
     engine = create_engine(connection_string)
     
     try:
-        # Create database if it doesn't exist
         with engine.connect() as conn:
-            # Use text() to wrap the SQL statement
             conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {db_name}"))
             conn.commit()
         print(f"Database '{db_name}' created or already exists.")
@@ -49,19 +44,15 @@ def create_database():
 def init_database(app):
     """Initialize the database with tables and sample data"""
     with app.app_context():
-        # Create all tables
         db.create_all()
         print("All tables created successfully!")
         
-        # Check if data already exists
         if User.query.first():
             print("Database already contains data. Skipping initialization.")
             return
         
-        # Create sample users
         print("Creating sample users...")
         
-        # Admin user
         admin = User(
             username='admin',
             email='admin@lms.com',
@@ -73,7 +64,6 @@ def init_database(app):
         admin.set_password('Admin123!')
         db.session.add(admin)
         
-        # Teacher users
         teachers = []
         teacher_data = [
             ('john_smith', 'john.smith@lms.com', 'John Smith', '555-0002', 42),
@@ -96,7 +86,6 @@ def init_database(app):
             teachers.append(teacher)
             db.session.add(teacher)
         
-        # Student users
         students = []
         student_data = [
             ('alice_martin', 'alice.martin@student.com', 'Alice Martin', '555-1001', 22),
@@ -127,7 +116,6 @@ def init_database(app):
         db.session.commit()
         print(f"Created {len(teachers)} teachers and {len(students)} students")
         
-        # Create sample courses
         print("Creating sample courses...")
         courses = []
         course_data = [
@@ -195,10 +183,9 @@ def init_database(app):
         db.session.commit()
         print(f"Created {len(courses)} courses")
         
-        # Create lessons for each course
         print("Creating lessons...")
         lesson_count = 0
-        for course in courses[:5]:  # Create lessons for published courses
+        for course in courses[:5]:  
             num_lessons = random.randint(5, 10)
             for i in range(num_lessons):
                 lesson = Lesson(
@@ -216,11 +203,9 @@ def init_database(app):
         db.session.commit()
         print(f"Created {lesson_count} lessons")
         
-        # Create enrollments
         print("Creating enrollments...")
         enrollment_count = 0
         for student in students:
-            # Each student enrolls in 2-4 courses
             num_courses = random.randint(2, 4)
             enrolled_courses = random.sample(courses[:5], min(num_courses, 5))
             
@@ -237,15 +222,13 @@ def init_database(app):
         db.session.commit()
         print(f"Created {enrollment_count} enrollments")
         
-        # Create quizzes with questions
         print("Creating quizzes and questions...")
         quiz_count = 0
         question_count = 0
         
-        for course in courses[:4]:  # Create quizzes for first 4 courses
+        for course in courses[:4]: 
             lessons = course.lessons.all()
             
-            # Create 1-2 quizzes per course
             for i in range(random.randint(1, 2)):
                 quiz = Quiz(
                     course_id=course.id,
@@ -258,10 +241,9 @@ def init_database(app):
                     max_attempts=3
                 )
                 db.session.add(quiz)
-                db.session.flush()  # Get quiz.id
+                db.session.flush()  
                 quiz_count += 1
                 
-                # Create 5-10 questions per quiz
                 for j in range(random.randint(5, 10)):
                     question_type = random.choice(['multiple_choice', 'true_false'])
                     question = Question(
@@ -272,10 +254,9 @@ def init_database(app):
                         order_number=j+1
                     )
                     db.session.add(question)
-                    db.session.flush()  # Get question.id
+                    db.session.flush()  
                     question_count += 1
                     
-                    # Create answer options
                     if question_type == 'multiple_choice':
                         correct_index = random.randint(0, 3)
                         for k in range(4):
@@ -302,13 +283,11 @@ def init_database(app):
         db.session.commit()
         print(f"Created {quiz_count} quizzes with {question_count} questions")
         
-        # Create assignments
         print("Creating assignments...")
         assignment_count = 0
         for course in courses[:4]:
             lessons = course.lessons.all()
             
-            # Create 2-3 assignments per course
             for i in range(random.randint(2, 3)):
                 assignment = Assignment(
                     course_id=course.id,
@@ -324,7 +303,6 @@ def init_database(app):
         db.session.commit()
         print(f"Created {assignment_count} assignments")
         
-        # Create achievements
         print("Creating achievements...")
         achievements_data = [
             {
@@ -384,20 +362,16 @@ def init_database(app):
 
 def main():
     """Main function to create and initialize the database"""
-    # Create Flask app
     app = Flask(__name__)
     app.config.from_object(config['development'])
     
-    # Initialize extensions
     db.init_app(app)
     migrate = Migrate(app, db)
     
-    # Create database
     if not create_database():
         print("Failed to create database. Exiting.")
         return
     
-    # Initialize database with tables and data
     init_database(app)
 
 if __name__ == '__main__':
