@@ -1,4 +1,4 @@
-# app/services/quiz_service.py 
+# app/services/quiz_service.py
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from app.models import db, Quiz, QuizAttempt, Question, AnswerOption, StudentAnswer, User, Course, Enrollment
@@ -63,9 +63,16 @@ class QuizService:
         
         quiz_data = quiz.to_dict()
         
-        # Add questions for teachers or during quiz attempt
+        # Add questions for teachers
         if user.is_teacher() and quiz.course.teacher_id == user_id:
-            quiz_data['questions'] = QuizService.get_quiz_questions(quiz_id, include_answers=True)
+            questions = quiz.questions.order_by(Question.order_number).all()
+            quiz_data['questions'] = []
+            for question in questions:
+                q_dict = question.to_dict()
+                # Include answer options with correct answers for teachers
+                if question.question_type in ['multiple_choice', 'true_false']:
+                    q_dict['answer_options'] = [opt.to_dict() for opt in question.answer_options]
+                quiz_data['questions'].append(q_dict)
         
         # Add attempt info for students
         if user.is_student():

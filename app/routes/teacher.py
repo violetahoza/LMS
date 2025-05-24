@@ -142,3 +142,21 @@ def get_course_analytics(course_id):
         teacher_id,
         course_id
     )
+
+@bp.route('/analytics/overview', methods=['GET'])
+@teacher_required()
+def get_teacher_analytics_overview():
+    """Get aggregate analytics for all teacher's courses"""
+    teacher_id_str = get_jwt_identity()
+    try:
+        teacher_id = int(teacher_id_str)
+    except (ValueError, TypeError):
+        return BaseController.handle_request(
+            lambda: (_ for _ in ()).throw(ValueError("Invalid teacher ID")),
+            success_message="Overview analytics retrieved"
+        )
+
+    return BaseController.handle_request(
+        TeacherService.get_teacher_analytics_overview,
+        teacher_id
+    )

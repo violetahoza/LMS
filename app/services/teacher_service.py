@@ -5,6 +5,7 @@ from sqlalchemy import desc, func
 from app.models import db, User, Course, Enrollment, Lesson, Quiz, Assignment, QuizAttempt, AssignmentSubmission, LessonProgress
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from app.utils.helpers import calculate_course_statistics, calculate_quiz_statistics
+from collections import defaultdict
 
 class TeacherService:
     """Service for teacher-specific operations"""
@@ -449,4 +450,65 @@ class TeacherService:
             'quiz_average': quiz_average,
             'assignment_average': assignment_average,
             'overall_percentage': overall_percentage
+        }
+    
+   
+    @staticmethod
+    def get_teacher_analytics_overview(teacher_id: int) -> Dict[str, Any]:
+        """Aggregate analytics overview across all courses taught by the teacher"""
+        user = User.query.get(teacher_id)
+        if not user or not user.is_teacher():
+            raise PermissionException("Only teachers can access this analytics overview")
+
+        courses = user.taught_courses.all()
+
+        total_students = 0
+        total_completion = 0
+        total_days = 0
+        completion_counts = 0
+        lesson_engagement = []
+        quiz_performance = []
+
+        # For enrollment trends
+        enrollment_trends_counter = defaultdict(int)
+        start_date = datetime.utcnow() - timedelta(days=30)
+
+        for course in courses:
+            stats = TeacherService.get_course_analytics(teacher_id, course.id)
+
+            total_students += stats["overall_stats"].get("total_students", 0)
+            total_completion += stats["overall_stats"].get("completion_rate", 0)
+            total_days += stats["overall_stats"].get("average_completion_days", 0)
+            completion_counts += 1
+
+            lesson_engagement += stats.get("lesson_engagement", [])
+            quiz_performance += stats.get("quiz_performance", [])
+
+            # Count enrollments per day
+            enrollments = course.enrollments.filter(
+                Enrollment.enrolled_at >= start_date
+            ).all()
+            for e in enrollments:
+                day = e.enrolled_at.date().isoformat()
+                enrollment_trends_counter[day] += 1
+
+        # Build time series list
+        enrollment_trends = []
+        for i in range(30):
+            date = (start_date + timedelta(days=i)).date().isoformat()
+            enrollment_trends.append({
+                "date": date,
+                "enrollments": enrollment_trends_counter.get(date, 0)
+            })
+
+        return {
+            "summary": {
+                "total_courses": len(courses),
+                "total_students": total_students,
+                "avg_completion_rate": round(total_completion / completion_counts, 1) if completion_counts else 0,
+                "avg_completion_days": round(total_days / completion_counts, 1) if completion_counts else 0
+            },
+            "enrollment_trends": enrollment_trends,
+            "lesson_engagement": lesson_engagement,
+            "quiz_performance": quiz_performance
         }
