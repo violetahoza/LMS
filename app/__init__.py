@@ -57,7 +57,7 @@ def register_blueprints(app):
         app.register_blueprint(admin.bp)
         app.register_blueprint(student.bp)
         app.register_blueprint(teacher.bp)
-        
+
         print("✅ All blueprints registered successfully")
     except Exception as e:
         print(f"❌ Error registering blueprints: {e}")

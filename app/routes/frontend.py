@@ -686,6 +686,15 @@ def teacher_lesson_preview(lesson_id):
     
     return render_template('teacher/lesson_preview.html', lesson_id=lesson_id)
 
+@bp.route('/teacher/quiz/<int:quiz_id>/analytics')
+def teacher_quiz_analytics(quiz_id):
+    """Quiz analytics"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('teacher/quiz_analytics.html', quiz_id=quiz_id)
+
 @bp.route('/teacher/quiz/<int:quiz_id>/questions')
 def teacher_quiz_questions(quiz_id):
     """Manage quiz questions"""
@@ -704,33 +713,6 @@ def teacher_assignment_submissions(assignment_id):
     
     return render_template('teacher/assignment_submissions.html', assignment_id=assignment_id)
 
-@bp.route('/teacher/lesson/<int:lesson_id>/analytics')
-def teacher_lesson_analytics(lesson_id):
-    """Lesson analytics"""
-    if not session.get('access_token') or session.get('user_role') != 'teacher':
-        flash('Access denied. Teacher privileges required.', 'error')
-        return redirect(url_for('frontend.index'))
-    
-    return render_template('teacher/lesson_analytics.html', lesson_id=lesson_id)
-
-@bp.route('/teacher/quiz/<int:quiz_id>/analytics')
-def teacher_quiz_analytics(quiz_id):
-    """Quiz analytics"""
-    if not session.get('access_token') or session.get('user_role') != 'teacher':
-        flash('Access denied. Teacher privileges required.', 'error')
-        return redirect(url_for('frontend.index'))
-    
-    return render_template('teacher/quiz_analytics.html', quiz_id=quiz_id)
-
-@bp.route('/messages')
-def messages():
-    """Messages page"""
-    if not session.get('access_token'):
-        flash('Please log in to access messages.', 'error')
-        return redirect(url_for('frontend.login'))
-    
-    return render_template('shared/messages.html')
-
 @bp.route('/teacher/student/<int:student_id>/progress')
 def teacher_student_progress(student_id):
     """View individual student progress"""
@@ -739,196 +721,4 @@ def teacher_student_progress(student_id):
         return redirect(url_for('frontend.index'))
     
     course_id = request.args.get('course')
-    return render_template('teacher/student_progress.html', 
-                         student_id=student_id, 
-                         course_id=course_id)
-
-@bp.route('/student/courses')
-def student_courses():
-    """Student courses page"""
-    if not session.get('access_token') or session.get('user_role') != 'student':
-        flash('Access denied. Student privileges required.', 'error')
-        return redirect(url_for('frontend.index'))
-    
-    return render_template('student/courses.html')
-
-@bp.route('/student/course/<int:course_id>')
-def student_course_view(course_id):
-    """Student course view"""
-    if not session.get('access_token') or session.get('user_role') != 'student':
-        flash('Access denied. Student privileges required.', 'error')
-        return redirect(url_for('frontend.index'))
-    
-    return render_template('student/course_view.html', course_id=course_id)
-
-@bp.route('/student/lesson/<int:lesson_id>')
-def student_lesson_view(lesson_id):
-    """Student lesson view"""
-    if not session.get('access_token') or session.get('user_role') != 'student':
-        flash('Access denied. Student privileges required.', 'error')
-        return redirect(url_for('frontend.index'))
-    
-    return render_template('student/lesson_view.html', lesson_id=lesson_id)
-
-@bp.route('/student/quiz/<int:quiz_id>')
-def student_quiz_view(quiz_id):
-    """Student quiz view"""
-    if not session.get('access_token') or session.get('user_role') != 'student':
-        flash('Access denied. Student privileges required.', 'error')
-        return redirect(url_for('frontend.index'))
-    
-    return render_template('student/quiz_view.html', quiz_id=quiz_id)
-
-@bp.route('/student/assignment/<int:assignment_id>')
-def student_assignment_view(assignment_id):
-    """Student assignment view"""
-    if not session.get('access_token') or session.get('user_role') != 'student':
-        flash('Access denied. Student privileges required.', 'error')
-        return redirect(url_for('frontend.index'))
-    
-    return render_template('student/assignment_view.html', assignment_id=assignment_id)
-
-@bp.route('/course/<int:course_id>/browse')
-def browse_course(course_id):
-    """Browse course content (for prospective students)"""
-    try:
-        headers = get_auth_headers() if session.get('access_token') else {}
-        response = requests.get(f'{API_BASE_URL}/courses/{course_id}', headers=headers)
-        
-        if response.status_code == 200:
-            course_data = response.json()
-            course = course_data.get('data', course_data)
-            return render_template('public/course_browse.html', course=course)
-        else:
-            flash('Course not found', 'error')
-            return redirect(url_for('frontend.index'))
-    except Exception as e:
-        flash(f'Error loading course: {str(e)}', 'error')
-        return redirect(url_for('frontend.index'))
-
-@bp.route('/courses/catalog')
-def course_catalog():
-    """Public course catalog"""
-    try:
-        page = request.args.get('page', 1, type=int)
-        category = request.args.get('category', '')
-        search = request.args.get('search', '')
-        
-        params = {'page': page, 'per_page': 12}
-        if category:
-            params['category'] = category
-        if search:
-            params['search'] = search
-        
-        # Get published courses only
-        response = requests.get(f'{API_BASE_URL}/courses', params=params)
-        
-        if response.status_code == 200:
-            courses_data = response.json()
-            return render_template('public/course_catalog.html',
-                                 courses=courses_data.get('courses', []),
-                                 total=courses_data.get('total', 0),
-                                 page=page,
-                                 pages=courses_data.get('pages', 1),
-                                 current_category=category,
-                                 current_search=search)
-        else:
-            flash('Failed to load courses', 'error')
-            return render_template('public/course_catalog.html',
-                                 courses=[], total=0, page=1, pages=1,
-                                 current_category=category, current_search=search)
-    except Exception as e:
-        flash(f'Error loading courses: {str(e)}', 'error')
-        return render_template('public/course_catalog.html',
-                             courses=[], total=0, page=1, pages=1,
-                             current_category='', current_search='')
-
-# Add API endpoints for lesson analytics
-@bp.route('/api/teacher/lesson/<int:lesson_id>/analytics', methods=['GET'])
-def get_lesson_analytics(lesson_id):
-    """Get lesson analytics (AJAX endpoint)"""
-    if not session.get('access_token') or session.get('user_role') != 'teacher':
-        return jsonify({'error': 'Access denied'}), 403
-    
-    try:
-        headers = get_auth_headers()
-        response = requests.get(f'{API_BASE_URL}/lessons/{lesson_id}/analytics', headers=headers)
-        
-        if response.status_code == 200:
-            return jsonify(response.json())
-        else:
-            error_data = response.json()
-            return jsonify(error_data), response.status_code
-    except Exception as e:
-        return jsonify({'error': f'Connection error: {str(e)}'}), 500
-
-# Add helper function to get quiz questions with proper permissions
-@bp.route('/api/teacher/quiz/<int:quiz_id>/questions', methods=['GET'])
-def get_quiz_questions(quiz_id):
-    """Get quiz questions for editing (AJAX endpoint)"""
-    if not session.get('access_token') or session.get('user_role') != 'teacher':
-        return jsonify({'error': 'Access denied'}), 403
-    
-    try:
-        headers = get_auth_headers()
-        response = requests.get(f'{API_BASE_URL}/quizzes/{quiz_id}', headers=headers)
-        
-        if response.status_code == 200:
-            return jsonify(response.json())
-        else:
-            error_data = response.json()
-            return jsonify(error_data), response.status_code
-    except Exception as e:
-        return jsonify({'error': f'Connection error: {str(e)}'}), 500
-
-# Add bulk operations endpoints
-@bp.route('/api/teacher/course/<int:course_id>/bulk-message', methods=['POST'])
-def send_bulk_message(course_id):
-    """Send message to all students in a course"""
-    if not session.get('access_token') or session.get('user_role') != 'teacher':
-        return jsonify({'error': 'Access denied'}), 403
-    
-    try:
-        headers = get_auth_headers()
-        data = request.get_json()
-        
-        # Get course students first
-        students_response = requests.get(f'{API_BASE_URL}/courses/{course_id}/students', headers=headers)
-        
-        if students_response.status_code != 200:
-            return jsonify({'error': 'Failed to get course students'}), 400
-        
-        students_data = students_response.json()
-        students = students_data.get('students', [])
-        
-        sent_count = 0
-        errors = []
-        
-        for student_data in students:
-            student = student_data.get('student', student_data)
-            try:
-                message_data = {
-                    'recipient_id': student['id'],
-                    'subject': data['subject'],
-                    'content': data['content'],
-                    'course_id': course_id
-                }
-                
-                response = requests.post(f'{API_BASE_URL}/student/messages/send', 
-                                       headers=headers, json=message_data)
-                
-                if response.status_code == 200:
-                    sent_count += 1
-                else:
-                    errors.append(f"Failed to send to {student['full_name']}")
-            except Exception as e:
-                errors.append(f"Error sending to {student['full_name']}: {str(e)}")
-        
-        return jsonify({
-            'message': f'Sent {sent_count} messages successfully',
-            'sent_count': sent_count,
-            'errors': errors
-        })
-        
-    except Exception as e:
-        return jsonify({'error': f'Connection error: {str(e)}'}), 500
+    return render_template('teacher/student_progress.html', student_id=student_id, course_id=course_id)
