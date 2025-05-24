@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+
+{% block title %}Course - Student - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-book-open fa-3x"></i>
+                                </div>
+                                <div>
+                                    <h2 class="mb-1" id="courseTitle">Loading...</h2>
+                                    <p class="mb-0 opacity-75" id="courseTeacher">by Loading...</p>
+                                    <small class="opacity-75" id="courseCategory">Loading...</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="text-center">
+                                <div class="h2 mb-0" id="progressPercentage">0%</div>
+                                <small class="opacity-75">Course Progress</small>
+                                <div class="progress mt-2" style="height: 8px;">
+                                    <div class="progress-bar bg-white" id="progressBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header border-bottom-0">
+                    <ul class="nav nav-tabs card-header-tabs" id="courseTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="lessons-tab" data-bs-toggle="tab" data-bs-target="#lessons" type="button" role="tab">
+                                <i class="fas fa-play-circle me-2"></i>Lessons <span class="badge bg-primary ms-2" id="lessonsCount">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="quizzes-tab" data-bs-toggle="tab" data-bs-target="#quizzes" type="button" role="tab">
+                                <i class="fas fa-question-circle me-2"></i>Quizzes <span class="badge bg-warning ms-2" id="quizzesCount">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments" type="button" role="tab">
+                                <i class="fas fa-tasks me-2"></i>Assignments <span class="badge bg-success ms-2" id="assignmentsCount">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                                <i class="fas fa-info-circle me-2"></i>Overview
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card-body">
+                    <div class="tab-content" id="courseTabsContent">
+                        <div class="tab-pane fade show active" id="lessons" role="tabpanel">
+                            <div id="lessonsContainer">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="quizzes" role="tabpanel">
+                            <div id="quizzesContainer">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-warning" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="assignments" role="tabpanel">
+                            <div id="assignmentsContainer">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="overview" role="tabpanel">
+                            <div id="overviewContainer">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-info" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const courseId = {{ course_id }};
+let courseData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCourse();
+    
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            const target = e.target.getAttribute('data-bs-target');
+            if (target === '#quizzes' && !document.getElementById('quizzesContainer').dataset.loaded) {
+                loadQuizzes();
+            } else if (target === '#assignments' && !document.getElementById('assignmentsContainer').dataset.loaded) {
+                loadAssignments();
+            } else if (target === '#overview' && !document.getElementById('overviewContainer').dataset.loaded) {
+                loadOverview();
+            }
+        });
+    });
+});
+
+async function loadCourse() {
+    try {
+        const response = await fetch(`/api/courses/${courseId}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            courseData = data.data || data;
+            updateCourseHeader();
+            loadLessons();
+        } else {
+            showError('Failed to load course');
+        }
+    } catch (error) {
+        console.error('Error loading course:', error);
+        showError('Error loading course');
+    }
+}
+
+function updateCourseHeader() {
+    if (!courseData) return;
+    
+    document.getElementById('courseTitle').textContent = courseData.title;
+    document.getElementById('courseTeacher').textContent = `by ${courseData.teacher_name || 'Unknown'}`;
+    document.getElementById('courseCategory').textContent = courseData.category || 'General';
+    
+    if (courseData.enrollment) {
+        const progress = courseData.enrollment.progress_percentage || 0;
+        document.getElementById('progressPercentage').textContent = `${progress.toFixed(1)}%`;
+        document.getElementById('progressBar').style.width = `${progress}%`;
+    }
+    
+    document.getElementById('lessonsCount').textContent = courseData.lesson_count || 0;
+    document.getElementById('quizzesCount').textContent = courseData.quiz_count || 0;
+    document.getElementById('assignmentsCount').textContent = courseData.assignment_count || 0;
+}
+
+async function loadLessons() {
+    try {
+        const response = await fetch(`/api/lessons/course/${courseId}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayLessons(data.data?.lessons || data.lessons || []);
+        } else {
+            showError('Failed to load lessons');
+        }
+    } catch (error) {
+        console.error('Error loading lessons:', error);
+        showError('Error loading lessons');
+    }
+}
+
+function displayLessons(lessons) {
+    const container = document.getElementById('lessonsContainer');
+    
+    if (lessons.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-play-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No lessons available</h5>
+                <p class="text-muted">This course doesn't have any lessons yet</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="list-group list-group-flush">';
+    
+    lessons.sort((a, b) => a.order_number - b.order_number);
+    
+    lessons.forEach((lesson, index) => {
+        const progress = lesson.progress || {};
+        const isCompleted = progress.completed;
+        const isViewed = progress.viewed;
+        const canAccess = index === 0 || lessons[index - 1]?.progress?.viewed;
+        
+        const statusIcon = isCompleted ? 'fas fa-check-circle text-success' : 
+                          isViewed ? 'fas fa-play-circle text-warning' : 
+                          'fas fa-lock text-muted';
+        
+        const typeIcon = lesson.lesson_type === 'video' ? 'fas fa-video' : 
+                        lesson.lesson_type === 'mixed' ? 'fas fa-file-video' : 'fas fa-file-text';
+        
+        content += `
+            <div class="list-group-item ${!canAccess ? 'disabled' : ''}" ${canAccess ? `onclick="openLesson(${lesson.id})"` : ''} style="${canAccess ? 'cursor: pointer;' : ''}">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-pill">${lesson.order_number}</span>
+                    </div>
+                    <div class="me-3">
+                        <i class="${statusIcon} fa-lg"></i>
+                    </div>
+                    <div class="me-3">
+                        <i class="${typeIcon} text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">${lesson.title}</h6>
+                        <small class="text-muted">
+                            ${lesson.lesson_type.charAt(0).toUpperCase() + lesson.lesson_type.slice(1)}
+                            ${lesson.duration_minutes ? ` • ${lesson.duration_minutes} min` : ''}
+                            ${progress.time_spent_minutes ? ` • Spent: ${progress.time_spent_minutes} min` : ''}
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        ${canAccess ? 
+                            `<i class="fas fa-chevron-right text-muted"></i>` : 
+                            `<small class="text-muted">Complete previous lessons</small>`
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+async function loadQuizzes() {
+    const container = document.getElementById('quizzesContainer');
+    container.dataset.loaded = 'true';
+    
+    try {
+        const response = await fetch(`/api/quizzes/course/${courseId}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayQuizzes(data.data?.quizzes || data.quizzes || []);
+        } else {
+            container.innerHTML = '<p class="text-muted">Failed to load quizzes</p>';
+        }
+    } catch (error) {
+        console.error('Error loading quizzes:', error);
+        container.innerHTML = '<p class="text-muted">Error loading quizzes</p>';
+    }
+}
+
+function displayQuizzes(quizzes) {
+    const container = document.getElementById('quizzesContainer');
+    
+    if (quizzes.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No quizzes available</h5>
+                <p class="text-muted">This course doesn't have any quizzes yet</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="row g-3">';
+    
+    quizzes.forEach(quiz => {
+        const attempts = quiz.attempts || {};
+        const hasAttempts = attempts.count > 0;
+        const hasPassed = attempts.has_passed;
+        const canTake = attempts.remaining > 0;
+        
+        content += `
+            <div class="col-md-6 col-lg-4">
+                <div class="card quiz-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title">${quiz.title}</h6>
+                            ${hasPassed ? '<span class="badge bg-success">Passed</span>' : 
+                             hasAttempts ? '<span class="badge bg-warning">Attempted</span>' : 
+                             '<span class="badge bg-secondary">Not Started</span>'}
+                        </div>
+                        
+                        <p class="card-text text-muted small">${quiz.description || 'No description'}</p>
+                        
+                        <div class="row g-2 text-center mb-3">
+                            <div class="col-4">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold text-primary">${quiz.question_count || 0}</div>
+                                    <small class="text-muted">Questions</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold text-warning">${quiz.total_points}</div>
+                                    <small class="text-muted">Points</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold text-success">${quiz.passing_score}%</div>
+                                    <small class="text-muted">Pass</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${hasAttempts ? `
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    Best Score: <span class="fw-bold ${hasPassed ? 'text-success' : 'text-danger'}">${attempts.best_score}%</span><br>
+                                    Attempts: ${attempts.count}/${quiz.max_attempts}
+                                </small>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="d-grid gap-2">
+                            ${canTake ? 
+                                `<a href="/student/courses/${courseId}/quiz/${quiz.id}" class="btn btn-gradient-warning">
+                                    <i class="fas fa-play me-2"></i>${hasAttempts ? 'Retake Quiz' : 'Start Quiz'}
+                                </a>` : 
+                                `<button class="btn btn-outline-secondary" disabled>
+                                    <i class="fas fa-ban me-2"></i>No Attempts Left
+                                </button>`
+                            }
+                            ${hasAttempts ? 
+                                `<button class="btn btn-outline-info btn-sm" onclick="viewQuizHistory(${quiz.id})">
+                                    <i class="fas fa-history me-2"></i>View History
+                                </button>` : ''
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+async function loadAssignments() {
+    const container = document.getElementById('assignmentsContainer');
+    container.dataset.loaded = 'true';
+    
+    try {
+        const response = await fetch(`/api/assignments/course/${courseId}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayAssignments(data.data?.assignments || data.assignments || []);
+        } else {
+            container.innerHTML = '<p class="text-muted">Failed to load assignments</p>';
+        }
+    } catch (error) {
+        console.error('Error loading assignments:', error);
+        container.innerHTML = '<p class="text-muted">Error loading assignments</p>';
+    }
+}
+
+function displayAssignments(assignments) {
+    const container = document.getElementById('assignmentsContainer');
+    
+    if (assignments.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No assignments available</h5>
+                <p class="text-muted">This course doesn't have any assignments yet</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="row g-3">';
+    
+    assignments.forEach(assignment => {
+        const submission = assignment.submission;
+        const hasSubmission = submission !== null;
+        const isOverdue = assignment.overdue;
+        const dueDate = assignment.due_date ? new Date(assignment.due_date) : null;
+        
+        content += `
+            <div class="col-md-6 col-lg-4">
+                <div class="card assignment-card h-100 ${isOverdue ? 'border-danger' : ''}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title">${assignment.title}</h6>
+                            ${hasSubmission ? 
+                                `<span class="badge bg-${submission.status === 'graded' ? 'success' : submission.status === 'submitted' ? 'warning' : 'info'}">${submission.status}</span>` :
+                                isOverdue ? '<span class="badge bg-danger">Overdue</span>' : 
+                                '<span class="badge bg-secondary">Not Submitted</span>'
+                            }
+                        </div>
+                        
+                        <p class="card-text text-muted small">${assignment.description?.substring(0, 100) || 'No description'}${assignment.description?.length > 100 ? '...' : ''}</p>
+                        
+                        ${dueDate ? `
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Due: ${dueDate.toLocaleDateString()}
+                                    ${isOverdue ? '<span class="text-danger">(Overdue)</span>' : ''}
+                                </small>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="row g-2 text-center mb-3">
+                            <div class="col-6">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold text-primary">${assignment.total_points}</div>
+                                    <small class="text-muted">Points</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold ${hasSubmission && submission.grade !== null ? 'text-success' : 'text-muted'}">
+                                        ${hasSubmission && submission.grade !== null ? submission.grade : '-'}
+                                    </div>
+                                    <small class="text-muted">Grade</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="/student/courses/${courseId}/assignment/${assignment.id}" class="btn btn-gradient-success">
+                                <i class="fas fa-${hasSubmission ? 'eye' : 'edit'} me-2"></i>
+                                ${hasSubmission ? 'View Submission' : 'Submit Assignment'}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function loadOverview() {
+    const container = document.getElementById('overviewContainer');
+    container.dataset.loaded = 'true';
+    
+    if (!courseData) {
+        container.innerHTML = '<p class="text-muted">Course data not loaded</p>';
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="row">
+            <div class="col-md-8">
+                <h5>About This Course</h5>
+                <p>${courseData.description || 'No description available'}</p>
+                
+                <h6>Course Information</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Category:</strong> ${courseData.category || 'General'}</li>
+                    <li><strong>Teacher:</strong> ${courseData.teacher_name || 'Unknown'}</li>
+                    <li><strong>Total Lessons:</strong> ${courseData.lesson_count || 0}</li>
+                    <li><strong>Total Quizzes:</strong> ${courseData.quiz_count || 0}</li>
+                    <li><strong>Total Assignments:</strong> ${courseData.assignment_count || 0}</li>
+                    ${courseData.start_date ? `<li><strong>Start Date:</strong> ${new Date(courseData.start_date).toLocaleDateString()}</li>` : ''}
+                    ${courseData.end_date ? `<li><strong>End Date:</strong> ${new Date(courseData.end_date).toLocaleDateString()}</li>` : ''}
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6>Your Progress</h6>
+                        <div class="text-center mb-3">
+                            <div class="h3 text-primary">${courseData.enrollment ? (courseData.enrollment.progress_percentage || 0).toFixed(1) : 0}%</div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-gradient-primary" style="width: ${courseData.enrollment ? courseData.enrollment.progress_percentage || 0 : 0}%"></div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="small">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Enrolled:</span>
+                                <span>${courseData.enrollment ? new Date(courseData.enrollment.enrolled_at).toLocaleDateString() : 'Not enrolled'}</span>
+                            </div>
+                            ${courseData.enrollment?.completed_at ? `
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Completed:</span>
+                                    <span>${new Date(courseData.enrollment.completed_at).toLocaleDateString()}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function openLesson(lessonId) {
+    window.location.href = `/student/courses/${courseId}/lesson/${lessonId}`;
+}
+
+function viewQuizHistory(quizId) {
+    window.location.href = `/student/courses/${courseId}/quiz/${quizId}`;
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}

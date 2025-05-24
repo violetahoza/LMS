@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}Compose Message - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1">Compose Message</h1>
+                    <p class="text-muted mb-0">Send a message to another user</p>
+                </div>
+                <div>
+                    <a href="/messages" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Messages
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-envelope me-2"></i>New Message
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="composeForm">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="recipientSearch" class="form-label fw-semibold">To:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="recipientSearch" 
+                                           placeholder="Search for users..." autocomplete="off">
+                                </div>
+                                <div id="recipientResults" class="mt-2"></div>
+                                <input type="hidden" id="selectedRecipientId" name="recipient_id">
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <div class="col-12" id="courseSelection" style="display: none;">
+                                <label for="courseId" class="form-label fw-semibold">Related Course (Optional):</label>
+                                <select class="form-select" id="courseId" name="course_id">
+                                    <option value="">Select a course...</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="messageSubject" class="form-label fw-semibold">Subject:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-tag"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="messageSubject" 
+                                           name="subject" placeholder="Enter message subject" required>
+                                </div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="messageContent" class="form-label fw-semibold">Message:</label>
+                                <textarea class="form-control" id="messageContent" name="content" 
+                                          rows="8" placeholder="Type your message here..." required></textarea>
+                                <div class="form-text">
+                                    <span id="charCount">0</span>/1000 characters
+                                </div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="clearForm()">
+                                        <i class="fas fa-times me-2"></i>Clear
+                                    </button>
+                                    <button type="submit" class="btn btn-gradient-primary">
+                                        <i class="fas fa-paper-plane me-2"></i>Send Message
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Templates (Optional) -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-templates me-2"></i>Quick Templates
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-outline-info btn-sm w-100" 
+                                    onclick="useTemplate('question')">
+                                <i class="fas fa-question-circle me-1"></i>Question
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-outline-warning btn-sm w-100" 
+                                    onclick="useTemplate('assignment')">
+                                <i class="fas fa-tasks me-1"></i>Assignment Help
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-outline-success btn-sm w-100" 
+                                    onclick="useTemplate('meeting')">
+                                <i class="fas fa-calendar me-1"></i>Meeting Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle me-2"></i>Message Sent!
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="fas fa-paper-plane fa-3x text-success mb-3"></i>
+                <h6>Your message has been sent successfully!</h6>
+                <p class="text-muted">The recipient will be notified of your message.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="/messages" class="btn btn-gradient-primary">
+                    <i class="fas fa-inbox me-2"></i>Go to Messages
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>Sending message...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let searchTimeout;
+let selectedRecipient = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupRecipientSearch();
+    setupCharacterCount();
+    setupFormSubmission();
+    loadUserCourses();
+});
+
+function setupRecipientSearch() {
+    const searchInput = document.getElementById('recipientSearch');
+    const resultsContainer = document.getElementById('recipientResults');
+    
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        
+        if (query.length < 2) {
+            resultsContainer.innerHTML = '';
+            selectedRecipient = null;
+            document.getElementById('selectedRecipientId').value = '';
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            searchUsers(query);
+        }, 300);
+    });
+}
+
+async function searchUsers(query) {
+    try {
+        const response = await fetch(`/api/messages/search-users?q=${encodeURIComponent(query)}&limit=10`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayUserResults(data.users || []);
+        } else {
+            console.error('Failed to search users');
+            displayUserResults([]);
+        }
+    } catch (error) {
+        console.error('Error searching users:', error);
+        displayUserResults([]);
+    }
+}
+
+function displayUserResults(users) {
+    const container = document.getElementById('recipientResults');
+    
+    if (users.length === 0) {
+        container.innerHTML = '<div class="alert alert-info small">No users found matching your search.</div>';
+        return;
+    }
+    
+    let content = '<div class="list-group shadow-sm">';
+    
+    users.forEach(user => {
+        const roleIcon = user.role === 'teacher' ? 'fa-chalkboard-teacher' : 
+                        user.role === 'admin' ? 'fa-user-shield' : 'fa-user-graduate';
+        const roleColor = user.role === 'teacher' ? 'text-primary' : 
+                         user.role === 'admin' ? 'text-danger' : 'text-success';
+        
+        content += `
+            <a href="#" class="list-group-item list-group-item-action" onclick="selectRecipient(${user.id}, '${user.full_name.replace(/'/g, "\\'")}', '${user.email}', '${user.role}')">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas ${roleIcon} ${roleColor}"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold">${user.full_name}</div>
+                        <small class="text-muted">${user.email}</small>
+                        ${user.context ? `<br><small class="text-info">${user.context}</small>` : ''}
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-light text-dark">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
+                    </div>
+                </div>
+            </a>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function selectRecipient(id, name, email, role) {
+    selectedRecipient = { id, name, email, role };
+    document.getElementById('selectedRecipientId').value = id;
+    document.getElementById('recipientSearch').value = `${name} (${email})`;
+    document.getElementById('recipientResults').innerHTML = '';
+    
+    // Show course selection if relevant
+    const courseSelection = document.getElementById('courseSelection');
+    if (role === 'teacher' || role === 'student') {
+        courseSelection.style.display = 'block';
+    } else {
+        courseSelection.style.display = 'none';
+    }
+}
+
+function setupCharacterCount() {
+    const messageContent = document.getElementById('messageContent');
+    const charCount = document.getElementById('charCount');
+    const maxLength = 1000;
+    
+    messageContent.addEventListener('input', function() {
+        const length = this.value.length;
+        charCount.textContent = length;
+        
+        if (length > maxLength) {
+            charCount.classList.add('text-danger');
+            this.classList.add('is-invalid');
+        } else {
+            charCount.classList.remove('text-danger');
+            this.classList.remove('is-invalid');
+        }
+    });
+}
+
+function setupFormSubmission() {
+    document.getElementById('composeForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const recipientId = document.getElementById('selectedRecipientId').value;
+        const subject = document.getElementById('messageSubject').value.trim();
+        const content = document.getElementById('messageContent').value.trim();
+        const courseId = document.getElementById('courseId').value;
+        
+        // Validation
+        if (!recipientId) {
+            showError('Please select a recipient');
+            return;
+        }
+        
+        if (!subject) {
+            showError('Please enter a subject');
+            return;
+        }
+        
+        if (!content) {
+            showError('Please enter a message');
+            return;
+        }
+        
+        if (content.length > 1000) {
+            showError('Message is too long (maximum 1000 characters)');
+            return;
+        }
+        
+        await sendMessage({
+            recipient_id: parseInt(recipientId),
+            subject: subject,
+            content: content,
+            course_id: courseId ? parseInt(courseId) : null
+        });
+    });
+}
+
+async function sendMessage(data) {
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/messages/send', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            new bootstrap.Modal(document.getElementById('successModal')).show();
+            clearForm();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to send message');
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+        showError('Error sending message');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function loadUserCourses() {
+    try {
+        const userRole = '{{ session.user_role }}';
+        let endpoint = '';
+        
+        if (userRole === 'teacher') {
+            endpoint = '/api/courses/?per_page=100';
+        } else if (userRole === 'student') {
+            endpoint = '/api/courses/enrolled?per_page=100';
+        } else {
+            return; // Admins don't need course context
+        }
+        
+        const response = await fetch(endpoint, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            populateCourseOptions(data.courses || data.enrollments || []);
+        }
+    } catch (error) {
+        console.error('Error loading courses:', error);
+    }
+}
+
+function populateCourseOptions(courses) {
+    const select = document.getElementById('courseId');
+    select.innerHTML = '<option value="">Select a course...</option>';
+    
+    courses.forEach(item => {
+        const course = item.course || item; // Handle both course objects and enrollment objects
+        const option = document.createElement('option');
+        option.value = course.id;
+        option.textContent = course.title;
+        select.appendChild(option);
+    });
+}
+
+function useTemplate(type) {
+    const subjectField = document.getElementById('messageSubject');
+    const contentField = document.getElementById('messageContent');
+    
+    const templates = {
+        question: {
+            subject: 'Question about course material',
+            content: 'Hi,\n\nI have a question about the course material. Could you please help me understand:\n\n[Your question here]\n\nThank you for your time.\n\nBest regards'
+        },
+        assignment: {
+            subject: 'Help with assignment',
+            content: 'Hi,\n\nI need some assistance with the assignment. I\'m having difficulty with:\n\n[Specific area where you need help]\n\nCould you please provide some guidance?\n\nThank you!'
+        },
+        meeting: {
+            subject: 'Meeting request',
+            content: 'Hi,\n\nI would like to schedule a meeting to discuss:\n\n[Topic to discuss]\n\nWould you be available for a meeting sometime this week? Please let me know what times work best for you.\n\nBest regards'
+        }
+    };
+    
+    const template = templates[type];
+    if (template) {
+        subjectField.value = template.subject;
+        contentField.value = template.content;
+        
+        // Update character count
+        document.getElementById('charCount').textContent = template.content.length;
+        
+        // Focus on content for editing
+        contentField.focus();
+        contentField.setSelectionRange(0, 0);
+    }
+}
+
+function clearForm() {
+    document.getElementById('composeForm').reset();
+    document.getElementById('recipientResults').innerHTML = '';
+    document.getElementById('selectedRecipientId').value = '';
+    document.getElementById('charCount').textContent = '0';
+    document.getElementById('courseSelection').style.display = 'none';
+    selectedRecipient = null;
+    
+    // Clear any validation states
+    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}

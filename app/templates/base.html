@@ -56,12 +56,32 @@
                                     <li><a class="dropdown-item" href="{{ url_for('frontend.teacher_courses') }}">
                                         <i class="fas fa-book me-2"></i>My Courses
                                     </a></li>
-
                                 {% else %}
                                     <li><a class="dropdown-item" href="{{ url_for('frontend.student_dashboard') }}">
                                         <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                                     </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('frontend.student_courses') }}">
+                                        <i class="fas fa-book me-2"></i>My Courses
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('frontend.student_browse_courses') }}">
+                                        <i class="fas fa-search me-2"></i>Browse Courses
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('frontend.student_assignments') }}">
+                                        <i class="fas fa-tasks me-2"></i>Assignments
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('frontend.student_progress') }}">
+                                        <i class="fas fa-chart-line me-2"></i>Progress
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('frontend.student_achievements') }}">
+                                        <i class="fas fa-trophy me-2"></i>Achievements
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('frontend.student_certificates') }}">
+                                        <i class="fas fa-certificate me-2"></i>Certificates
+                                    </a></li>
                                 {% endif %}
+                                <li><a class="dropdown-item" href="{{ url_for('frontend.messages') }}">
+                                        <i class="fas fa-envelope me-2"></i>Messages
+                                    </a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ url_for('frontend.profile') }}">
                                     <i class="fas fa-user-cog me-2"></i>Profile Settings

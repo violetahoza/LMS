@@ -215,40 +215,73 @@ class MessagingService:
     @staticmethod
     def _can_message(sender: User, recipient: User, course_id: int = None) -> bool:
         """Check if sender can message recipient"""
+        # Admins can message anyone
         if sender.is_admin():
             return True
         
+        # Users can always reply to existing conversations
+        existing_conversation = Message.query.filter(
+            or_(
+                db.and_(Message.sender_id == sender.id, Message.recipient_id == recipient.id),
+                db.and_(Message.sender_id == recipient.id, Message.recipient_id == sender.id)
+            )
+        ).first()
+        
+        if existing_conversation:
+            return True
+        
+        # If a specific course is mentioned, check course-based permissions
         if course_id:
             course = Course.query.get(course_id)
             if not course:
                 return False
             
-            if sender.is_teacher() and course.teacher_id == sender.id:
-                if recipient.is_student():
-                    enrollment = Enrollment.query.filter_by(
-                        student_id=recipient.id,
-                        course_id=course_id
-                    ).first()
-                    return enrollment is not None
+            # Teacher can message students in their course
+            if sender.is_teacher() and course.teacher_id == sender.id and recipient.is_student():
+                enrollment = Enrollment.query.filter_by(
+                    student_id=recipient.id,
+                    course_id=course_id
+                ).first()
+                return enrollment is not None
             
-            if sender.is_student() and recipient.is_teacher():
-                if course.teacher_id == recipient.id:
-                    enrollment = Enrollment.query.filter_by(
-                        student_id=sender.id,
-                        course_id=course_id
-                    ).first()
-                    return enrollment is not None
+            # Student can message teacher of their course
+            if sender.is_student() and recipient.is_teacher() and course.teacher_id == recipient.id:
+                enrollment = Enrollment.query.filter_by(
+                    student_id=sender.id,
+                    course_id=course_id
+                ).first()
+                return enrollment is not None
         
+        # General permission checks without specific course context
+        
+        # Teachers can message any admin
+        if sender.is_teacher() and recipient.is_admin():
+            return True
+        
+        # Students can message any admin
+        if sender.is_student() and recipient.is_admin():
+            return True
+        
+        # Teachers can message other teachers
+        if sender.is_teacher() and recipient.is_teacher():
+            return True
+        
+        # Teachers can message students who are enrolled in any of their courses
         if sender.is_teacher() and recipient.is_student():
             shared_courses = Course.query.filter_by(teacher_id=sender.id).join(
                 Enrollment, Course.id == Enrollment.course_id
             ).filter_by(student_id=recipient.id).first()
             return shared_courses is not None
         
+        # Students can message teachers of courses they're enrolled in
         if sender.is_student() and recipient.is_teacher():
             shared_courses = Course.query.filter_by(teacher_id=recipient.id).join(
                 Enrollment, Course.id == Enrollment.course_id
-            ).filter_by(student_id=sender.id).first()
+            ).filter_by(student_id=sender.id, status='active').first()
             return shared_courses is not None
+        
+        # Students cannot message other students directly
+        if sender.is_student() and recipient.is_student():
+            return False
         
         return False

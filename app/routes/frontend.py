@@ -75,7 +75,6 @@ def register():
     if request.method == 'POST':
         field_errors = {}
         
-        # Basic validation
         if not request.form.get('full_name', '').strip():
             field_errors['full_name'] = 'Full name is required'
         
@@ -594,6 +593,103 @@ def student_dashboard():
         return redirect(url_for('frontend.index'))
     
     return render_template('student/dashboard.html')
+
+@bp.route('/student/courses/browse')
+def student_browse_courses():
+    """Browse available courses for students"""
+    if not session.get('access_token') or session.get('user_role') != 'student':
+        flash('Access denied. Student privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('student/browse_courses.html')
+
+@bp.route('/student/courses')
+def student_courses():
+    """Student's enrolled courses"""
+    if not session.get('access_token') or session.get('user_role') != 'student':
+        flash('Access denied. Student privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('student/courses.html')
+
+@bp.route('/student/courses/<int:course_id>')
+def student_course_view(course_id):
+    """View course content as student"""
+    if not session.get('access_token') or session.get('user_role') != 'student':
+        flash('Access denied. Student privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('student/course_view.html', course_id=course_id)
+
+@bp.route('/student/courses/<int:course_id>/lesson/<int:lesson_id>')
+def student_lesson_view(course_id, lesson_id):
+    """View specific lesson"""
+    if not session.get('access_token') or session.get('user_role') != 'student':
+        flash('Access denied. Student privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('student/lesson_view.html', course_id=course_id, lesson_id=lesson_id)
+
+@bp.route('/student/courses/<int:course_id>/quiz/<int:quiz_id>')
+def student_quiz_take(course_id, quiz_id):
+    """Take a quiz"""
+    if not session.get('access_token') or session.get('user_role') != 'student':
+        flash('Access denied. Student privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('student/quiz_take.html', course_id=course_id, quiz_id=quiz_id)
+
+@bp.route('/student/quiz/<int:attempt_id>/results')
+def student_quiz_results(attempt_id):
+    """View quiz results"""
+    if not session.get('access_token') or session.get('user_role') != 'student':
+        flash('Access denied. Student privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('student/quiz_results.html', attempt_id=attempt_id)
+
+@bp.route('/student/courses/<int:course_id>/assignment/<int:assignment_id>')
+def student_assignment_view(course_id, assignment_id):
+    """View and submit assignment"""
+    if not session.get('access_token') or session.get('user_role') != 'student':
+        flash('Access denied. Student privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('student/assignment_view.html', course_id=course_id, assignment_id=assignment_id)
+
+@bp.route('/student/assignments')
+def student_assignments():
+    """Student assignments overview"""
+    if not session.get('access_token') or session.get('user_role') != 'student':
+        flash('Access denied. Student privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('student/assignments.html')
+
+@bp.route('/student/progress')
+def student_progress():
+    """Student progress overview"""
+    if not session.get('access_token') or session.get('user_role') != 'student':
+        flash('Access denied. Student privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+
+@bp.route('/student/achievements')
+def student_achievements():
+    """Student achievements"""
+    if not session.get('access_token') or session.get('user_role') != 'student':
+        flash('Access denied. Student privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('student/achievements.html')
+
+@bp.route('/student/certificates')
+def student_certificates():
+    """Student certificates"""
+    if not session.get('access_token') or session.get('user_role') != 'student':
+        flash('Access denied. Student privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('student/certificates.html')
 
 @bp.route('/teacher/dashboard')
 def teacher_dashboard():

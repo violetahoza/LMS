@@ -1,68 +1,50 @@
 from datetime import datetime
-from app.models import db, Certificate, Enrollment, Course, User
+from typing import Dict, Any, List
+from app.models import db, User, Course, Certificate, Enrollment
+from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from app.utils.helpers import generate_certificate_code
 
 class CertificateService:
-    """Service class for certificate generation and management"""
+    """Service for certificate-related operations"""
     
     @staticmethod
-    def check_course_completion(student_id, course_id):
-        """Check if student has completed all course requirements"""
+    def get_student_certificates(student_id: int) -> List[Dict[str, Any]]:
+        """Get all certificates for a student"""
+        user = User.query.get(student_id)
+        if not user or not user.is_student():
+            raise PermissionException("Only students can access certificates")
+        
+        certificates = Certificate.query.filter_by(student_id=student_id).all()
+        
+        certificates_data = []
+        for cert in certificates:
+            cert_data = cert.to_dict()
+            certificates_data.append(cert_data)
+        
+        return certificates_data
+    
+    @staticmethod
+    def generate_certificate(student_id: int, course_id: int) -> Certificate:
+        """Generate a certificate for a completed course"""
+        user = User.query.get(student_id)
+        if not user or not user.is_student():
+            raise PermissionException("Only students can generate certificates")
+        
+        course = Course.query.get(course_id)
+        if not course:
+            raise NotFoundException("Course not found")
+        
+        # Check if student completed the course
         enrollment = Enrollment.query.filter_by(
             student_id=student_id,
-            course_id=course_id
+            course_id=course_id,
+            status='completed'
         ).first()
         
         if not enrollment:
-            return False, "Not enrolled in this course"
+            raise ValidationException("Course must be completed to generate certificate")
         
-        if enrollment.status != 'completed':
-            return False, "Course not completed"
-        
-        course = Course.query.get(course_id)
-        
-        from app.models import Lesson, LessonProgress
-        total_lessons = course.lessons.count()
-        completed_lessons = LessonProgress.query.filter_by(
-            student_id=student_id
-        ).join(Lesson).filter(
-            Lesson.course_id == course_id,
-            LessonProgress.completed_at.isnot(None)
-        ).count()
-        
-        if completed_lessons < total_lessons:
-            return False, f"Only {completed_lessons}/{total_lessons} lessons completed"
-        
-        from app.models import Quiz, QuizAttempt
-        required_quizzes = course.quizzes.all()
-        
-        for quiz in required_quizzes:
-            best_attempt = QuizAttempt.query.filter_by(
-                student_id=student_id,
-                quiz_id=quiz.id,
-                status='completed'
-            ).order_by(QuizAttempt.score.desc()).first()
-            
-            if not best_attempt or best_attempt.score < quiz.passing_score:
-                return False, f"Quiz '{quiz.title}' not passed"
-        
-        from app.models import Assignment, AssignmentSubmission
-        required_assignments = course.assignments.all()
-        
-        for assignment in required_assignments:
-            submission = AssignmentSubmission.query.filter_by(
-                student_id=student_id,
-                assignment_id=assignment.id
-            ).first()
-            
-            if not submission:
-                return False, f"Assignment '{assignment.title}' not submitted"
-        
-        return True, "All requirements completed"
-    
-    @staticmethod
-    def generate_certificate(student_id, course_id):
-        """Generate a certificate for course completion"""
+        # Check if certificate already exists
         existing_cert = Certificate.query.filter_by(
             student_id=student_id,
             course_id=course_id
@@ -71,14 +53,13 @@ class CertificateService:
         if existing_cert:
             return existing_cert
         
-        is_complete, message = CertificateService.check_course_completion(student_id, course_id)
-        if not is_complete:
-            raise ValueError(message)
+        # Generate new certificate
+        certificate_code = generate_certificate_code()
         
         certificate = Certificate(
             student_id=student_id,
             course_id=course_id,
-            certificate_code=generate_certificate_code()
+            certificate_code=certificate_code
         )
         
         db.session.add(certificate)
@@ -87,78 +68,26 @@ class CertificateService:
         return certificate
     
     @staticmethod
-    def verify_certificate(certificate_code):
+    def verify_certificate(certificate_code: str) -> Dict[str, Any]:
         """Verify a certificate by its code"""
         certificate = Certificate.query.filter_by(
             certificate_code=certificate_code
         ).first()
         
         if not certificate:
-            return None
+            raise NotFoundException("Certificate not found")
         
         return {
+            'certificate': certificate.to_dict(),
             'valid': True,
-            'student_name': certificate.student.full_name,
-            'course_title': certificate.course.title,
-            'issued_date': certificate.issued_at,
-            'certificate_code': certificate_code
+            'verified_at': datetime.utcnow().isoformat()
         }
     
     @staticmethod
-    def get_student_certificates(student_id):
-        """Get all certificates earned by a student"""
-        certificates = Certificate.query.filter_by(
-            student_id=student_id
-        ).order_by(Certificate.issued_at.desc()).all()
+    def get_certificate_details(certificate_id: int) -> Dict[str, Any]:
+        """Get detailed certificate information"""
+        certificate = Certificate.query.get(certificate_id)
+        if not certificate:
+            raise NotFoundException("Certificate not found")
         
-        return [cert.to_dict() for cert in certificates]
-    
-    @staticmethod
-    def get_course_certificates(course_id):
-        """Get all certificates issued for a course"""
-        certificates = Certificate.query.filter_by(
-            course_id=course_id
-        ).order_by(Certificate.issued_at.desc()).all()
-        
-        cert_data = []
-        for cert in certificates:
-            data = cert.to_dict()
-            data['student'] = cert.student.to_dict()
-            cert_data.append(data)
-        
-        return cert_data
-    
-    @staticmethod
-    def generate_bulk_certificates(course_id):
-        """Generate certificates for all eligible students in a course"""
-        course = Course.query.get(course_id)
-        if not course:
-            raise ValueError("Course not found")
-        
-        completed_enrollments = Enrollment.query.filter_by(
-            course_id=course_id,
-            status='completed'
-        ).all()
-        
-        generated = []
-        errors = []
-        
-        for enrollment in completed_enrollments:
-            try:
-                cert = CertificateService.generate_certificate(
-                    enrollment.student_id,
-                    course_id
-                )
-                generated.append(cert)
-            except Exception as e:
-                errors.append({
-                    'student_id': enrollment.student_id,
-                    'student_name': enrollment.student.full_name,
-                    'error': str(e)
-                })
-        
-        return {
-            'generated': len(generated),
-            'errors': errors,
-            'certificates': [cert.to_dict() for cert in generated]
-        }
+        return certificate.to_dict()
