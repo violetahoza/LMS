@@ -49,18 +49,28 @@ class User(UserMixin, db.Model):
     
     def can_access_course(self, course):
         """Check if user can access a course"""
-        if self.is_admin():
-            return True
-        elif self.is_teacher():
-            return course.teacher_id == self.id
-        elif self.is_student():
-            enrollment = Enrollment.query.filter_by(
-                student_id=self.id,
-                course_id=course.id,
-                status='active'
-            ).first()
-            return enrollment is not None
-        return False
+        try:
+            if self.is_admin():
+                return True
+            elif self.is_teacher():
+                # Teachers can access their own courses
+                return course.teacher_id == self.id
+            elif self.is_student():
+                # Students can access published courses they're enrolled in OR any published course for viewing
+                if course.is_published:
+                    return True  # Allow students to view any published course
+                else:
+                    # For unpublished courses, check enrollment
+                    enrollment = Enrollment.query.filter_by(
+                        student_id=self.id,
+                        course_id=course.id,
+                        status='active'
+                    ).first()
+                    return enrollment is not None
+            return False
+        except Exception as e:
+            print(f"Error in can_access_course: {e}")
+            return False
     
     def to_dict(self):
         return {

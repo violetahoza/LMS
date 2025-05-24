@@ -9,21 +9,21 @@ def teacher_required():
         @wraps(f)
         @jwt_required()
         def decorated_function(*args, **kwargs):
-            user_id_str = get_jwt_identity()
+            current_user = get_jwt_identity()
             
-            # Convert string to int
             try:
-                user_id = int(user_id_str)
+                user_id = int(current_user)
             except (ValueError, TypeError):
-                return jsonify({'error': 'Invalid user ID'}), 400
+                return jsonify({'error': 'Invalid user ID format'}), 400
             
             user = User.query.get(user_id)
             
             if not user:
                 return jsonify({'error': 'User not found'}), 404
-            
-            if not user.is_teacher() and not user.is_admin():
-                return jsonify({'error': 'Access denied. Teacher role required'}), 403
+                
+            # Allow both teachers and admins
+            if not (user.role == UserRole.TEACHER or user.role == UserRole.ADMIN):
+                return jsonify({'error': 'Teacher or admin access required'}), 403
             
             return f(*args, **kwargs)
         return decorated_function

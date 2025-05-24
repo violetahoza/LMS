@@ -2,6 +2,7 @@
 from flask import jsonify
 from app.models import db
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,17 @@ class BaseController:
                 'data': result
             }), success_code
             
-        except ValueError as e:
+        except ValidationException as e:
             logger.warning(f"Validation error: {str(e)}")
+            return jsonify({'error': str(e)}), 400
+        except PermissionException as e:
+            logger.warning(f"Permission error: {str(e)}")
+            return jsonify({'error': str(e)}), 403
+        except NotFoundException as e:
+            logger.warning(f"Not found error: {str(e)}")
+            return jsonify({'error': str(e)}), 404
+        except ValueError as e:
+            logger.warning(f"Value error: {str(e)}")
             return jsonify({'error': str(e)}), 400
         except PermissionError as e:
             logger.warning(f"Permission error: {str(e)}")
@@ -33,6 +43,7 @@ class BaseController:
             return jsonify({'error': str(e)}), 404
         except Exception as e:
             logger.error(f"Unexpected error: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             db.session.rollback()
             return jsonify({'error': 'Internal server error'}), 500
     
@@ -42,8 +53,18 @@ class BaseController:
         try:
             result = service_method(*args, **kwargs)
             return jsonify(result), 200
+        except ValidationException as e:
+            logger.warning(f"Validation error: {str(e)}")
+            return jsonify({'error': str(e)}), 400
+        except PermissionException as e:
+            logger.warning(f"Permission error: {str(e)}")
+            return jsonify({'error': str(e)}), 403
+        except NotFoundException as e:
+            logger.warning(f"Not found error: {str(e)}")
+            return jsonify({'error': str(e)}), 404
         except Exception as e:
             logger.error(f"List request error: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return jsonify({'error': 'Internal server error'}), 500
 
 class ServiceException(Exception):

@@ -183,23 +183,32 @@
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between mt-4">
-                            <button type="button" class="btn btn-outline-secondary" id="prevBtn" onclick="changeStep(-1)" style="display: none;">
-                                <i class="fas fa-arrow-left me-2"></i>Previous
-                            </button>
-                            <div></div>
-                            <button type="button" class="btn btn-gradient-primary" id="nextBtn" onclick="changeStep(1)">
-                                Next<i class="fas fa-arrow-right ms-2"></i>
-                            </button>
-                            <button type="submit" class="btn btn-gradient-success" id="submitBtn" style="display: none;">
-                                <i class="fas fa-plus me-2"></i>Create Course
-                            </button>
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('frontend.teacher_courses') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to My Courses
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary" id="prevBtn" onclick="changeStep(-1)" style="display: none;">
+                                    <i class="fas fa-chevron-left me-2"></i>Previous
+                                </button>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-gradient-primary" id="nextBtn" onclick="changeStep(1)">
+                                    Next<i class="fas fa-chevron-right ms-2"></i>
+                                </button>
+                                <button type="submit" class="btn btn-gradient-success" id="submitBtn" style="display: none;">
+                                    <i class="fas fa-plus me-2"></i>Create Course
+                                </button>
+                            </div>
                         </div>
+
                     </form>
                 </div>
             </div>
         </div>
     </div>
+    
 </div>
 
 <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">

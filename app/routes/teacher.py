@@ -160,3 +160,22 @@ def get_teacher_analytics_overview():
         TeacherService.get_teacher_analytics_overview,
         teacher_id
     )
+
+@bp.route('/student/<int:student_id>/progress', methods=['GET'])
+@teacher_required()
+def get_individual_student_progress(student_id):
+    """Get detailed progress for a student (by teacher)"""
+    teacher_id = int(get_jwt_identity())
+    course_id = request.args.get('course_id', type=int)
+
+    if not course_id:
+        return {'error': 'Missing course_id parameter'}, 400
+
+    return BaseController.handle_request(
+        TeacherService.get_individual_student_progress,
+        teacher_id,
+        student_id,
+        course_id
+    )
+    
+

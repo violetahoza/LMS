@@ -50,7 +50,7 @@ def update_assignment(assignment_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         AssignmentService.update_assignment,
-        user_id,
+        int(user_id),
         assignment_id,
         request.get_json(),
         success_message="Assignment updated successfully"
@@ -63,7 +63,7 @@ def delete_assignment(assignment_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         AssignmentService.delete_assignment,
-        user_id,
+        int(user_id),
         assignment_id,
         success_message="Assignment deleted successfully"
     )
@@ -79,7 +79,7 @@ def submit_assignment(assignment_id):
     
     return BaseController.handle_request(
         AssignmentService.submit_assignment,
-        user_id,
+        int(user_id),
         assignment_id,
         submission_text,
         file,
@@ -95,7 +95,7 @@ def get_assignment_submissions(assignment_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         AssignmentService.get_assignment_submissions,
-        user_id,
+        int(user_id),
         assignment_id
     )
 
@@ -118,7 +118,7 @@ def grade_submission(submission_id):
     
     return BaseController.handle_request(
         AssignmentService.grade_submission,
-        user_id,
+        int(user_id),
         submission_id,
         grade,
         feedback,
@@ -135,7 +135,7 @@ def return_submission(submission_id):
     
     return BaseController.handle_request(
         AssignmentService.return_submission,
-        user_id,
+        int(user_id),
         submission_id,
         feedback,
         success_message="Assignment returned to student"

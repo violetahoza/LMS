@@ -13,9 +13,10 @@
                     <p class="text-muted mb-0">Detailed performance insights and statistics</p>
                 </div>
                 <div>
-                    <a href="{{ url_for('frontend.teacher_courses') }}" class="btn btn-outline-secondary me-2">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Courses
-                    </a>
+                    <button type="button" class="btn btn-outline-secondary me-2" onclick="goBack()">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </button>
+
                     <a href="/teacher/courses/{{ course_id }}/content" class="btn btn-gradient-primary">
                         <i class="fas fa-edit me-2"></i>Manage Content
                     </a>
@@ -490,6 +491,15 @@ function showError(message) {
     alertContainer.insertBefore(alert, alertContainer.firstChild);
     setTimeout(() => alert.remove(), 5000);
 }
+
+function goBack() {
+    if (document.referrer && !document.referrer.includes(window.location.pathname)) {
+        window.history.back();
+    } else {
+        window.location.href = "/teacher/courses";
+    }
+}
+
 </script>
 
 {% endblock %}

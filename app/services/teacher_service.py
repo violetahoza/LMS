@@ -512,3 +512,27 @@ class TeacherService:
             "lesson_engagement": lesson_engagement,
             "quiz_performance": quiz_performance
         }
+
+    @staticmethod
+    def get_individual_student_progress(teacher_id: int, student_id: int, course_id: int) -> Dict[str, Any]:
+        user = User.query.get(teacher_id)
+        if not user or not user.is_teacher():
+            raise PermissionException("Only teachers can access this data")
+
+        course = Course.query.get(course_id)
+        if not course or course.teacher_id != teacher_id:
+            raise PermissionException("Access denied to this course")
+
+        student = User.query.get(student_id)
+        if not student:
+            raise NotFoundException("Student not found")
+
+        progress = TeacherService._calculate_student_progress(student_id, course_id)
+
+        return {
+            'student': student.to_dict(),
+            'course': course.to_dict(),
+            'progress': progress
+        }
+
+    

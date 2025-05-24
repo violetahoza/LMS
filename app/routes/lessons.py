@@ -37,7 +37,7 @@ def create_lesson():
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         LessonService.create_lesson,
-        user_id,
+        int(user_id),
         request.get_json(),
         success_message="Lesson created successfully",
         success_code=201
@@ -50,7 +50,7 @@ def update_lesson(lesson_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         LessonService.update_lesson,
-        user_id,
+        int(user_id),
         lesson_id,
         request.get_json(),
         success_message="Lesson updated successfully"
@@ -63,7 +63,7 @@ def delete_lesson(lesson_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         LessonService.delete_lesson,
-        user_id,
+        int(user_id),
         lesson_id,
         success_message="Lesson deleted successfully"
     )
@@ -78,7 +78,7 @@ def complete_lesson(lesson_id):
     
     return BaseController.handle_request(
         LessonService.complete_lesson,
-        user_id,
+        int(user_id),
         lesson_id,
         time_spent,
         success_message="Lesson marked as complete"

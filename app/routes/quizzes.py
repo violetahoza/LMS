@@ -17,7 +17,7 @@ def get_course_quizzes(course_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         QuizService.get_course_quizzes,
-        user_id,
+        int(user_id),
         course_id
     )
 
@@ -28,7 +28,7 @@ def get_quiz(quiz_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         QuizService.get_quiz,
-        user_id,
+        int(user_id),
         quiz_id
     )
 
@@ -39,7 +39,7 @@ def create_quiz():
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         QuizService.create_quiz,
-        user_id,
+        int(user_id),
         request.get_json(),
         success_message="Quiz created successfully",
         success_code=201
@@ -52,7 +52,7 @@ def update_quiz(quiz_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         QuizService.update_quiz,
-        user_id,
+        int(user_id),
         quiz_id,
         request.get_json(),
         success_message="Quiz updated successfully"
@@ -65,7 +65,7 @@ def delete_quiz(quiz_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         QuizService.delete_quiz,
-        user_id,
+        int(user_id),
         quiz_id,
         success_message="Quiz deleted successfully"
     )
@@ -77,7 +77,7 @@ def add_question(quiz_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         QuizService.add_question,
-        user_id,
+        int(user_id),
         quiz_id,
         request.get_json(),
         success_message="Question added successfully",
@@ -91,7 +91,7 @@ def update_question(quiz_id, question_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         QuizService.update_question,
-        user_id,
+        int(user_id),
         quiz_id,
         question_id,
         request.get_json(),
@@ -105,7 +105,7 @@ def delete_question(quiz_id, question_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         QuizService.delete_question,
-        user_id,
+        int(user_id),
         quiz_id,
         question_id,
         success_message="Question deleted successfully"
@@ -118,7 +118,7 @@ def start_quiz(quiz_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         QuizService.start_quiz,
-        user_id,
+        int(user_id),
         quiz_id,
         success_message="Quiz started successfully"
     )
@@ -134,7 +134,7 @@ def submit_quiz(attempt_id):
     # Handle the submission and achievement checking in the service
     return BaseController.handle_request(
         QuizService.submit_quiz_with_achievements,
-        user_id,
+        int(user_id),
         attempt_id,
         answers,
         success_message="Quiz submitted successfully"
@@ -147,7 +147,7 @@ def get_quiz_results(attempt_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         QuizService.get_quiz_results,
-        user_id,
+        int(user_id),
         attempt_id
     )
 
@@ -158,6 +158,6 @@ def get_quiz_statistics(quiz_id):
     user_id = get_jwt_identity()
     return BaseController.handle_request(
         QuizService.get_quiz_statistics,
-        user_id,
+        int(user_id),
         quiz_id
     )
