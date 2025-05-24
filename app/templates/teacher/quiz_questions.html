@@ -72,7 +72,6 @@
     </div>
 </div>
 
-<!-- Add/Edit Question Modal -->
 <div class="modal fade" id="questionModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -106,7 +105,6 @@
                             <input type="number" class="form-control" id="questionOrder" name="order_number" min="1" required>
                         </div>
                         
-                        <!-- Options section for multiple choice and true/false -->
                         <div class="col-12 d-none" id="optionsSection">
                             <label class="form-label fw-semibold">Answer Options</label>
                             <div id="optionsContainer">
@@ -117,7 +115,6 @@
                             </button>
                         </div>
                         
-                        <!-- Correct answer for short answer -->
                         <div class="col-12 d-none" id="correctAnswerSection">
                             <label class="form-label fw-semibold">Sample Correct Answer</label>
                             <textarea class="form-control" id="correctAnswer" rows="2" placeholder="Provide a sample answer for reference (optional)"></textarea>
@@ -275,7 +272,6 @@ function addQuestion() {
     const nextOrder = Math.max(...questions.map(q => q.order_number || 0), 0) + 1;
     document.getElementById('questionOrder').value = nextOrder;
     
-    // Reset the form
     document.getElementById('questionType').value = '';
     toggleQuestionFields();
     
@@ -300,7 +296,6 @@ function editQuestion(questionId) {
     
     toggleQuestionFields();
     
-    // Load options if applicable
     if (question.answer_options) {
         const container = document.getElementById('optionsContainer');
         container.innerHTML = '';
@@ -325,7 +320,6 @@ function toggleQuestionFields() {
         optionsSection.classList.remove('d-none');
         correctAnswerSection.classList.add('d-none');
         
-        // Clear and setup options
         const container = document.getElementById('optionsContainer');
         container.innerHTML = '';
         
@@ -384,7 +378,6 @@ async function saveQuestion() {
     const formData = new FormData(form);
     const questionId = formData.get('question_id');
     
-    // Validate required fields
     if (!formData.get('question_text').trim()) {
         showError('Question text is required');
         return;
@@ -395,7 +388,6 @@ async function saveQuestion() {
         return;
     }
     
-    // Collect options
     const options = [];
     const optionInputs = document.querySelectorAll('.option-text');
     const correctInputs = document.querySelectorAll('#optionsContainer input[type="checkbox"], #optionsContainer input[type="radio"]');
@@ -410,7 +402,6 @@ async function saveQuestion() {
             }
         });
         
-        // Validation for options
         if (options.length === 0) {
             showError('Please add at least one option');
             return;
@@ -447,7 +438,7 @@ async function saveQuestion() {
         if (response.ok) {
             bootstrap.Modal.getInstance(document.getElementById('questionModal')).hide();
             showSuccess(questionId ? 'Question updated successfully' : 'Question added successfully');
-            loadQuizData(); // Reload to get updated data
+            loadQuizData(); 
         } else {
             const error = await response.json();
             showError(error.error || 'Failed to save question');

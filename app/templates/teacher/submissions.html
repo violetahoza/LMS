@@ -23,7 +23,6 @@
         </div>
     </div>
 
-    <!-- Summary Cards -->
     <div class="row g-4 mb-5">
         <div class="col-md-3">
             <div class="card stats-card h-100">
@@ -71,7 +70,6 @@
         </div>
     </div>
 
-    <!-- Filters -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -112,7 +110,6 @@
         </div>
     </div>
 
-    <!-- Submissions List -->
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -135,7 +132,6 @@
     </div>
 </div>
 
-<!-- Quick Grade Modal -->
 <div class="modal fade" id="quickGradeModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -418,7 +414,7 @@ async function saveQuickGrade() {
         if (response.ok) {
             showSuccess('Grade saved successfully');
             bootstrap.Modal.getInstance(document.getElementById('quickGradeModal')).hide();
-            loadPendingSubmissions(); // Refresh the list
+            loadPendingSubmissions(); 
         } else {
             const error = await response.json();
             showError(error.error || 'Failed to save grade');
@@ -436,7 +432,6 @@ function viewSubmission(submissionId) {
         return;
     }
     
-    // Redirect to the detailed submission view
     window.location.href = `/teacher/assignment/${submission.assignment.id}/submissions`;
 }
 
@@ -463,7 +458,6 @@ function applyFilters() {
         filtered = filtered.filter(s => s.status === statusFilter);
     }
     
-    // Sort submissions
     filtered.sort((a, b) => {
         switch (sortBy) {
             case 'newest':

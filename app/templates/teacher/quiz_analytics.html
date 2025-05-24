@@ -236,6 +236,15 @@ function updateDashboard(data) {
     document.getElementById('highestScore').textContent = `${(stats.highest_score || 0).toFixed(1)}%`;
 }
 
+function formatQuestionType(type) {
+    switch (type) {
+        case 'multiple_choice': return 'Multiple Choice';
+        case 'true_false': return 'True/False';
+        case 'short_answer': return 'Short Answer';
+        default: return 'Unspecified';
+    }
+}
+
 function updateQuestionAnalytics(questions) {
     const container = document.getElementById('questionAnalyticsContainer');
     
@@ -267,12 +276,14 @@ function updateQuestionAnalytics(questions) {
         <tbody>
     `;
     
+    console.log('Question analytics:', questions);
     questions.forEach((questionData, index) => {
         const question = questionData.question || questionData;
         const accuracy = questionData.accuracy_rate || 0;
         const totalAnswers = questionData.total_answers || 0;
         const correctAnswers = questionData.correct_answers || 0;
-        
+       const qType = question.question_type || questionData.question_type || 'unknown';
+
         const accuracyClass = accuracy >= 80 ? 'text-success' : accuracy >= 60 ? 'text-warning' : 'text-danger';
         
         content += `
@@ -282,7 +293,7 @@ function updateQuestionAnalytics(questions) {
                     <small class="text-muted">${question.points || 10} points</small>
                 </td>
                 <td class="text-center">
-                    <span class="badge bg-light text-dark">${formatQuestionType(question.question_type)}</span>
+                    <span class="badge bg-light text-dark">${formatQuestionType(qType)}</span>
                 </td>
                 <td class="text-center">${totalAnswers}</td>
                 <td class="text-center">${correctAnswers}</td>
@@ -361,14 +372,6 @@ function updateStudentPerformance(students) {
     container.innerHTML = content;
 }
 
-function formatQuestionType(type) {
-    switch(type) {
-        case 'multiple_choice': return 'Multiple Choice';
-        case 'true_false': return 'True/False';
-        case 'short_answer': return 'Short Answer';
-        default: return type || 'Unknown';
-    }
-}
 
 function editQuiz() {
     if (!quizData || !quizData.quiz) {

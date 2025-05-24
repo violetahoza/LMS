@@ -434,8 +434,10 @@ class QuizService:
                         correct_count += 1
             
             question_stats.append({
-                'question_id': question.id,
-                'question_text': question.question_text,
+                'question': {
+                    **question.to_dict(),
+                    'question_type': question.question_type  
+                },
                 'total_answers': total_answers,
                 'correct_answers': correct_count,
                 'accuracy_rate': (correct_count / total_answers * 100) if total_answers > 0 else 0
