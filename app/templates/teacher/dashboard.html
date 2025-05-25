@@ -96,7 +96,6 @@
                 </div>
                 <div class="card-body">
                     <div id="topCoursesContainer">
-                        <!-- Content will be loaded dynamically -->
                         <div class="text-center py-4">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Loading...</span>
@@ -121,6 +120,9 @@
                         </a>
                         <a href="{{ url_for('frontend.teacher_submissions') }}" class="btn btn-outline-warning btn-lg">
                             <i class="fas fa-clipboard-list me-2"></i>Grade Assignments
+                        </a>
+                        <a href="/teacher/grading" class="btn btn-outline-warning btn-lg">
+                            <i class="fas fa-clipboard-list me-2"></i>Grade Quizzes
                         </a>
                         <a href="{{ url_for('frontend.teacher_analytics') }}" class="btn btn-outline-info btn-lg">
                             <i class="fas fa-chart-bar me-2"></i>View Analytics
@@ -155,7 +157,6 @@
                                 </tr>
                             </thead>
                             <tbody id="recentQuizAttempts">
-                                <!-- Content will be loaded dynamically -->
                                 <tr>
                                     <td colspan="5" class="text-center py-3">
                                         <div class="spinner-border spinner-border-sm text-primary" role="status">
@@ -181,7 +182,6 @@
                 </div>
                 <div class="card-body">
                     <div id="pendingSubmissions">
-                        <!-- Content will be loaded dynamically -->
                         <div class="text-center py-3">
                             <div class="spinner-border spinner-border-sm text-warning" role="status">
                                 <span class="visually-hidden">Loading...</span>

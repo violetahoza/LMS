@@ -38,7 +38,6 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
     <div class="row g-4 mb-5">
         <div class="col-xl-3 col-md-6">
             <div class="card stats-card h-100">
@@ -89,7 +88,6 @@
         </div>
     </div>
 
-    <!-- Navigation Tabs -->
     <div class="row mb-4">
         <div class="col-12">
             <ul class="nav nav-pills nav-fill" id="certificateTabs" role="tablist">
@@ -114,9 +112,7 @@
         </div>
     </div>
 
-    <!-- Tab Content -->
     <div class="tab-content" id="certificateTabsContent">
-        <!-- Pending Requests Tab -->
         <div class="tab-pane fade show active" id="requests" role="tabpanel">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -144,7 +140,6 @@
             </div>
         </div>
 
-        <!-- Eligible Students Tab -->
         <div class="tab-pane fade" id="eligible" role="tabpanel">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -172,7 +167,6 @@
             </div>
         </div>
 
-        <!-- Recent History Tab -->
         <div class="tab-pane fade" id="history" role="tabpanel">
             <div class="card">
                 <div class="card-header">
@@ -194,7 +188,6 @@
     </div>
 </div>
 
-<!-- Certificate Preview Modal -->
 <div class="modal fade" id="certificatePreviewModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -206,7 +199,6 @@
             </div>
             <div class="modal-body p-0">
                 <div id="certificatePreviewContent">
-                    <!-- Certificate preview will be loaded here -->
                 </div>
             </div>
             <div class="modal-footer">
@@ -219,7 +211,6 @@
     </div>
 </div>
 
-<!-- Rejection Modal -->
 <div class="modal fade" id="rejectionModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -235,7 +226,6 @@
                     <textarea class="form-control" id="rejectionReason" rows="4" placeholder="Please provide a reason for rejecting this certificate request..."></textarea>
                 </div>
                 <div id="rejectionStudentInfo">
-                    <!-- Student info will be populated here -->
                 </div>
             </div>
             <div class="modal-footer">
@@ -248,7 +238,6 @@
     </div>
 </div>
 
-<!-- Loading overlay -->
 <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
     <div class="d-flex align-items-center justify-content-center h-100">
         <div class="text-center text-white">
@@ -273,7 +262,6 @@ let currentPreviewData = null;
 document.addEventListener('DOMContentLoaded', function() {
     loadAllData();
     
-    // Tab switching handlers
     document.getElementById('requests-tab').addEventListener('click', () => loadRequests());
     document.getElementById('eligible-tab').addEventListener('click', () => loadEligibleStudents());
     document.getElementById('history-tab').addEventListener('click', () => loadRecentHistory());
@@ -734,11 +722,9 @@ async function issueCertificate(studentId, courseId) {
             const data = await response.json();
             showSuccess(data.message || 'Certificate issued successfully!');
             
-            // Close modals
             const previewModal = bootstrap.Modal.getInstance(document.getElementById('certificatePreviewModal'));
             if (previewModal) previewModal.hide();
             
-            // Refresh data
             await loadAllData();
         } else {
             const error = await response.json();
