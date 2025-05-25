@@ -24,7 +24,6 @@ class User(UserMixin, db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     
-    # Relationships
     taught_courses = db.relationship('Course', backref='teacher', lazy='dynamic', foreign_keys='Course.teacher_id')
     enrollments = db.relationship('Enrollment', backref='student', lazy='dynamic', foreign_keys='Enrollment.student_id')
     quiz_attempts = db.relationship('QuizAttempt', backref='student', lazy='dynamic')
@@ -93,7 +92,6 @@ class Course(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_published = db.Column(db.Boolean, default=False)
     
-    # Relationships
     lessons = db.relationship('Lesson', backref='course', lazy='dynamic', cascade='all, delete-orphan')
     enrollments = db.relationship('Enrollment', backref='course', lazy='dynamic', cascade='all, delete-orphan')
     quizzes = db.relationship('Quiz', backref='course', lazy='dynamic', cascade='all, delete-orphan')
@@ -137,7 +135,6 @@ class Lesson(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     progress_records = db.relationship('LessonProgress', backref='lesson', lazy='dynamic', cascade='all, delete-orphan')
     quizzes = db.relationship('Quiz', backref='lesson', lazy='dynamic')
     assignments = db.relationship('Assignment', backref='lesson', lazy='dynamic')
@@ -247,7 +244,6 @@ class Quiz(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     questions = db.relationship('Question', backref='quiz', lazy='dynamic', cascade='all, delete-orphan')
     attempts = db.relationship('QuizAttempt', backref='quiz', lazy='dynamic', cascade='all, delete-orphan')
     
@@ -277,7 +273,6 @@ class Question(db.Model):
     order_number = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationships
     answer_options = db.relationship('AnswerOption', backref='question', lazy='dynamic', cascade='all, delete-orphan')
     student_answers = db.relationship('StudentAnswer', backref='question', lazy='dynamic')
     
@@ -320,7 +315,6 @@ class QuizAttempt(db.Model):
     time_spent_minutes = db.Column(db.Integer)
     status = db.Column(db.Enum('in_progress', 'completed', 'abandoned'), default='in_progress')
     
-    # Relationships
     student_answers = db.relationship('StudentAnswer', backref='attempt', lazy='dynamic', cascade='all, delete-orphan')
     
     def to_dict(self):
@@ -347,7 +341,6 @@ class StudentAnswer(db.Model):
     is_correct = db.Column(db.Boolean)
     points_earned = db.Column(db.Float, default=0)
     
-    # Relationships
     selected_option = db.relationship('AnswerOption', foreign_keys=[selected_option_id])
 
 class Assignment(db.Model):
@@ -363,7 +356,6 @@ class Assignment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     submissions = db.relationship('AssignmentSubmission', backref='assignment', lazy='dynamic', cascade='all, delete-orphan')
     
     def to_dict(self):
@@ -395,7 +387,6 @@ class AssignmentSubmission(db.Model):
     
     __table_args__ = (db.UniqueConstraint('assignment_id', 'student_id'),)
     
-    # Relationships
     grader = db.relationship('User', foreign_keys=[graded_by])
     
     def to_dict(self):
@@ -425,7 +416,6 @@ class LessonProgress(db.Model):
     
     __table_args__ = (db.UniqueConstraint('student_id', 'lesson_id'),)
     
-    # Relationships
     student = db.relationship('User', backref='lesson_progress')
 
 class Achievement(db.Model):
@@ -439,7 +429,6 @@ class Achievement(db.Model):
     criteria_type = db.Column(db.Enum('course_completion', 'quiz_score', 'streak', 'participation'), nullable=False)
     criteria_value = db.Column(db.Integer)
     
-    # Relationships
     student_achievements = db.relationship('StudentAchievement', backref='achievement', lazy='dynamic')
 
 class StudentAchievement(db.Model):
@@ -463,7 +452,6 @@ class Discussion(db.Model):
     is_pinned = db.Column(db.Boolean, default=False)
     is_locked = db.Column(db.Boolean, default=False)
     
-    # Relationships
     creator = db.relationship('User', backref='created_discussions')
     posts = db.relationship('DiscussionPost', backref='discussion', lazy='dynamic', cascade='all, delete-orphan')
 
@@ -479,7 +467,6 @@ class DiscussionPost(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_edited = db.Column(db.Boolean, default=False)
     
-    # Relationships
     parent_post = db.relationship('DiscussionPost', remote_side=[id], backref='replies')
 
 class Certificate(db.Model):
@@ -493,7 +480,6 @@ class Certificate(db.Model):
     
     __table_args__ = (db.UniqueConstraint('student_id', 'course_id'),)
     
-    # Relationships
     student = db.relationship('User', backref='certificates')
     
     def to_dict(self):
@@ -521,7 +507,6 @@ class Message(db.Model):
     read_at = db.Column(db.DateTime, nullable=True)
     is_announcement = db.Column(db.Boolean, default=False, nullable=False)
     
-    # Relationships
     sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
     recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_messages')
     course = db.relationship('Course', backref='messages')
@@ -539,4 +524,101 @@ class Message(db.Model):
             'is_announcement': self.is_announcement,
             'sender_name': self.sender.full_name if self.sender else None,
             'recipient_name': self.recipient.full_name if self.recipient else None
+        }
+    
+class NotificationType(enum.Enum):
+    MESSAGE = 'message'
+    ENROLLMENT = 'enrollment'
+    ASSIGNMENT_SUBMISSION = 'assignment_submission'
+    ASSIGNMENT_GRADED = 'assignment_graded'
+    QUIZ_SUBMISSION = 'quiz_submission'
+    QUIZ_GRADED = 'quiz_graded'
+    COURSE_COMPLETION = 'course_completion'
+    NEW_CONTENT = 'new_content'
+    CERTIFICATE_ISSUED = 'certificate_issued'
+    ACHIEVEMENT_EARNED = 'achievement_earned'
+
+class NotificationPriority(enum.Enum):
+    LOW = 'low'
+    NORMAL = 'normal'
+    HIGH = 'high'
+    URGENT = 'urgent'
+
+class Notification(db.Model):
+    """Notification model for user notifications"""
+    __tablename__ = 'notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    type = db.Column(db.Enum(NotificationType), nullable=False)
+    priority = db.Column(db.Enum(NotificationPriority), default=NotificationPriority.NORMAL)
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    action_url = db.Column(db.String(500), nullable=True)
+    related_id = db.Column(db.Integer, nullable=True)  # ID of related object (course, assignment, etc.)
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    read_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_notifications')
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_notifications')
+    
+    def mark_as_read(self):
+        """Mark notification as read"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = datetime.utcnow()
+            db.session.commit()
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'recipient_id': self.recipient_id,
+            'sender_id': self.sender_id,
+            'type': self.type.value,
+            'priority': self.priority.value,
+            'title': self.title,
+            'message': self.message,
+            'action_url': self.action_url,
+            'related_id': self.related_id,
+            'is_read': self.is_read,
+            'read_at': self.read_at.isoformat() if self.read_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'sender_name': self.sender.full_name if self.sender else None,
+            'recipient_name': self.recipient.full_name if self.recipient else None
+        }
+    
+class CertificateRequest(db.Model):
+    """Certificate request model"""
+    __tablename__ = 'certificate_requests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
+    requested_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.Enum('pending', 'approved', 'rejected'), default='pending')
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reviewed_at = db.Column(db.DateTime)
+    rejection_reason = db.Column(db.Text)
+    
+    student = db.relationship('User', foreign_keys=[student_id], backref='certificate_requests')
+    course = db.relationship('Course', backref='certificate_requests')
+    reviewer = db.relationship('User', foreign_keys=[reviewed_by])
+    
+    __table_args__ = (db.UniqueConstraint('student_id', 'course_id'),)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'student_id': self.student_id,
+            'course_id': self.course_id,
+            'student_name': self.student.full_name if self.student else None,
+            'course_title': self.course.title if self.course else None,
+            'requested_at': self.requested_at.isoformat() if self.requested_at else None,
+            'status': self.status,
+            'reviewed_by': self.reviewed_by,
+            'reviewer_name': self.reviewer.full_name if self.reviewer else None,
+            'reviewed_at': self.reviewed_at.isoformat() if self.reviewed_at else None,
+            'rejection_reason': self.rejection_reason
         }

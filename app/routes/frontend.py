@@ -854,3 +854,42 @@ def teacher_student_progress(student_id):
     
     return render_template('teacher/student_progress.html', student_id=student_id, course_id=course_id)
 
+@bp.route('/notifications')
+def notifications():
+    """Notifications page"""
+    if not session.get('access_token'):
+        flash('Please log in to view notifications.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('components/view_notifications.html')
+
+@bp.route('/admin/certificates')
+def admin_certificates():
+    """Admin certificate management page"""
+    if not session.get('access_token') or session.get('user_role') != 'admin':
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('admin/certificates.html')
+
+@bp.route('/verify-certificate/<certificate_code>')
+def verify_certificate_public(certificate_code):
+    """Public certificate verification page"""
+    try:
+        response = requests.get(f'{API_BASE_URL}/certificates/verify/{certificate_code}')
+        
+        if response.status_code == 200:
+            certificate_data = response.json()
+            return render_template('public/verify_certificate.html', 
+                                 certificate=certificate_data.get('data', {}),
+                                 verified=True)
+        else:
+            return render_template('public/verify_certificate.html', 
+                                 certificate=None,
+                                 verified=False,
+                                 error='Certificate not found or invalid')
+    except Exception as e:
+        return render_template('public/verify_certificate.html', 
+                             certificate=None,
+                             verified=False,
+                             error='Error verifying certificate')

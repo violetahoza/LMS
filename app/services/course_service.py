@@ -3,6 +3,7 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy import or_
 from app.models import db, User, Course, Enrollment, UserRole
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
+from app.services.notification_service import NotificationService
 
 class CourseService:
     """Service for course-related operations"""
@@ -204,6 +205,10 @@ class CourseService:
                 existing_enrollment.status = 'active'
                 existing_enrollment.enrolled_at = datetime.utcnow()
                 db.session.commit()
+                
+                # Notify teacher about re-enrollment
+                NotificationService.notify_student_enrollment(course.teacher_id, student_id, course_id)
+                
                 return {
                     'message': 'Re-enrolled in course successfully',
                     'enrollment': existing_enrollment.to_dict()
@@ -220,6 +225,11 @@ class CourseService:
         
         db.session.add(enrollment)
         db.session.commit()
+        
+        try:
+            NotificationService.notify_student_enrollment(course.teacher_id, student_id, course_id)
+        except Exception as e:
+            print(f"Failed to send enrollment notification: {e}")        
         
         return {
             'message': 'Enrolled in course successfully',

@@ -1,0 +1,818 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1">Notifications</h1>
+                    <p class="text-muted mb-0">Stay updated with your latest activities and messages</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary me-2" onclick="markAllAsRead()">
+                        <i class="fas fa-check-double me-2"></i>Mark All Read
+                    </button>
+                    <button class="btn btn-gradient-primary" onclick="refreshNotifications()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-warning rounded-circle mx-auto mb-3">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 class="stats-number text-warning" id="totalNotifications">0</h3>
+                    <p class="text-muted mb-0">Total Notifications</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-danger rounded-circle mx-auto mb-3">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <h3 class="stats-number text-danger" id="unreadNotifications">0</h3>
+                    <p class="text-muted mb-0">Unread</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-info rounded-circle mx-auto mb-3">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3 class="stats-number text-info" id="messageNotifications">0</h3>
+                    <p class="text-muted mb-0">Messages</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-success rounded-circle mx-auto mb-3">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h3 class="stats-number text-success" id="importantNotifications">0</h3>
+                    <p class="text-muted mb-0">Important</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">Filter by Type</label>
+                            <select class="form-select" id="typeFilter" onchange="filterNotifications()">
+                                <option value="">All Types</option>
+                                <option value="message">Messages</option>
+                                <option value="enrollment">Enrollments</option>
+                                <option value="assignment_submission">Assignment Submissions</option>
+                                <option value="assignment_graded">Assignment Graded</option>
+                                <option value="quiz_submission">Quiz Submissions</option>
+                                <option value="quiz_graded">Quiz Graded</option>
+                                <option value="course_completion">Course Completions</option>
+                                <option value="new_content">New Content</option>
+                                <option value="certificate_issued">Certificates</option>
+                                <option value="achievement_earned">Achievements</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Filter by Status</label>
+                            <select class="form-select" id="statusFilter" onchange="filterNotifications()">
+                                <option value="">All</option>
+                                <option value="unread">Unread Only</option>
+                                <option value="read">Read Only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Filter by Priority</label>
+                            <select class="form-select" id="priorityFilter" onchange="filterNotifications()">
+                                <option value="">All Priorities</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="high">High</option>
+                                <option value="normal">Normal</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                                <i class="fas fa-times me-2"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>All Notifications
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteSelected()" id="deleteSelectedBtn" style="display: none;">
+                            <i class="fas fa-trash me-2"></i>Delete Selected
+                        </button>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="selectAllNotifications" onchange="toggleSelectAll()">
+                            <label class="form-check-label" for="selectAllNotifications">
+                                Select All
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="notificationsContainer">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                        <div>
+                            <span class="text-muted" id="paginationInfo">Showing 0 of 0 notifications</span>
+                        </div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0" id="paginationNav">
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="notificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalTitle">Notification Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="notificationModalBody">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="notificationActionBtn">
+                    <i class="fas fa-external-link-alt me-2"></i>Go to Item
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>Processing notifications...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allNotifications = [];
+let filteredNotifications = [];
+let selectedNotifications = new Set();
+let currentPage = 1;
+let totalPages = 1;
+let currentFilters = {
+    type: '',
+    status: '',
+    priority: ''
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadNotifications();
+});
+
+async function loadNotifications(page = 1) {
+    try {
+        showLoading();
+        
+        let url = `/api/notifications/?page=${page}&per_page=20`;
+        
+        if (currentFilters.status === 'unread') {
+            url += '&unread_only=true';
+        }
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            allNotifications = data.notifications || [];
+            currentPage = data.page || 1;
+            totalPages = data.pages || 1;
+            
+            updateStatistics(data);
+            applyFilters();
+            updatePagination(data.total, data.page, data.per_page);
+        } else {
+            showError('Failed to load notifications');
+        }
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+        showError('Error loading notifications');
+    } finally {
+        hideLoading();
+    }
+}
+
+function updateStatistics(data) {
+    document.getElementById('totalNotifications').textContent = data.total || 0;
+    document.getElementById('unreadNotifications').textContent = data.unread_count || 0;
+    
+    const messageCount = allNotifications.filter(n => n.type === 'message').length;
+    const importantCount = allNotifications.filter(n => ['urgent', 'high'].includes(n.priority)).length;
+    
+    document.getElementById('messageNotifications').textContent = messageCount;
+    document.getElementById('importantNotifications').textContent = importantCount;
+}
+
+function applyFilters() {
+    filteredNotifications = allNotifications.filter(notification => {
+        if (currentFilters.type && notification.type !== currentFilters.type) return false;
+        if (currentFilters.status === 'unread' && notification.is_read) return false;
+        if (currentFilters.status === 'read' && !notification.is_read) return false;
+        if (currentFilters.priority && notification.priority !== currentFilters.priority) return false;
+        return true;
+    });
+    
+    displayNotifications();
+}
+
+function displayNotifications() {
+    const container = document.getElementById('notificationsContainer');
+    
+    if (filteredNotifications.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-bell-slash fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">No Notifications Found</h5>
+                <p class="text-muted">Try adjusting your filters or check back later.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '';
+    
+    filteredNotifications.forEach(notification => {
+        const timeAgo = formatTimeAgo(new Date(notification.created_at));
+        const isUnread = !notification.is_read;
+        const priorityClass = getPriorityClass(notification.priority);
+        const typeIcon = getTypeIcon(notification.type);
+        const isSelected = selectedNotifications.has(notification.id);
+        
+        content += `
+            <div class="notification-item-full ${isUnread ? 'unread' : ''}" data-notification-id="${notification.id}">
+                <div class="d-flex align-items-start p-3 border-bottom">
+                    <div class="form-check me-3">
+                        <input class="form-check-input notification-checkbox" type="checkbox" 
+                               value="${notification.id}" ${isSelected ? 'checked' : ''}
+                               onchange="toggleNotificationSelection(${notification.id})">
+                    </div>
+                    
+                    <div class="notification-icon-full me-3 ${priorityClass}">
+                        <i class="fas ${typeIcon}"></i>
+                    </div>
+                    
+                    <div class="flex-grow-1" onclick="viewNotificationDetails(${notification.id})" style="cursor: pointer;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="notification-title-full mb-1 ${isUnread ? 'fw-bold' : ''}">${notification.title}</h6>
+                                <p class="notification-message-full text-muted mb-2">${notification.message}</p>
+                                <div class="notification-meta d-flex align-items-center">
+                                    <small class="text-muted me-3">
+                                        <i class="fas fa-clock me-1"></i>${timeAgo}
+                                    </small>
+                                    ${notification.sender_name ? `
+                                        <small class="text-muted me-3">
+                                            <i class="fas fa-user me-1"></i>${notification.sender_name}
+                                        </small>
+                                    ` : ''}
+                                    <span class="badge bg-light text-dark">${formatNotificationType(notification.type)}</span>
+                                    <span class="badge bg-${getPriorityBadgeClass(notification.priority)} ms-2">${notification.priority.toUpperCase()}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="notification-actions ms-3">
+                                <div class="btn-group">
+                                    ${isUnread ? `
+                                        <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); markNotificationAsRead(${notification.id})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    ` : ''}
+                                    ${notification.action_url ? `
+                                        <button class="btn btn-outline-success btn-sm" onclick="event.stopPropagation(); goToNotificationAction('${notification.action_url}', ${notification.id})">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </button>
+                                    ` : ''}
+                                    <button class="btn btn-outline-danger btn-sm" onclick="event.stopPropagation(); deleteNotification(${notification.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${isUnread ? '<div class="notification-dot-full"></div>' : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = content;
+}
+
+function filterNotifications() {
+    currentFilters.type = document.getElementById('typeFilter').value;
+    currentFilters.status = document.getElementById('statusFilter').value;
+    currentFilters.priority = document.getElementById('priorityFilter').value;
+    
+    if (currentFilters.status === 'unread') {
+        loadNotifications(1);
+    } else {
+        applyFilters();
+    }
+}
+
+function clearFilters() {
+    document.getElementById('typeFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('priorityFilter').value = '';
+    
+    currentFilters = { type: '', status: '', priority: '' };
+    loadNotifications(1);
+}
+
+function toggleNotificationSelection(notificationId) {
+    if (selectedNotifications.has(notificationId)) {
+        selectedNotifications.delete(notificationId);
+    } else {
+        selectedNotifications.add(notificationId);
+    }
+    
+    updateDeleteButton();
+    updateSelectAllCheckbox();
+}
+
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAllNotifications');
+    const checkboxes = document.querySelectorAll('.notification-checkbox');
+    
+    if (selectAllCheckbox.checked) {
+        filteredNotifications.forEach(notification => {
+            selectedNotifications.add(notification.id);
+        });
+        checkboxes.forEach(checkbox => checkbox.checked = true);
+    } else {
+        selectedNotifications.clear();
+        checkboxes.forEach(checkbox => checkbox.checked = false);
+    }
+    
+    updateDeleteButton();
+}
+
+function updateSelectAllCheckbox() {
+    const selectAllCheckbox = document.getElementById('selectAllNotifications');
+    const totalFilteredNotifications = filteredNotifications.length;
+    const selectedFilteredCount = filteredNotifications.filter(n => selectedNotifications.has(n.id)).length;
+    
+    if (selectedFilteredCount === 0) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = false;
+    } else if (selectedFilteredCount === totalFilteredNotifications) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = true;
+    } else {
+        selectAllCheckbox.indeterminate = true;
+    }
+}
+
+function updateDeleteButton() {
+    const deleteBtn = document.getElementById('deleteSelectedBtn');
+    if (selectedNotifications.size > 0) {
+        deleteBtn.style.display = 'block';
+        deleteBtn.innerHTML = `<i class="fas fa-trash me-2"></i>Delete Selected (${selectedNotifications.size})`;
+    } else {
+        deleteBtn.style.display = 'none';
+    }
+}
+
+async function markNotificationAsRead(notificationId) {
+    try {
+        const response = await fetch(`/api/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const notification = allNotifications.find(n => n.id === notificationId);
+            if (notification) {
+                notification.is_read = true;
+            }
+            applyFilters();
+            
+            if (window.notificationManager) {
+                window.notificationManager.loadNotifications();
+            }
+        } else {
+            showError('Failed to mark notification as read');
+        }
+    } catch (error) {
+        console.error('Error marking notification as read:', error);
+        showError('Error marking notification as read');
+    }
+}
+
+async function markAllAsRead() {
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/notifications/mark-all-read', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showSuccess('All notifications marked as read');
+            loadNotifications(currentPage);
+            
+            if (window.notificationManager) {
+                window.notificationManager.loadNotifications();
+            }
+        } else {
+            showError('Failed to mark all notifications as read');
+        }
+    } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+        showError('Error marking all notifications as read');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteNotification(notificationId) {
+    if (!confirm('Are you sure you want to delete this notification?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/notifications/${notificationId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            allNotifications = allNotifications.filter(n => n.id !== notificationId);
+            selectedNotifications.delete(notificationId);
+            applyFilters();
+            updateDeleteButton();
+            showSuccess('Notification deleted');
+        } else {
+            showError('Failed to delete notification');
+        }
+    } catch (error) {
+        console.error('Error deleting notification:', error);
+        showError('Error deleting notification');
+    }
+}
+
+async function deleteSelected() {
+    if (selectedNotifications.size === 0) {
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete ${selectedNotifications.size} selected notifications?`)) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const deletePromises = Array.from(selectedNotifications).map(id =>
+            fetch(`/api/notifications/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer {{ session.access_token }}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+        );
+        
+        await Promise.all(deletePromises);
+        
+        allNotifications = allNotifications.filter(n => !selectedNotifications.has(n.id));
+        selectedNotifications.clear();
+        applyFilters();
+        updateDeleteButton();
+        updateSelectAllCheckbox();
+        showSuccess('Selected notifications deleted');
+    } catch (error) {
+        console.error('Error deleting notifications:', error);
+        showError('Error deleting selected notifications');
+    } finally {
+        hideLoading();
+    }
+}
+
+function viewNotificationDetails(notificationId) {
+    const notification = allNotifications.find(n => n.id === notificationId);
+    if (!notification) return;
+    
+    document.getElementById('notificationModalTitle').textContent = notification.title;
+    
+    const createdDate = new Date(notification.created_at).toLocaleString();
+    const priorityBadge = `<span class="badge bg-${getPriorityBadgeClass(notification.priority)}">${notification.priority.toUpperCase()}</span>`;
+    const typeBadge = `<span class="badge bg-light text-dark">${formatNotificationType(notification.type)}</span>`;
+    
+    document.getElementById('notificationModalBody').innerHTML = `
+        <div class="notification-detail">
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    ${priorityBadge}
+                    ${typeBadge}
+                </div>
+                <h6>${notification.title}</h6>
+                <p class="text-muted">${notification.message}</p>
+            </div>
+            
+            <div class="notification-meta">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <strong>Created:</strong><br>
+                        <small class="text-muted">${createdDate}</small>
+                    </div>
+                    ${notification.sender_name ? `
+                        <div class="col-sm-6">
+                            <strong>From:</strong><br>
+                            <small class="text-muted">${notification.sender_name}</small>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const actionBtn = document.getElementById('notificationActionBtn');
+    if (notification.action_url) {
+        actionBtn.style.display = 'block';
+        actionBtn.onclick = () => goToNotificationAction(notification.action_url, notification.id);
+    } else {
+        actionBtn.style.display = 'none';
+    }
+    
+    if (!notification.is_read) {
+        markNotificationAsRead(notification.id);
+    }
+    
+    new bootstrap.Modal(document.getElementById('notificationModal')).show();
+}
+
+function goToNotificationAction(actionUrl, notificationId) {
+    const notification = allNotifications.find(n => n.id === notificationId);
+    if (notification && !notification.is_read) {
+        markNotificationAsRead(notificationId);
+    }
+    
+    window.location.href = actionUrl;
+}
+
+function refreshNotifications() {
+    selectedNotifications.clear();
+    loadNotifications(currentPage);
+}
+
+function updatePagination(total, page, perPage) {
+    const info = document.getElementById('paginationInfo');
+    const nav = document.getElementById('paginationNav');
+    
+    const start = ((page - 1) * perPage) + 1;
+    const end = Math.min(page * perPage, total);
+    
+    info.textContent = `Showing ${start}-${end} of ${total} notifications`;
+    
+    let paginationHTML = '';
+    
+    if (page > 1) {
+        paginationHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="loadNotifications(${page - 1})">Previous</a>
+            </li>
+        `;
+    }
+    
+    const maxPages = 5;
+    let startPage = Math.max(1, page - Math.floor(maxPages / 2));
+    let endPage = Math.min(totalPages, startPage + maxPages - 1);
+    
+    if (endPage - startPage < maxPages - 1) {
+        startPage = Math.max(1, endPage - maxPages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <li class="page-item ${i === page ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="loadNotifications(${i})">${i}</a>
+            </li>
+        `;
+    }
+    
+    if (page < totalPages) {
+        paginationHTML += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="loadNotifications(${page + 1})">Next</a>
+            </li>
+        `;
+    }
+    
+    nav.innerHTML = paginationHTML;
+}
+
+function getTypeIcon(type) {
+    const icons = {
+        'message': 'fa-envelope',
+        'enrollment': 'fa-user-plus',
+        'assignment_submission': 'fa-tasks',
+        'assignment_graded': 'fa-check-circle',
+        'quiz_submission': 'fa-question-circle',
+        'quiz_graded': 'fa-star',
+        'course_completion': 'fa-graduation-cap',
+        'new_content': 'fa-plus-circle',
+        'certificate_issued': 'fa-certificate',
+        'achievement_earned': 'fa-trophy'
+    };
+    return icons[type] || 'fa-bell';
+}
+
+function getPriorityClass(priority) {
+    const classes = {
+        'urgent': 'text-danger',
+        'high': 'text-warning',
+        'normal': 'text-primary',
+        'low': 'text-muted'
+    };
+    return classes[priority] || 'text-primary';
+}
+
+function getPriorityBadgeClass(priority) {
+    const classes = {
+        'urgent': 'danger',
+        'high': 'warning',
+        'normal': 'primary',
+        'low': 'secondary'
+    };
+    return classes[priority] || 'primary';
+}
+
+function formatNotificationType(type) {
+    const types = {
+        'message': 'Message',
+        'enrollment': 'Enrollment',
+        'assignment_submission': 'Assignment Submission',
+        'assignment_graded': 'Assignment Graded',
+        'quiz_submission': 'Quiz Submission',
+        'quiz_graded': 'Quiz Graded',
+        'course_completion': 'Course Completion',
+        'new_content': 'New Content',
+        'certificate_issued': 'Certificate',
+        'achievement_earned': 'Achievement'
+    };
+    return types[type] || type;
+}
+
+function formatTimeAgo(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+function showSuccess(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a' && e.target.tagName !== 'INPUT') {
+        e.preventDefault();
+        document.getElementById('selectAllNotifications').checked = true;
+        toggleSelectAll();
+    }
+    
+    if (e.key === 'Delete' && selectedNotifications.size > 0 && e.target.tagName !== 'INPUT') {
+        e.preventDefault();
+        deleteSelected();
+    }
+    
+    if (e.key === 'r' && !e.ctrlKey && !e.metaKey && e.target.tagName !== 'INPUT') {
+        e.preventDefault();
+        refreshNotifications();
+    }
+});
+
+setInterval(() => {
+    if (document.visibilityState === 'visible') {
+        refreshNotifications();
+    }
+}, 5 * 60 * 1000);
+
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        if (window.notificationManager) {
+            window.notificationManager.loadNotifications();
+        }
+    }
+});
+</script>
+{% endblock %}

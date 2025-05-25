@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 from sqlalchemy import or_, desc
 from app.models import db, User, Message, Course, Enrollment
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
+from app.services.notification_service import NotificationService
 
 class MessagingService:
     """Service for messaging functionality"""
@@ -40,6 +41,11 @@ class MessagingService:
         db.session.add(message)
         db.session.commit()
         
+        try:
+            NotificationService.notify_new_message(sender_id, recipient_id, subject)
+        except Exception as e:
+            print(f"Failed to send notification: {e}")
+                    
         return {
             'message': 'Message sent successfully',
             'message_data': message.to_dict()

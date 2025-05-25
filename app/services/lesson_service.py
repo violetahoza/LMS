@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 from app.models import AssignmentSubmission, QuizAttempt, db, User, Course, Lesson, LessonProgress, Enrollment
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
+from app.services.notification_service import NotificationService
 
 class LessonService:
     """Service for lesson-related operations"""
@@ -161,6 +162,18 @@ class LessonService:
         db.session.add(lesson)
         db.session.commit()
         
+        course = Course.query.get(lesson_data['course_id'])
+        enrolled_students = [enrollment.student_id for enrollment in course.enrollments.filter_by(status='active')]
+        
+        if enrolled_students:
+            NotificationService.notify_new_content(
+                student_ids=enrolled_students,
+                teacher_id=teacher_id,
+                course_id=course.id,
+                content_type='lesson',
+                content_title=lesson.title
+            )
+
         return {
             'message': 'Lesson created successfully',
             'lesson': lesson.to_dict()
@@ -300,7 +313,13 @@ class LessonService:
         if course_completed and enrollment.status == 'active':
             enrollment.status = 'completed'
             enrollment.completed_at = datetime.utcnow()
-        
+
+            NotificationService.notify_course_completion(
+                teacher_id=lesson.course.teacher_id,
+                student_id=student_id,
+                course_id=lesson.course_id
+            )
+            
         db.session.commit()
         
         return {

@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 from app.models import db, User, Achievement, StudentAchievement, QuizAttempt, Enrollment, LessonProgress
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from app.utils.helpers import check_achievement_criteria
+from app.services.notification_service import NotificationService
 
 class AchievementService:
     """Service for achievement-related operations"""
@@ -46,19 +47,16 @@ class AchievementService:
         if not user or not user.is_student():
             raise PermissionException("Only students can access achievements")
         
-        # Get earned achievement IDs
         earned_ids = db.session.query(StudentAchievement.achievement_id).filter_by(
             student_id=student_id
         ).subquery()
         
-        # Get available achievements
         available = Achievement.query.filter(
             ~Achievement.id.in_(earned_ids)
         ).all()
         
         available_data = []
         for achievement in available:
-            # Check if student meets criteria
             meets_criteria = check_achievement_criteria(user, achievement)
             
             achievement_dict = {
@@ -87,13 +85,11 @@ class AchievementService:
         
         achievements_earned = []
         
-        # Quiz score achievements
         score_achievements = Achievement.query.filter_by(
             criteria_type='quiz_score'
         ).all()
         
         for achievement in score_achievements:
-            # Check if already earned
             existing = StudentAchievement.query.filter_by(
                 student_id=student_id,
                 achievement_id=achievement.id

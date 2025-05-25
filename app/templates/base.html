@@ -30,6 +30,8 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     {% if session.access_token %}
+                        
+                        
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-user-circle me-1"></i>
@@ -46,6 +48,9 @@
                                     <li><a class="dropdown-item" href="{{ url_for('frontend.admin_courses') }}">
                                         <i class="fas fa-book me-2"></i>Courses
                                     </a></li>
+                                    <li><a class="dropdown-item" href="/admin/certificates">
+                                        <i class="fas fa-certificate me-2"></i>Certificates
+                                    </a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('frontend.admin_reports') }}">
                                         <i class="fas fa-chart-bar me-2"></i>Reports
                                     </a></li>
@@ -55,6 +60,15 @@
                                     </a></li>
                                     <li><a class="dropdown-item" href="{{ url_for('frontend.teacher_courses') }}">
                                         <i class="fas fa-book me-2"></i>My Courses
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/teacher/grading">
+                                        <i class="fas fa-edit me-2"></i>Quiz Grading
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('frontend.teacher_submissions') }}">
+                                        <i class="fas fa-tasks me-2"></i>Submissions
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('frontend.teacher_analytics') }}">
+                                        <i class="fas fa-chart-line me-2"></i>Analytics
                                     </a></li>
                                 {% else %}
                                     <li><a class="dropdown-item" href="{{ url_for('frontend.student_dashboard') }}">
@@ -91,6 +105,35 @@
                                     <i class="fas fa-sign-out-alt me-2"></i>Logout
                                 </a></li>
                             </ul>
+                        </li>
+
+                        <li class="nav-item dropdown me-3">
+                            <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bell fa-lg"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationBadge" style="display: none;">
+                                    0
+                                </span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationDropdown" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                                <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">Notifications</h6>
+                                    <button class="btn btn-link btn-sm p-0" onclick="markAllNotificationsAsRead()">
+                                        <small>Mark all read</small>
+                                    </button>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <div id="notificationsList">
+                                    <div class="text-center py-3">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <div class="dropdown-item text-center">
+                                    <a href="/notifications" class="btn btn-link btn-sm">View All Notifications</a>
+                                </div>
+                            </div>
                         </li>
                     {% else %}
                         <li class="nav-item">
@@ -177,9 +220,253 @@
         </div>
     </footer>
 
+    <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% if session.access_token %}
+    <script>
+    class NotificationManager {
+        constructor() {
+            this.notifications = [];
+            this.unreadCount = 0;
+            this.isLoading = false;
+            this.init();
+        }
+
+        init() {
+            this.loadNotifications();
+            this.startPolling();
+            this.setupEventListeners();
+        }
+
+        async loadNotifications() {
+            if (this.isLoading) return;
+            
+            this.isLoading = true;
+            try {
+                const response = await fetch('/api/notifications/?per_page=10', {
+                    headers: {
+                        'Authorization': `Bearer {{ session.access_token }}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.notifications = data.notifications || [];
+                    this.unreadCount = data.unread_count || 0;
+                    this.updateUI();
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            } finally {
+                this.isLoading = false;
+            }
+        }
+
+        updateUI() {
+            const badge = document.getElementById('notificationBadge');
+            const list = document.getElementById('notificationsList');
+
+            if (this.unreadCount > 0) {
+                badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+
+            if (this.notifications.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-3 text-muted">
+                        <i class="fas fa-bell-slash mb-2"></i>
+                        <div>No notifications</div>
+                    </div>
+                `;
+            } else {
+                list.innerHTML = this.notifications.map(notification => this.renderNotification(notification)).join('');
+            }
+        }
+
+        renderNotification(notification) {
+            const timeAgo = this.formatTimeAgo(new Date(notification.created_at));
+            const isUnread = !notification.is_read;
+            const priorityClass = this.getPriorityClass(notification.priority);
+            const typeIcon = this.getTypeIcon(notification.type);
+
+            return `
+                <div class="dropdown-item notification-item ${isUnread ? 'unread' : ''}" 
+                     data-notification-id="${notification.id}"
+                     onclick="handleNotificationClick(${notification.id}, '${notification.action_url || '#'}')">
+                    <div class="d-flex align-items-start">
+                        <div class="notification-icon me-3 ${priorityClass}">
+                            <i class="fas ${typeIcon}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="notification-title fw-semibold">${notification.title}</div>
+                            <div class="notification-message small text-muted">${notification.message}</div>
+                            <div class="notification-time small text-muted mt-1">
+                                <i class="fas fa-clock me-1"></i>${timeAgo}
+                                ${notification.sender_name ? `• From ${notification.sender_name}` : ''}
+                            </div>
+                        </div>
+                        ${isUnread ? '<div class="notification-dot"></div>' : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        getTypeIcon(type) {
+            const icons = {
+                'message': 'fa-envelope',
+                'enrollment': 'fa-user-plus',
+                'assignment_submission': 'fa-tasks',
+                'assignment_graded': 'fa-check-circle',
+                'quiz_submission': 'fa-question-circle',
+                'quiz_graded': 'fa-star',
+                'course_completion': 'fa-graduation-cap',
+                'new_content': 'fa-plus-circle',
+                'certificate_issued': 'fa-certificate',
+                'achievement_earned': 'fa-trophy'
+            };
+            return icons[type] || 'fa-bell';
+        }
+
+        getPriorityClass(priority) {
+            const classes = {
+                'urgent': 'text-danger',
+                'high': 'text-warning',
+                'normal': 'text-primary',
+                'low': 'text-muted'
+            };
+            return classes[priority] || 'text-primary';
+        }
+
+        formatTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        async markAsRead(notificationId) {
+            try {
+                const response = await fetch(`/api/notifications/${notificationId}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer {{ session.access_token }}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const notification = this.notifications.find(n => n.id === notificationId);
+                    if (notification && !notification.is_read) {
+                        notification.is_read = true;
+                        this.unreadCount = Math.max(0, this.unreadCount - 1);
+                        this.updateUI();
+                    }
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+
+        async markAllAsRead() {
+            try {
+                const response = await fetch('/api/notifications/mark-all-read', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer {{ session.access_token }}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    this.notifications.forEach(n => n.is_read = true);
+                    this.unreadCount = 0;
+                    this.updateUI();
+                }
+            } catch (error) {
+                console.error('Error marking all notifications as read:', error);
+            }
+        }
+
+        setupEventListeners() {
+            document.addEventListener('click', (e) => {
+                const dropdown = document.getElementById('notificationDropdown');
+                if (!dropdown.contains(e.target)) {
+                    const dropdownMenu = bootstrap.Dropdown.getInstance(dropdown);
+                    if (dropdownMenu) {
+                        dropdownMenu.hide();
+                    }
+                }
+            });
+        }
+
+        startPolling() {
+            setInterval(() => {
+                this.loadNotifications();
+            }, 30000);
+        }
+
+        showToast(notification) {
+            const toastContainer = document.getElementById('toast-container');
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="toast-header">
+                    <i class="fas ${this.getTypeIcon(notification.type)} me-2 ${this.getPriorityClass(notification.priority)}"></i>
+                    <strong class="me-auto">${notification.title}</strong>
+                    <small>${this.formatTimeAgo(new Date(notification.created_at))}</small>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${notification.message}
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
+        }
+    }
+
+    function handleNotificationClick(notificationId, actionUrl) {
+        window.notificationManager.markAsRead(notificationId);
+        
+        if (actionUrl && actionUrl !== '#') {
+            window.location.href = actionUrl;
+        }
+    }
+
+    function markAllNotificationsAsRead() {
+        window.notificationManager.markAllAsRead();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof bootstrap !== 'undefined') {
+            window.notificationManager = new NotificationManager();
+        }
+    });
+    </script>
+
+    {% endif %}
     
     {% block extra_js %}{% endblock %}
 </body>

@@ -5,6 +5,7 @@ from app.services.achievement_service import AchievementService
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from app.utils.helpers import calculate_time_spent, calculate_quiz_statistics
 from app.utils.validators import validate_quiz_answers
+from app.services.notification_service import NotificationService
 
 class QuizService:
     """Service class for quiz-related operations"""
@@ -121,6 +122,17 @@ class QuizService:
         db.session.add(quiz)
         db.session.commit()
         
+        enrolled_students = [enrollment.student_id for enrollment in course.enrollments.filter_by(status='active')]
+    
+        if enrolled_students:
+            NotificationService.notify_new_content(
+                student_ids=enrolled_students,
+                teacher_id=teacher_id,
+                course_id=course.id,
+                content_type='quiz',
+                content_title=quiz.title
+            )
+
         return {
             'message': 'Quiz created successfully',
             'quiz': quiz.to_dict()
@@ -367,6 +379,16 @@ class QuizService:
         
         result = QuizService.submit_quiz_attempt(attempt_id, answers)
         
+        try:
+            NotificationService.notify_quiz_submission(
+                attempt.quiz.course.teacher_id,
+                student_id,
+                attempt.quiz_id,
+                attempt.score
+            )
+        except Exception as e:
+            print(f"Failed to send quiz submission notification: {e}")
+
         achievements = AchievementService.check_quiz_achievement(student_id, attempt_id)
         
         enrollment = Enrollment.query.filter_by(
@@ -383,6 +405,13 @@ class QuizService:
             if course_completed and enrollment.status == 'active':
                 enrollment.status = 'completed'
                 enrollment.completed_at = datetime.utcnow()
+
+                NotificationService.notify_course_completion(
+                    teacher_id=attempt.quiz.course.teacher_id,
+                    student_id=student_id,
+                    course_id=attempt.quiz.course_id
+                )
+                
                 db.session.commit()
         
         response = {

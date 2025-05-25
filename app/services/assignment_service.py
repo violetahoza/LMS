@@ -7,6 +7,7 @@ from app.utils.validators import allowed_file, validate_file_size, sanitize_file
 from app.utils.helpers import create_upload_directory, delete_file
 import os
 from flask import current_app
+from app.services.notification_service import NotificationService
 
 class AssignmentService:
     """Service for assignment-related operations"""
@@ -247,9 +248,19 @@ class AssignmentService:
             if course_completed and enrollment.status == 'active':
                 enrollment.status = 'completed'
                 enrollment.completed_at = datetime.utcnow()
+                NotificationService.notify_course_completion(assignment.course.teacher_id, student_id, assignment.course_id)
             
             db.session.commit()
             
+            try:
+                NotificationService.notify_assignment_submission(
+                    assignment.course.teacher_id, 
+                    student_id, 
+                    assignment_id
+                )
+            except Exception as e:
+                print(f"Failed to send assignment submission notification: {e}")
+
             return {
                 'message': 'Assignment submitted successfully',
                 'submission': submission.to_dict()
@@ -318,9 +329,20 @@ class AssignmentService:
             if course_completed and enrollment.status == 'active':
                 enrollment.status = 'completed'
                 enrollment.completed_at = datetime.utcnow()
-        
+                NotificationService.notify_course_completion(teacher_id, submission.student_id, submission.assignment.course_id)
+       
         db.session.commit()
         
+        try:
+            NotificationService.notify_assignment_graded(
+                submission.student_id,
+                teacher_id,
+                submission.assignment_id,
+                grade
+            )
+        except Exception as e:
+            print(f"Failed to send grading notification: {e}")
+
         return {
             'message': 'Assignment graded successfully',
             'submission': submission.to_dict()
