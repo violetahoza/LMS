@@ -6,6 +6,7 @@ from app.utils.base_controller import ValidationException, PermissionException, 
 from app.utils.validators import allowed_file, validate_file_size, sanitize_filename
 from app.utils.helpers import create_upload_directory, delete_file
 import os
+from flask import current_app
 
 class AssignmentService:
     """Service for assignment-related operations"""
@@ -177,7 +178,7 @@ class AssignmentService:
     
     @staticmethod
     def submit_assignment(student_id: int, assignment_id: int, submission_text: str, 
-                         file: Optional[FileStorage] = None, max_file_size: int = 16777216) -> Dict[str, Any]:
+                        file: Optional[FileStorage] = None, max_file_size: int = 16777216) -> Dict[str, Any]:
         """Submit an assignment"""
         user = User.query.get(student_id)
         if not user or not user.is_student():
@@ -189,9 +190,8 @@ class AssignmentService:
         
         enrollment = Enrollment.query.filter_by(
             student_id=student_id,
-            course_id=assignment.course_id,
-            status='active'
-        ).first()
+            course_id=assignment.course_id
+        ).filter(Enrollment.status.in_(['active', 'completed'])).first()
         
         if not enrollment:
             raise PermissionException("Not enrolled in this course")
@@ -239,6 +239,15 @@ class AssignmentService:
                 )
                 db.session.add(submission)
             
+            enrollment.progress_percentage = enrollment.calculate_progress()
+            
+            from app.services.lesson_service import LessonService
+            course_completed = LessonService._is_course_fully_completed(student_id, assignment.course_id)
+            
+            if course_completed and enrollment.status == 'active':
+                enrollment.status = 'completed'
+                enrollment.completed_at = datetime.utcnow()
+            
             db.session.commit()
             
             return {
@@ -250,6 +259,7 @@ class AssignmentService:
             if file_path:
                 delete_file(file_path)
             raise e
+
     
     @staticmethod
     def get_assignment_submissions(teacher_id: int, assignment_id: int) -> Dict[str, Any]:
@@ -294,6 +304,21 @@ class AssignmentService:
         submission.graded_by = teacher_id
         submission.status = 'graded'
         
+        enrollment = Enrollment.query.filter_by(
+            student_id=submission.student_id,
+            course_id=submission.assignment.course_id
+        ).filter(Enrollment.status.in_(['active', 'completed'])).first()
+        
+        if enrollment:
+            enrollment.progress_percentage = enrollment.calculate_progress()
+            
+            from app.services.lesson_service import LessonService
+            course_completed = LessonService._is_course_fully_completed(submission.student_id, submission.assignment.course_id)
+            
+            if course_completed and enrollment.status == 'active':
+                enrollment.status = 'completed'
+                enrollment.completed_at = datetime.utcnow()
+        
         db.session.commit()
         
         return {
@@ -326,7 +351,6 @@ class AssignmentService:
     @staticmethod
     def _handle_file_upload(file: FileStorage, max_file_size: int) -> str:
         """Handle file upload for assignment submission"""
-        from flask import current_app
         
         allowed_extensions = current_app.config.get('ALLOWED_EXTENSIONS', {'pdf', 'doc', 'docx', 'txt'})
         if not allowed_file(file.filename, allowed_extensions):

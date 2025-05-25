@@ -274,26 +274,16 @@ async function loadDashboard() {
 function updateDashboard(data) {
     const stats = data.stats || {};
     
-    // Update statistics cards
     document.getElementById('activeCourses').textContent = stats.active_courses || 0;
     document.getElementById('completedCourses').textContent = stats.completed_courses || 0;
     document.getElementById('overallProgress').textContent = `${stats.overall_progress || 0}%`;
     document.getElementById('totalAchievements').textContent = stats.total_achievements || 0;
     document.getElementById('achievementPoints').textContent = stats.achievement_points || 0;
     
-    // Update active courses
     displayActiveCourses(data.active_courses || []);
-    
-    // Update upcoming assignments
     displayUpcomingAssignments(data.upcoming_assignments || []);
-    
-    // Update recent activity
     displayRecentActivity(data.recent_activity || []);
-    
-    // Update recent achievements
     displayRecentAchievements(data.achievements || []);
-    
-    // Load and display study streak
     loadStudyStreak();
 }
 
@@ -304,7 +294,7 @@ function displayActiveCourses(courses) {
         container.innerHTML = `
             <div class="text-center py-5">
                 <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
-                <h6 class="text-muted">No active courses</h6>
+                <h6 class="text-muted">No courses</h6>
                 <p class="text-muted">Enroll in courses to start learning</p>
                 <a href="/student/courses/browse" class="btn btn-primary">
                     <i class="fas fa-search me-2"></i>Browse Courses
@@ -320,21 +310,37 @@ function displayActiveCourses(courses) {
         const progressClass = progressPercentage >= 80 ? 'bg-success' : 
                              progressPercentage >= 60 ? 'bg-warning' : 'bg-primary';
         
+        // Determine if course is completed
+        const isCompleted = course.status === 'completed';
+        const statusBadge = isCompleted ? 
+            '<span class="badge bg-success ms-2">Completed</span>' : 
+            '<span class="badge bg-primary ms-2">Active</span>';
+        
         content += `
             <div class="card course-card mb-3">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col-md-8">
-                            <h6 class="card-title mb-2">${course.title}</h6>
+                            <h6 class="card-title mb-2">
+                                ${course.title}
+                                ${statusBadge}
+                            </h6>
                             <p class="text-muted small mb-2">by ${course.teacher}</p>
                             <div class="progress mb-2" style="height: 8px;">
                                 <div class="progress-bar ${progressClass}" style="width: ${progressPercentage}%"></div>
                             </div>
                             <small class="text-muted">${progressPercentage.toFixed(1)}% completed</small>
+                            ${isCompleted && course.completed_at ? `
+                                <br><small class="text-success">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    Completed on ${new Date(course.completed_at).toLocaleDateString()}
+                                </small>
+                            ` : ''}
                         </div>
                         <div class="col-md-4 text-md-end">
                             <a href="/student/courses/${course.id}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-play me-1"></i>Continue
+                                <i class="fas fa-${isCompleted ? 'eye' : 'play'} me-1"></i>
+                                ${isCompleted ? 'Review' : 'Continue'}
                             </a>
                         </div>
                     </div>

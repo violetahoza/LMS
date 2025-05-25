@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from app.models import db, User, Course, Lesson, LessonProgress, Enrollment
+from app.models import AssignmentSubmission, QuizAttempt, db, User, Course, Lesson, LessonProgress, Enrollment
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 
 class LessonService:
@@ -256,9 +256,8 @@ class LessonService:
         
         enrollment = Enrollment.query.filter_by(
             student_id=student_id,
-            course_id=lesson.course_id,
-            status='active'
-        ).first()
+            course_id=lesson.course_id
+        ).filter(Enrollment.status.in_(['active', 'completed'])).first()
         
         if not enrollment:
             raise PermissionException("Not enrolled in this course")
@@ -296,7 +295,9 @@ class LessonService:
         
         enrollment.progress_percentage = enrollment.calculate_progress()
         
-        if LessonService._is_course_completed(student_id, lesson.course_id):
+        course_completed = LessonService._is_course_fully_completed(student_id, lesson.course_id)
+        
+        if course_completed and enrollment.status == 'active':
             enrollment.status = 'completed'
             enrollment.completed_at = datetime.utcnow()
         
@@ -308,6 +309,46 @@ class LessonService:
             'course_progress': enrollment.progress_percentage,
             'course_completed': enrollment.status == 'completed'
         }
+    
+    @staticmethod
+    def _is_course_fully_completed(student_id: int, course_id: int) -> bool:
+        """Check if student has completed ALL course requirements (lessons, quizzes, assignments)"""
+        course = Course.query.get(course_id)
+        
+        total_lessons = course.lessons.count()
+        if total_lessons > 0:
+            completed_lessons = LessonProgress.query.filter_by(
+                student_id=student_id
+            ).join(Lesson).filter(
+                Lesson.course_id == course_id,
+                LessonProgress.completed_at.isnot(None)
+            ).count()
+            
+            if completed_lessons < total_lessons:
+                return False
+        
+        course_quizzes = course.quizzes.all()
+        for quiz in course_quizzes:
+            best_attempt = QuizAttempt.query.filter_by(
+                student_id=student_id,
+                quiz_id=quiz.id,
+                status='completed'
+            ).order_by(QuizAttempt.score.desc()).first()
+            
+            if not best_attempt or best_attempt.score < quiz.passing_score:
+                return False
+        
+        course_assignments = course.assignments.all()
+        for assignment in course_assignments:
+            submission = AssignmentSubmission.query.filter_by(
+                student_id=student_id,
+                assignment_id=assignment.id
+            ).first()
+            
+            if not submission or submission.status not in ['submitted', 'graded']:
+                return False
+        
+        return True
     
     @staticmethod
     def get_lesson_analytics(teacher_id: int, lesson_id: int) -> Dict[str, Any]:

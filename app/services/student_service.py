@@ -44,6 +44,21 @@ class StudentService:
         
         recent_activity = StudentService._format_recent_activity(recent_lessons, recent_quiz_attempts)
         
+        all_courses = active_enrollments + completed_enrollments
+        active_courses_data = []
+        
+        for enrollment in all_courses:
+            course_data = {
+                'id': enrollment.course.id,
+                'title': enrollment.course.title,
+                'progress': enrollment.progress_percentage,
+                'teacher': enrollment.course.teacher.full_name if enrollment.course.teacher else 'Unknown',
+                'enrolled_at': enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else None,
+                'status': enrollment.status,
+                'completed_at': enrollment.completed_at.isoformat() if enrollment.completed_at else None
+            }
+            active_courses_data.append(course_data)
+        
         return {
             'stats': {
                 'active_courses': len(active_enrollments),
@@ -52,16 +67,7 @@ class StudentService:
                 'total_achievements': achievements_data['total_achievements'],
                 'achievement_points': achievements_data['total_points']
             },
-            'active_courses': [
-                {
-                    'id': e.course.id,
-                    'title': e.course.title,
-                    'progress': e.progress_percentage,
-                    'teacher': e.course.teacher.full_name,
-                    'enrolled_at': e.enrolled_at.isoformat() if e.enrolled_at else None
-                }
-                for e in active_enrollments
-            ],
+            'active_courses': active_courses_data, 
             'recent_activity': recent_activity,
             'upcoming_assignments': upcoming_assignments,
             'achievements': achievements_data['achievements'][:5]

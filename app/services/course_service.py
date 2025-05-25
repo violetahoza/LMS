@@ -249,7 +249,7 @@ class CourseService:
     
     @staticmethod
     def get_enrolled_courses(student_id: int, page: int = 1, per_page: int = 20, 
-                           status: str = 'active') -> Dict[str, Any]:
+                        status: str = 'active') -> Dict[str, Any]:
         """Get courses the student is enrolled in"""
         user = User.query.get(student_id)
         if not user or not user.is_student():
@@ -257,7 +257,13 @@ class CourseService:
         
         query = Enrollment.query.filter_by(student_id=student_id)
         
-        if status:
+        if status == 'active':
+            query = query.filter_by(status='active')
+        elif status == 'completed':
+            query = query.filter_by(status='completed')
+        elif status == 'all' or not status:
+            query = query.filter(Enrollment.status.in_(['active', 'completed']))
+        else:
             query = query.filter_by(status=status)
         
         pagination = query.paginate(

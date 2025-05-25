@@ -49,28 +49,21 @@ class User(UserMixin, db.Model):
     
     def can_access_course(self, course):
         """Check if user can access a course"""
-        try:
-            if self.is_admin():
-                return True
-            elif self.is_teacher():
-                # Teachers can access their own courses
-                return course.teacher_id == self.id
-            elif self.is_student():
-                # Students can access published courses they're enrolled in OR any published course for viewing
-                if course.is_published:
-                    return True  # Allow students to view any published course
-                else:
-                    # For unpublished courses, check enrollment
-                    enrollment = Enrollment.query.filter_by(
-                        student_id=self.id,
-                        course_id=course.id,
-                        status='active'
-                    ).first()
-                    return enrollment is not None
-            return False
-        except Exception as e:
-            print(f"Error in can_access_course: {e}")
-            return False
+        if self.is_admin():
+            return True
+        
+        if self.is_teacher():
+            return course.teacher_id == self.id
+        
+        if self.is_student():
+            # Students can access if enrolled (active OR completed)
+            enrollment = Enrollment.query.filter_by(
+                student_id=self.id,
+                course_id=course.id
+            ).filter(Enrollment.status.in_(['active', 'completed'])).first()
+            return enrollment is not None
+        
+        return False
     
     def to_dict(self):
         return {
@@ -176,18 +169,56 @@ class Enrollment(db.Model):
     __table_args__ = (db.UniqueConstraint('student_id', 'course_id'),)
     
     def calculate_progress(self):
-        total_lessons = self.course.lessons.count()
-        if total_lessons == 0:
-            return 0.0
+        """Calculate overall course progress percentage"""
+        course = self.course
+        total_components = 0
+        completed_components = 0
         
-        completed_lessons = LessonProgress.query.filter_by(
-            student_id=self.student_id
-        ).join(Lesson).filter(
-            Lesson.course_id == self.course_id,
-            LessonProgress.completed_at.isnot(None)
-        ).count()
+        from app.models import QuizAttempt, AssignmentSubmission
         
-        return (completed_lessons / total_lessons) * 100
+        total_lessons = course.lessons.count()
+        if total_lessons > 0:
+            completed_lessons = LessonProgress.query.filter_by(
+                student_id=self.student_id
+            ).join(Lesson).filter(
+                Lesson.course_id == course.id,
+                LessonProgress.completed_at.isnot(None)
+            ).count()
+            
+            total_components += total_lessons
+            completed_components += completed_lessons
+        
+        course_quizzes = course.quizzes.all()
+        for quiz in course_quizzes:
+            total_components += 1
+            best_attempt = QuizAttempt.query.filter_by(
+                student_id=self.student_id,
+                quiz_id=quiz.id,
+                status='completed'
+            ).order_by(QuizAttempt.score.desc()).first()
+            
+            if best_attempt and best_attempt.score >= quiz.passing_score:
+                completed_components += 1
+        
+        course_assignments = course.assignments.all()
+        for assignment in course_assignments:
+            total_components += 1
+            submission = AssignmentSubmission.query.filter_by(
+                student_id=self.student_id,
+                assignment_id=assignment.id
+            ).first()
+            
+            if submission and submission.status in ['submitted', 'graded']:
+                completed_components += 1
+        
+        if total_components == 0:
+            return 100.0  
+        
+        progress = round((completed_components / total_components) * 100, 2)
+        
+        return min(progress, 100.0)
+
+
     
     def to_dict(self):
         return {

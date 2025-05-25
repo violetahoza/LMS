@@ -329,9 +329,8 @@ class QuizService:
         
         enrollment = Enrollment.query.filter_by(
             student_id=student_id,
-            course_id=quiz.course_id,
-            status='active'
-        ).first()
+            course_id=quiz.course_id
+        ).filter(Enrollment.status.in_(['active', 'completed'])).first()
         
         if not enrollment:
             raise PermissionException("Not enrolled in this course")
@@ -369,6 +368,22 @@ class QuizService:
         result = QuizService.submit_quiz_attempt(attempt_id, answers)
         
         achievements = AchievementService.check_quiz_achievement(student_id, attempt_id)
+        
+        enrollment = Enrollment.query.filter_by(
+            student_id=student_id,
+            course_id=attempt.quiz.course_id
+        ).filter(Enrollment.status.in_(['active', 'completed'])).first()
+        
+        if enrollment:
+            enrollment.progress_percentage = enrollment.calculate_progress()
+            
+            from app.services.lesson_service import LessonService
+            course_completed = LessonService._is_course_fully_completed(student_id, attempt.quiz.course_id)
+            
+            if course_completed and enrollment.status == 'active':
+                enrollment.status = 'completed'
+                enrollment.completed_at = datetime.utcnow()
+                db.session.commit()
         
         response = {
             'message': 'Quiz submitted successfully',
