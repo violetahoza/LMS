@@ -201,41 +201,25 @@
                     <h5 class="card-title mb-0">Recent Registrations</h5>
                     <a href="{{ url_for('frontend.admin_users') }}" class="btn btn-sm btn-outline-primary">View All</a>
                 </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        <!-- Placeholder for recent users -->
-                        <div class="list-group-item d-flex align-items-center border-0 px-0">
-                            <div class="avatar bg-gradient-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <i class="fas fa-user text-white"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold">New Student Registration</div>
-                                <small class="text-muted">2 hours ago</small>
-                            </div>
-                            <span class="badge bg-soft-primary text-primary">Student</span>
+                <div class="list-group list-group-flush">
+                    {% for user in data.users.recent_list %}
+                    <div class="list-group-item d-flex align-items-center border-0 px-0">
+                        <div class="avatar bg-gradient-{{ 'primary' if user.role == 'student' else 'secondary' }} rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas {{ 'fa-user' if user.role == 'student' else 'fa-chalkboard-teacher' }} text-white"></i>
                         </div>
-                        <div class="list-group-item d-flex align-items-center border-0 px-0">
-                            <div class="avatar bg-gradient-secondary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <i class="fas fa-chalkboard-teacher text-white"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold">New Teacher Registration</div>
-                                <small class="text-muted">5 hours ago</small>
-                            </div>
-                            <span class="badge bg-soft-secondary text-secondary">Teacher</span>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">{{ user.full_name }}</div>
+                            <small class="text-muted">{{ user.created_at[:16].replace('T', ' ') }}</small>
                         </div>
-                        <div class="list-group-item d-flex align-items-center border-0 px-0">
-                            <div class="avatar bg-gradient-success rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <i class="fas fa-user-graduate text-white"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold">Course Enrollment</div>
-                                <small class="text-muted">1 day ago</small>
-                            </div>
-                            <span class="badge bg-soft-success text-success">Active</span>
-                        </div>
+                        <span class="badge bg-soft-{{ 'primary' if user.role == 'student' else 'secondary' }} text-{{ 'primary' if user.role == 'student' else 'secondary' }} me-4">
+                            {{ user.role.capitalize() }}
+                        </span>
                     </div>
+                    {% else %}
+                    <p class="text-muted px-3">No recent registrations.</p>
+                    {% endfor %}
                 </div>
+
             </div>
         </div>
         

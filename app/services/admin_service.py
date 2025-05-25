@@ -34,13 +34,23 @@ class AdminService:
             recent_enrollments = Enrollment.query.filter(Enrollment.enrolled_at >= week_ago).count()
             recent_courses = Course.query.filter(Course.created_at >= week_ago).count()
             
+            recent_users_list = User.query.order_by(desc(User.created_at)).limit(5).all()
+            recent_users_data = [
+                {
+                    'full_name': user.full_name,
+                    'role': user.role.value,
+                    'created_at': user.created_at.isoformat()
+                }
+                for user in recent_users_list
+            ]
             return {
                 'users': {
                     'total': total_users,
                     'students': total_students,
                     'teachers': total_teachers,
                     'active': active_users,
-                    'recent': recent_users
+                    'recent': recent_users,
+                    'recent_list': recent_users_data
                 },
                 'courses': {
                     'total': total_courses,
