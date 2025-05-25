@@ -44,6 +44,14 @@ class CourseService:
         if user.is_student():
             CourseService._add_enrollment_status(courses, user_id)
         
+        for course in courses:
+            db_course = Course.query.get(course['id'])
+            course['lesson_count'] = db_course.lessons.count()
+            course['quiz_count'] = db_course.quizzes.count()
+            course['assignment_count'] = db_course.assignments.count()
+            if db_course.teacher:
+                course['teacher_name'] = f"{db_course.teacher.full_name}".strip()
+                
         return {
             'courses': courses,
             'total': pagination.total,
@@ -261,7 +269,16 @@ class CourseService:
         enrollments = []
         for enrollment in pagination.items:
             enrollment_data = enrollment.to_dict()
-            enrollment_data['course'] = enrollment.course.to_dict()
+            course_data = enrollment.course.to_dict()
+            
+            course_data['lesson_count'] = enrollment.course.lessons.count()
+            course_data['quiz_count'] = enrollment.course.quizzes.count()
+            course_data['assignment_count'] = enrollment.course.assignments.count()
+            
+            if enrollment.course.teacher:
+                course_data['teacher_name'] = f"{enrollment.course.teacher.full_name}".strip()
+            
+            enrollment_data['course'] = course_data
             enrollments.append(enrollment_data)
         
         return {
@@ -306,4 +323,3 @@ class CourseService:
         
         for course in courses:
             course['is_enrolled'] = course['id'] in enrolled_course_ids
-            
