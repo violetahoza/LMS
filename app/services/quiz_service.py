@@ -660,3 +660,5 @@ class QuizService:
             return False, "You have an in-progress attempt"
         
         return True, f"You have {quiz.max_attempts - attempts} attempts remaining"
+    
+    

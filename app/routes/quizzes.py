@@ -159,3 +159,4 @@ def get_quiz_statistics(quiz_id):
         int(user_id),
         quiz_id
     )
+

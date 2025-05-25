@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Results - Student - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card" id="resultsHeader">
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading results...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card mb-4" id="summaryCard" style="display: none;">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Quiz Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="summaryContent">
+                        <!-- Summary will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4" id="questionsCard" style="display: none;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Question Review
+                    </h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="filterOptions" id="showAll" value="all" checked>
+                        <label class="btn btn-outline-primary" for="showAll">All</label>
+                        
+                        <input type="radio" class="btn-check" name="filterOptions" id="showCorrect" value="correct">
+                        <label class="btn btn-outline-success" for="showCorrect">Correct</label>
+                        
+                        <input type="radio" class="btn-check" name="filterOptions" id="showIncorrect" value="incorrect">
+                        <label class="btn btn-outline-danger" for="showIncorrect">Incorrect</label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="questionsReview">
+                        <!-- Questions will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="actionsCard" style="display: none;">
+                <div class="card-body text-center">
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                        <button type="button" id="backToCourseBtn" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Course
+                        </button>
+                        <button class="btn btn-outline-info" id="retakeQuizBtn" onclick="retakeQuiz()" style="display: none;">
+                            <i class="fas fa-redo me-2"></i>Retake Quiz
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="printResults()">
+                            <i class="fas fa-print me-2"></i>Print Results
+                        </button>
+                        <button class="btn btn-outline-success" onclick="shareResults()">
+                            <i class="fas fa-share me-2"></i>Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="achievementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-warning text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-trophy me-2"></i>Achievement Unlocked!
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center" id="achievementContent">
+                <!-- Achievement content will be loaded here -->
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-warning" data-bs-dismiss="modal">
+                    <i class="fas fa-check me-2"></i>Awesome!
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const attemptId = {{ attempt_id }};
+let resultsData = null;
+let allQuestions = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadQuizResults();
+    
+    document.querySelectorAll('input[name="filterOptions"]').forEach(radio => {
+        radio.addEventListener('change', filterQuestions);
+    });
+});
+
+async function loadQuizResults() {
+    try {
+        const response = await fetch(`/api/quizzes/attempt/${attemptId}/results`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            resultsData = data.data || data;
+            allQuestions = resultsData.questions || [];
+            displayResults();
+        } else {
+            showError('Failed to load quiz results');
+        }
+    } catch (error) {
+        console.error('Error loading results:', error);
+        showError('Error loading quiz results');
+    }
+}
+
+function displayResults() {
+    if (!resultsData) return;
+    
+    displayResultsHeader();
+    displaySummary();
+    displayQuestions();
+    setupActions();
+    
+    document.getElementById('summaryCard').style.display = 'block';
+    document.getElementById('questionsCard').style.display = 'block';
+    document.getElementById('actionsCard').style.display = 'block';
+    
+    checkForAchievements();
+}
+
+function displayResultsHeader() {
+    const attempt = resultsData.attempt;
+    const quiz = resultsData.quiz;
+    const score = attempt.score || 0;
+    const passed = score >= quiz.passing_score;
+    
+    const headerHTML = `
+        <div class="card ${passed ? 'bg-gradient-success' : 'bg-gradient-warning'} text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center">
+                            <div class="me-4">
+                                <i class="fas fa-${passed ? 'check-circle' : 'exclamation-triangle'} fa-4x"></i>
+                            </div>
+                            <div>
+                                <h2 class="mb-1">${quiz.title}</h2>
+                                <h3 class="mb-2">${score.toFixed(1)}%</h3>
+                                <p class="mb-0 opacity-75">
+                                    ${passed ? 'Congratulations! You passed!' : 'Keep studying and try again!'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <div class="text-center">
+                            <div class="h1 mb-0">${passed ? 'PASSED' : 'NOT PASSED'}</div>
+                            <small class="opacity-75">Required: ${quiz.passing_score}%</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('resultsHeader').innerHTML = headerHTML;
+}
+
+function displaySummary() {
+    const attempt = resultsData.attempt;
+    const quiz = resultsData.quiz;
+    const questions = resultsData.questions;
+    
+    const correctAnswers = questions.filter(q => q.is_correct === true).length;
+    const incorrectAnswers = questions.filter(q => q.is_correct === false).length;
+    const unanswered = questions.filter(q => q.is_correct === null).length;
+    const totalPoints = questions.reduce((sum, q) => sum + (q.points_earned || 0), 0);
+    const maxPoints = questions.reduce((sum, q) => sum + q.points, 0);
+    
+    const timeSpent = attempt.time_spent_minutes || 0;
+    const timeSpentDisplay = timeSpent >= 60 ? 
+        `${Math.floor(timeSpent / 60)}h ${timeSpent % 60}m` : 
+        `${timeSpent}m`;
+    
+    const summaryHTML = `
+        <div class="row g-4">
+            <div class="col-md-6">
+                <h6>Performance Overview</h6>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-success mb-1">${correctAnswers}</div>
+                            <small class="text-muted">Correct</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-danger mb-1">${incorrectAnswers}</div>
+                            <small class="text-muted">Incorrect</small>
+                        </div>
+                    </div>
+                    ${unanswered > 0 ? `
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-warning mb-1">${unanswered}</div>
+                            <small class="text-muted">Unanswered</small>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h6>Quiz Details</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Score:</strong> ${attempt.score?.toFixed(1) || 0}%</li>
+                    <li><strong>Points:</strong> ${totalPoints}/${maxPoints}</li>
+                    <li><strong>Time Spent:</strong> ${timeSpentDisplay}</li>
+                    <li><strong>Attempt:</strong> #${attempt.attempt_number}</li>
+                    <li><strong>Submitted:</strong> ${new Date(attempt.submitted_at).toLocaleString()}</li>
+                    <li><strong>Status:</strong> 
+                        <span class="badge bg-${attempt.score >= quiz.passing_score ? 'success' : 'warning'}">
+                            ${attempt.score >= quiz.passing_score ? 'Passed' : 'Not Passed'}
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h6>Score Breakdown</h6>
+            <div class="progress mb-2" style="height: 25px;">
+                <div class="progress-bar bg-success" style="width: ${(correctAnswers / questions.length) * 100}%">
+                    ${correctAnswers} Correct
+                </div>
+                <div class="progress-bar bg-danger" style="width: ${(incorrectAnswers / questions.length) * 100}%">
+                    ${incorrectAnswers} Incorrect
+                </div>
+                ${unanswered > 0 ? `
+                <div class="progress-bar bg-warning" style="width: ${(unanswered / questions.length) * 100}%">
+                    ${unanswered} Unanswered
+                </div>
+                ` : ''}
+            </div>
+            <small class="text-muted">Total Questions: ${questions.length}</small>
+        </div>
+    `;
+    
+    document.getElementById('summaryContent').innerHTML = summaryHTML;
+}
+
+function displayQuestions() {
+    renderQuestions(allQuestions);
+}
+
+function renderQuestions(questions) {
+    let questionsHTML = '';
+    
+    questions.forEach((question, index) => {
+        const statusClass = question.is_correct === true ? 'success' : 
+                           question.is_correct === false ? 'danger' : 'warning';
+        const statusIcon = question.is_correct === true ? 'check-circle' : 
+                          question.is_correct === false ? 'times-circle' : 'question-circle';
+        
+        questionsHTML += `
+            <div class="card mb-3 border-${statusClass}">
+                <div class="card-header bg-${statusClass} bg-opacity-10">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-${statusIcon} text-${statusClass} me-2"></i>
+                            Question ${index + 1}
+                        </h6>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-${statusClass} me-2">
+                                ${question.points_earned || 0}/${question.points} points
+                            </span>
+                            <span class="badge bg-primary">${question.question_type.replace('_', ' ')}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="question-text mb-3">
+                        <strong>${question.question_text}</strong>
+                    </div>
+                    
+                    ${renderQuestionDetails(question)}
+                </div>
+            </div>
+        `;
+    });
+    
+    if (questions.length === 0) {
+        questionsHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-filter fa-2x text-muted mb-3"></i>
+                <h6 class="text-muted">No questions match the current filter</h6>
+            </div>
+        `;
+    }
+    
+    document.getElementById('questionsReview').innerHTML = questionsHTML;
+}
+
+function renderQuestionDetails(question) {
+    if (question.question_type === 'short_answer') {
+        return `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Your Answer:</h6>
+                    <div class="p-3 bg-light rounded">
+                        ${question.student_answer || '<em class="text-muted">No answer provided</em>'}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">Status:</h6>
+                    <div class="p-3 bg-light rounded">
+                        ${question.is_correct === null ? 
+                            '<span class="badge bg-warning">Pending Review</span>' :
+                            question.is_correct ? 
+                                '<span class="badge bg-success">Correct</span>' :
+                                '<span class="badge bg-danger">Incorrect</span>'
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        let optionsHTML = '<div class="options">';
+        
+        question.options?.forEach(option => {
+            const isSelected = option.selected;
+            const isCorrect = option.is_correct;
+            
+            let optionClass = '';
+            let optionIcon = '';
+            
+            if (isCorrect) {
+                optionClass = 'border-success bg-success bg-opacity-10';
+                optionIcon = '<i class="fas fa-check text-success me-2"></i>';
+            } else if (isSelected && !isCorrect) {
+                optionClass = 'border-danger bg-danger bg-opacity-10';
+                optionIcon = '<i class="fas fa-times text-danger me-2"></i>';
+            } else if (isSelected) {
+                optionIcon = '<i class="fas fa-arrow-right text-primary me-2"></i>';
+            }
+            
+            optionsHTML += `
+                <div class="p-3 mb-2 border rounded ${optionClass}">
+                    ${optionIcon}${option.option_text}
+                    ${isCorrect ? '<span class="badge bg-success ms-2">Correct Answer</span>' : ''}
+                    ${isSelected && !isCorrect ? '<span class="badge bg-danger ms-2">Your Choice</span>' : ''}
+                    ${isSelected && isCorrect ? '<span class="badge bg-success ms-2">Your Choice ✓</span>' : ''}
+                </div>
+            `;
+        });
+        
+        optionsHTML += '</div>';
+        
+        return `
+            <h6 class="text-muted mb-3">Answer Options:</h6>
+            ${optionsHTML}
+            ${question.student_answer ? `
+                <div class="mt-3">
+                    <small class="text-muted">
+                        Your answer: <strong>${question.student_answer}</strong>
+                        ${question.correct_answer ? ` | Correct answer: <strong>${question.correct_answer}</strong>` : ''}
+                    </small>
+                </div>
+            ` : ''}
+        `;
+    }
+}
+
+function filterQuestions() {
+    const filter = document.querySelector('input[name="filterOptions"]:checked').value;
+    let filteredQuestions = allQuestions;
+    
+    if (filter === 'correct') {
+        filteredQuestions = allQuestions.filter(q => q.is_correct === true);
+    } else if (filter === 'incorrect') {
+        filteredQuestions = allQuestions.filter(q => q.is_correct === false);
+    }
+    
+    renderQuestions(filteredQuestions);
+}
+
+function setupActions() {
+    const quiz = resultsData.quiz;
+    const attempt = resultsData.attempt;
+    
+    document.getElementById('backToCourseBtn').addEventListener('click', () => {
+        const quiz = resultsData.quiz;
+        window.location.href = `/student/courses/${quiz.course_id}`;
+    });
+        
+   const retakeBtn = document.getElementById('retakeQuizBtn');
+    // retakeBtn.style.display = 'block'; // Show if retake is available
+}
+
+function checkForAchievements() {
+
+}
+
+function retakeQuiz() {
+    const quiz = resultsData.quiz;
+    window.location.href = `/student/courses/${quiz.course_id}/quiz/${quiz.id}`;
+}
+
+function printResults() {
+    window.print();
+}
+
+function shareResults() {
+    const quiz = resultsData.quiz;
+    const attempt = resultsData.attempt;
+    const score = attempt.score || 0;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: `Quiz Results: ${quiz.title}`,
+            text: `I scored ${score.toFixed(1)}% on "${quiz.title}"!`,
+            url: window.location.href
+        });
+    } else {
+        const shareText = `I scored ${score.toFixed(1)}% on "${quiz.title}"! ${window.location.href}`;
+        navigator.clipboard.writeText(shareText).then(() => {
+            showSuccess('Results link copied to clipboard!');
+        });
+    }
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+function showSuccess(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+
+<style>
+@media print {
+    .btn, .card-header .btn-group, #actionsCard {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #dee2e6 !important;
+        break-inside: avoid;
+    }
+    
+    .bg-gradient-success,
+    .bg-gradient-warning,
+    .bg-gradient-danger {
+        background: #f8f9fa !important;
+        color: #000 !important;
+    }
+}
+</style>
+{% endblock %}

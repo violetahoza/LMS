@@ -1,0 +1,757 @@
+{% extends "base.html" %}
+
+{% block title %}My Assignments - Student - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1">My Assignments</h1>
+                    <p class="text-muted mb-0">Track and submit your course assignments</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('frontend.student_courses') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-book me-2"></i>My Courses
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-info rounded-circle mx-auto mb-3">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <h3 class="stats-number text-info" id="totalAssignments">0</h3>
+                    <p class="text-muted mb-0">Total Assignments</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-warning rounded-circle mx-auto mb-3">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3 class="stats-number text-warning" id="pendingAssignments">0</h3>
+                    <p class="text-muted mb-0">Pending</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-success rounded-circle mx-auto mb-3">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 class="stats-number text-success" id="submittedAssignments">0</h3>
+                    <p class="text-muted mb-0">Submitted</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-danger rounded-circle mx-auto mb-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3 class="stats-number text-danger" id="overdueAssignments">0</h3>
+                    <p class="text-muted mb-0">Overdue</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text bg-gradient-primary text-white">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search assignments...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="statusFilter" onchange="filterAssignments()">
+                                <option value="">All Assignments</option>
+                                <option value="pending">Pending</option>
+                                <option value="submitted">Submitted</option>
+                                <option value="graded">Graded</option>
+                                <option value="overdue">Overdue</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="courseFilter" onchange="filterAssignments()">
+                                <option value="">All Courses</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="sortFilter" onchange="sortAssignments()">
+                                <option value="due_date">Due Date</option>
+                                <option value="course">Course</option>
+                                <option value="title">Title</option>
+                                <option value="status">Status</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header border-bottom-0">
+                    <ul class="nav nav-tabs card-header-tabs" id="assignmentsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                                <i class="fas fa-list me-2"></i>All Assignments
+                                <span class="badge bg-primary ms-2" id="allCount">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+                                <i class="fas fa-clock me-2"></i>Pending
+                                <span class="badge bg-warning ms-2" id="pendingCount">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">
+                                <i class="fas fa-calendar me-2"></i>Due Soon
+                                <span class="badge bg-info ms-2" id="upcomingCount">0</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card-body">
+                    <div class="tab-content" id="assignmentsTabsContent">
+                        <div class="tab-pane fade show active" id="all" role="tabpanel">
+                            <div id="allAssignmentsContainer">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="pending" role="tabpanel">
+                            <div id="pendingAssignmentsContainer">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-warning" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="upcoming" role="tabpanel">
+                            <div id="upcomingAssignmentsContainer">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-info" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="assignmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title" id="assignmentModalTitle">Assignment Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="assignmentModalBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-gradient-primary" id="submitAssignmentButton">
+                    <i class="fas fa-edit me-2"></i>Submit Assignment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>Loading assignments...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allAssignments = [];
+let filteredAssignments = [];
+let courses = [];
+let selectedAssignmentId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadAssignments();
+    
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        filterAssignments();
+    });
+    
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            const target = e.target.getAttribute('data-bs-target');
+            if (target === '#pending' && !document.getElementById('pendingAssignmentsContainer').dataset.loaded) {
+                displayPendingAssignments();
+            } else if (target === '#upcoming' && !document.getElementById('upcomingAssignmentsContainer').dataset.loaded) {
+                displayUpcomingAssignments();
+            }
+        });
+    });
+});
+
+async function loadAssignments() {
+    try {
+        showLoading();
+        
+        const coursesResponse = await fetch('/api/courses/enrolled', {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (coursesResponse.ok) {
+            const coursesData = await coursesResponse.json();
+            courses = coursesData.enrollments || [];
+            
+            // Load assignments from all enrolled courses
+            allAssignments = [];
+            for (const enrollment of courses) {
+                const courseId = enrollment.course.id;
+                const assignmentsResponse = await fetch(`/api/assignments/course/${courseId}`, {
+                    headers: {
+                        'Authorization': `Bearer {{ session.access_token }}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (assignmentsResponse.ok) {
+                    const assignmentsData = await assignmentsResponse.json();
+                    const courseAssignments = (assignmentsData.data?.assignments || assignmentsData.assignments || []).map(assignment => ({
+                        ...assignment,
+                        course: enrollment.course
+                    }));
+                    allAssignments.push(...courseAssignments);
+                }
+            }
+            
+            filteredAssignments = [...allAssignments];
+            updateStatistics();
+            populateCourseFilter();
+            displayAllAssignments();
+        } else {
+            showError('Failed to load assignments');
+        }
+    } catch (error) {
+        console.error('Error loading assignments:', error);
+        showError('Error loading assignments');
+    } finally {
+        hideLoading();
+    }
+}
+
+function updateStatistics() {
+    const total = allAssignments.length;
+    const pending = allAssignments.filter(a => !a.submission).length;
+    const submitted = allAssignments.filter(a => a.submission && a.submission.status !== 'not_submitted').length;
+    const overdue = allAssignments.filter(a => a.overdue).length;
+    
+    document.getElementById('totalAssignments').textContent = total;
+    document.getElementById('pendingAssignments').textContent = pending;
+    document.getElementById('submittedAssignments').textContent = submitted;
+    document.getElementById('overdueAssignments').textContent = overdue;
+    
+    document.getElementById('allCount').textContent = total;
+    document.getElementById('pendingCount').textContent = pending;
+    
+    const now = new Date();
+    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const upcoming = allAssignments.filter(a => {
+        if (!a.due_date || a.submission) return false;
+        const dueDate = new Date(a.due_date);
+        return dueDate >= now && dueDate <= weekFromNow;
+    }).length;
+    
+    document.getElementById('upcomingCount').textContent = upcoming;
+}
+
+function populateCourseFilter() {
+    const courseFilter = document.getElementById('courseFilter');
+    const uniqueCourses = [...new Set(allAssignments.map(a => a.course.id))];
+    
+    courseFilter.innerHTML = '<option value="">All Courses</option>';
+    uniqueCourses.forEach(courseId => {
+        const course = allAssignments.find(a => a.course.id === courseId).course;
+        courseFilter.innerHTML += `<option value="${courseId}">${course.title}</option>`;
+    });
+}
+
+function displayAllAssignments() {
+    const container = document.getElementById('allAssignmentsContainer');
+    
+    if (filteredAssignments.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No assignments found</h5>
+                <p class="text-muted">Check back later or enroll in more courses</p>
+                <a href="{{ url_for('frontend.student_browse_courses') }}" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>Browse Courses
+                </a>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="row g-4">';
+    
+    filteredAssignments.forEach(assignment => {
+        const submission = assignment.submission;
+        const hasSubmission = submission !== null;
+        const isOverdue = assignment.overdue;
+        const dueDate = assignment.due_date ? new Date(assignment.due_date) : null;
+        
+        const statusBadge = getStatusBadge(assignment);
+        const urgencyClass = getUrgencyClass(assignment);
+        
+        content += `
+            <div class="col-lg-6 col-xl-4">
+                <div class="card assignment-card h-100 ${urgencyClass}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge bg-gradient-primary">${assignment.course.title}</span>
+                            ${statusBadge}
+                        </div>
+                        
+                        <h6 class="card-title">${assignment.title}</h6>
+                        <p class="card-text text-muted small">${assignment.description?.substring(0, 100) || 'No description'}${assignment.description?.length > 100 ? '...' : ''}</p>
+                        
+                        ${dueDate ? `
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Due: ${dueDate.toLocaleDateString()} ${dueDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    ${isOverdue ? '<span class="text-danger">(Overdue)</span>' : ''}
+                                </small>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="row g-2 text-center mb-3">
+                            <div class="col-6">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold text-primary">${assignment.total_points}</div>
+                                    <small class="text-muted">Points</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-light rounded p-2">
+                                    <div class="fw-bold ${hasSubmission && submission.grade !== null ? 'text-success' : 'text-muted'}">
+                                        ${hasSubmission && submission.grade !== null ? submission.grade : '-'}
+                                    </div>
+                                    <small class="text-muted">Grade</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${hasSubmission && submission.feedback ? `
+                            <div class="alert alert-info alert-sm mb-3">
+                                <small><strong>Feedback:</strong> ${submission.feedback.substring(0, 80)}${submission.feedback.length > 80 ? '...' : ''}</small>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-info btn-sm" onclick="viewAssignment(${assignment.id})">
+                                <i class="fas fa-eye me-2"></i>View Details
+                            </button>
+                            <a href="/student/courses/${assignment.course.id}/assignment/${assignment.id}" class="btn btn-gradient-primary btn-sm">
+                                <i class="fas fa-${hasSubmission ? 'eye' : 'edit'} me-2"></i>
+                                ${hasSubmission ? 'View Submission' : 'Submit Assignment'}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function displayPendingAssignments() {
+    const container = document.getElementById('pendingAssignmentsContainer');
+    container.dataset.loaded = 'true';
+    
+    const pendingAssignments = allAssignments.filter(a => !a.submission);
+    
+    if (pendingAssignments.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <h5 class="text-success">All assignments submitted!</h5>
+                <p class="text-muted">Great job keeping up with your assignments</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="list-group list-group-flush">';
+    
+    // Sort by due date
+    pendingAssignments.sort((a, b) => {
+        if (!a.due_date && !b.due_date) return 0;
+        if (!a.due_date) return 1;
+        if (!b.due_date) return -1;
+        return new Date(a.due_date) - new Date(b.due_date);
+    });
+    
+    pendingAssignments.forEach(assignment => {
+        const dueDate = assignment.due_date ? new Date(assignment.due_date) : null;
+        const isOverdue = assignment.overdue;
+        const urgencyClass = isOverdue ? 'border-danger' : dueDate && getDaysUntilDue(assignment) <= 3 ? 'border-warning' : '';
+        
+        content += `
+            <div class="list-group-item ${urgencyClass}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">${assignment.title}</h6>
+                                <p class="mb-1 text-muted small">${assignment.course.title}</p>
+                                ${dueDate ? `
+                                    <small class="${isOverdue ? 'text-danger' : 'text-muted'}">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        Due: ${dueDate.toLocaleDateString()}
+                                        ${isOverdue ? '(Overdue)' : `(${getDaysUntilDue(assignment)} days left)`}
+                                    </small>
+                                ` : '<small class="text-muted">No due date</small>'}
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary">${assignment.total_points} pts</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ms-3">
+                        <a href="/student/courses/${assignment.course.id}/assignment/${assignment.id}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit me-1"></i>Submit
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function displayUpcomingAssignments() {
+    const container = document.getElementById('upcomingAssignmentsContainer');
+    container.dataset.loaded = 'true';
+    
+    const now = new Date();
+    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const upcomingAssignments = allAssignments.filter(a => {
+        if (!a.due_date || a.submission) return false;
+        const dueDate = new Date(a.due_date);
+        return dueDate >= now && dueDate <= weekFromNow;
+    });
+    
+    if (upcomingAssignments.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No assignments due soon</h5>
+                <p class="text-muted">You're all caught up for the next week!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Sort by due date
+    upcomingAssignments.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+    
+    let content = '<div class="timeline">';
+    
+    upcomingAssignments.forEach((assignment, index) => {
+        const dueDate = new Date(assignment.due_date);
+        const daysLeft = getDaysUntilDue(assignment);
+        const urgencyColor = daysLeft <= 1 ? 'danger' : daysLeft <= 3 ? 'warning' : 'info';
+        
+        content += `
+            <div class="timeline-item">
+                <div class="timeline-marker bg-${urgencyColor}"></div>
+                <div class="timeline-content">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title">${assignment.title}</h6>
+                                    <p class="card-text text-muted small">${assignment.course.title}</p>
+                                    <small class="text-${urgencyColor}">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Due ${dueDate.toLocaleDateString()} - ${daysLeft} day${daysLeft !== 1 ? 's' : ''} left
+                                    </small>
+                                </div>
+                                <div>
+                                    <span class="badge bg-primary">${assignment.total_points} pts</span>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <a href="/student/courses/${assignment.course.id}/assignment/${assignment.id}" class="btn btn-sm btn-outline-${urgencyColor}">
+                                    <i class="fas fa-edit me-1"></i>Submit Now
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function getStatusBadge(assignment) {
+    const submission = assignment.submission;
+    
+    if (assignment.overdue && !submission) {
+        return '<span class="badge bg-danger">Overdue</span>';
+    } else if (submission) {
+        switch (submission.status) {
+            case 'submitted':
+                return '<span class="badge bg-warning">Submitted</span>';
+            case 'graded':
+                return '<span class="badge bg-success">Graded</span>';
+            case 'returned':
+                return '<span class="badge bg-info">Returned</span>';
+            default:
+                return '<span class="badge bg-secondary">Unknown</span>';
+        }
+    } else {
+        return '<span class="badge bg-primary">Pending</span>';
+    }
+}
+
+function getUrgencyClass(assignment) {
+    if (assignment.overdue) return 'border-danger';
+    if (!assignment.due_date || assignment.submission) return '';
+    
+    const daysLeft = getDaysUntilDue(assignment);
+    if (daysLeft <= 1) return 'border-danger';
+    if (daysLeft <= 3) return 'border-warning';
+    return '';
+}
+
+function getDaysUntilDue(assignment) {
+    if (!assignment.due_date) return Infinity;
+    const now = new Date();
+    const dueDate = new Date(assignment.due_date);
+    const diffTime = dueDate - now;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+function filterAssignments() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const courseFilter = document.getElementById('courseFilter').value;
+    
+    filteredAssignments = allAssignments.filter(assignment => {
+        const matchesSearch = !searchTerm || 
+            assignment.title.toLowerCase().includes(searchTerm) ||
+            assignment.description?.toLowerCase().includes(searchTerm) ||
+            assignment.course.title.toLowerCase().includes(searchTerm);
+        
+        const matchesStatus = !statusFilter || getAssignmentStatus(assignment) === statusFilter;
+        
+        const matchesCourse = !courseFilter || assignment.course.id.toString() === courseFilter;
+        
+        return matchesSearch && matchesStatus && matchesCourse;
+    });
+    
+    displayAllAssignments();
+}
+
+function getAssignmentStatus(assignment) {
+    if (assignment.overdue && !assignment.submission) return 'overdue';
+    if (!assignment.submission) return 'pending';
+    if (assignment.submission.status === 'graded') return 'graded';
+    return 'submitted';
+}
+
+function sortAssignments() {
+    const sortBy = document.getElementById('sortFilter').value;
+    
+    filteredAssignments.sort((a, b) => {
+        switch (sortBy) {
+            case 'due_date':
+                if (!a.due_date && !b.due_date) return 0;
+                if (!a.due_date) return 1;
+                if (!b.due_date) return -1;
+                return new Date(a.due_date) - new Date(b.due_date);
+            case 'course':
+                return a.course.title.localeCompare(b.course.title);
+            case 'title':
+                return a.title.localeCompare(b.title);
+            case 'status':
+                return getAssignmentStatus(a).localeCompare(getAssignmentStatus(b));
+            default:
+                return 0;
+        }
+    });
+    
+    displayAllAssignments();
+}
+
+async function viewAssignment(assignmentId) {
+    selectedAssignmentId = assignmentId;
+    const assignment = allAssignments.find(a => a.id === assignmentId);
+    
+    if (!assignment) return;
+    
+    document.getElementById('assignmentModalTitle').textContent = assignment.title;
+    document.getElementById('submitAssignmentButton').onclick = () => {
+        window.location.href = `/student/courses/${assignment.course.id}/assignment/${assignment.id}`;
+    };
+    
+    const modalBody = document.getElementById('assignmentModalBody');
+    const dueDate = assignment.due_date ? new Date(assignment.due_date) : null;
+    
+    modalBody.innerHTML = `
+        <div class="row">
+            <div class="col-md-8">
+                <h6>Description</h6>
+                <p>${assignment.description || 'No description available'}</p>
+                
+                <h6>Assignment Details</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Course:</strong> ${assignment.course.title}</li>
+                    <li><strong>Points:</strong> ${assignment.total_points}</li>
+                    ${dueDate ? `<li><strong>Due Date:</strong> ${dueDate.toLocaleDateString()} ${dueDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</li>` : '<li><strong>Due Date:</strong> No due date</li>'}
+                </ul>
+                
+                ${assignment.submission ? `
+                    <h6>Submission Status</h6>
+                    <div class="alert alert-${assignment.submission.status === 'graded' ? 'success' : assignment.submission.status === 'submitted' ? 'warning' : 'info'}">
+                        <strong>Status:</strong> ${assignment.submission.status.charAt(0).toUpperCase() + assignment.submission.status.slice(1)}<br>
+                        <strong>Submitted:</strong> ${new Date(assignment.submission.submitted_at).toLocaleDateString()}<br>
+                        ${assignment.submission.grade !== null ? `<strong>Grade:</strong> ${assignment.submission.grade}/${assignment.total_points}` : ''}
+                    </div>
+                    ${assignment.submission.feedback ? `
+                        <h6>Feedback</h6>
+                        <div class="alert alert-info">
+                            ${assignment.submission.feedback}
+                        </div>
+                    ` : ''}
+                ` : `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This assignment has not been submitted yet.
+                    </div>
+                `}
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6>Quick Stats</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Status:</span>
+                            <span class="fw-bold">${getAssignmentStatus(assignment).charAt(0).toUpperCase() + getAssignmentStatus(assignment).slice(1)}</span>
+                        </div>
+                        ${dueDate ? `
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Days Left:</span>
+                                <span class="fw-bold ${assignment.overdue ? 'text-danger' : getDaysUntilDue(assignment) <= 3 ? 'text-warning' : 'text-success'}">
+                                    ${assignment.overdue ? 'Overdue' : getDaysUntilDue(assignment) + ' days'}
+                                </span>
+                            </div>
+                        ` : ''}
+                        <div class="d-flex justify-content-between">
+                            <span>Points:</span>
+                            <span class="fw-bold">${assignment.total_points}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    new bootstrap.Modal(document.getElementById('assignmentModal')).show();
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+function showSuccess(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}

@@ -306,3 +306,4 @@ class CourseService:
         
         for course in courses:
             course['is_enrolled'] = course['id'] in enrolled_course_ids
+            

@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+
+{% block title %}Achievements - Student - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-warning text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-trophy fa-3x"></i>
+                                </div>
+                                <div>
+                                    <h2 class="mb-1">Your Achievements</h2>
+                                    <p class="mb-0 opacity-75">Track your learning milestones and unlock new badges</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="text-center">
+                                <div class="h2 mb-0" id="totalPoints">0</div>
+                                <small class="opacity-75">Achievement Points</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-success rounded-circle mx-auto mb-3">
+                        <i class="fas fa-medal"></i>
+                    </div>
+                    <h3 class="stats-number text-success" id="earnedCount">0</h3>
+                    <p class="text-muted mb-0">Earned</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-primary rounded-circle mx-auto mb-3">
+                        <i class="fas fa-target"></i>
+                    </div>
+                    <h3 class="stats-number text-primary" id="availableCount">0</h3>
+                    <p class="text-muted mb-0">Available</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-info rounded-circle mx-auto mb-3">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <h3 class="stats-number text-info" id="completionRate">0%</h3>
+                    <p class="text-muted mb-0">Completion Rate</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-secondary rounded-circle mx-auto mb-3">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="stats-number text-secondary" id="rankPosition">-</h3>
+                    <p class="text-muted mb-0">Rank</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header border-bottom-0">
+                    <ul class="nav nav-tabs card-header-tabs" id="achievementTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="earned-tab" data-bs-toggle="tab" data-bs-target="#earned" type="button" role="tab">
+                                <i class="fas fa-trophy me-2"></i>Earned <span class="badge bg-success ms-2" id="earnedBadge">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="available-tab" data-bs-toggle="tab" data-bs-target="#available" type="button" role="tab">
+                                <i class="fas fa-target me-2"></i>Available <span class="badge bg-primary ms-2" id="availableBadge">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">
+                                <i class="fas fa-tags me-2"></i>Categories
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card-body">
+                    <div class="tab-content" id="achievementTabsContent">
+                        <div class="tab-pane fade show active" id="earned" role="tabpanel">
+                            <div id="earnedAchievements">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="available" role="tabpanel">
+                            <div id="availableAchievements">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="categories" role="tabpanel">
+                            <div id="categoriesView">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-info" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="achievementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-warning text-white">
+                <h5 class="modal-title" id="achievementModalTitle">
+                    <i class="fas fa-trophy me-2"></i>Achievement Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="achievementModalBody">
+                <!-- Achievement details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border text-warning mb-3" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>Loading achievements...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let achievementsData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadAchievements();
+    
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            const target = e.target.getAttribute('data-bs-target');
+            if (target === '#available' && !document.getElementById('availableAchievements').dataset.loaded) {
+                displayAvailableAchievements();
+            } else if (target === '#categories' && !document.getElementById('categoriesView').dataset.loaded) {
+                displayAchievementCategories();
+            }
+        });
+    });
+});
+
+async function loadAchievements() {
+    try {
+        showLoading();
+        
+        const response = await fetch('/api/student/achievements', {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            achievementsData = data.data || data;
+            updateStatistics();
+            displayEarnedAchievements();
+        } else {
+            showError('Failed to load achievements');
+        }
+    } catch (error) {
+        console.error('Error loading achievements:', error);
+        showError('Error loading achievements');
+    } finally {
+        hideLoading();
+    }
+}
+
+function updateStatistics() {
+    if (!achievementsData) return;
+    
+    const earned = achievementsData.earned?.achievements || [];
+    const available = achievementsData.available?.achievements || [];
+    
+    const earnedCount = earned.length;
+    const availableCount = available.length;
+    const totalCount = earnedCount + availableCount;
+    const completionRate = totalCount > 0 ? ((earnedCount / totalCount) * 100).toFixed(1) : 0;
+    const totalPoints = achievementsData.earned?.total_points || 0;
+    
+    document.getElementById('earnedCount').textContent = earnedCount;
+    document.getElementById('availableCount').textContent = availableCount;
+    document.getElementById('completionRate').textContent = `${completionRate}%`;
+    document.getElementById('totalPoints').textContent = totalPoints;
+    
+    document.getElementById('earnedBadge').textContent = earnedCount;
+    document.getElementById('availableBadge').textContent = availableCount;
+    
+    document.getElementById('rankPosition').textContent = earnedCount > 0 ? 'Top 25%' : '-';
+}
+
+function displayEarnedAchievements() {
+    const container = document.getElementById('earnedAchievements');
+    const earned = achievementsData?.earned?.achievements || [];
+    
+    if (earned.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-trophy fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted mb-3">No Achievements Yet</h4>
+                <p class="text-muted mb-4">Start completing courses and quizzes to earn your first achievement!</p>
+                <a href="/student/courses/browse" class="btn btn-gradient-primary">
+                    <i class="fas fa-search me-2"></i>Browse Courses
+                </a>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="row g-4">';
+    
+    earned.forEach(achievement => {
+        const earnedDate = new Date(achievement.earned_at).toLocaleDateString();
+        
+        content += `
+            <div class="col-lg-4 col-md-6">
+                <div class="card achievement-card earned h-100" onclick="showAchievementDetails(${achievement.achievement_id}, true)">
+                    <div class="card-body text-center position-relative">
+                        <div class="achievement-badge earned mb-3">
+                            <i class="fas fa-trophy fa-3x text-warning"></i>
+                            <div class="achievement-glow"></div>
+                        </div>
+                        <h5 class="card-title text-warning">${achievement.name}</h5>
+                        <p class="card-text text-muted">${achievement.description}</p>
+                        <div class="achievement-points mb-2">
+                            <span class="badge bg-gradient-warning">${achievement.points_value} points</span>
+                        </div>
+                        <small class="text-muted">Earned on ${earnedDate}</small>
+                        <div class="achievement-overlay">
+                            <i class="fas fa-check-circle text-success fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function displayAvailableAchievements() {
+    const container = document.getElementById('availableAchievements');
+    container.dataset.loaded = 'true';
+    
+    const available = achievementsData?.available?.achievements || [];
+    
+    if (available.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-target fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted mb-3">All Achievements Earned!</h4>
+                <p class="text-muted">Congratulations! You've earned all available achievements.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="row g-4">';
+    
+    available.forEach(achievement => {
+        content += `
+            <div class="col-lg-4 col-md-6">
+                <div class="card achievement-card available h-100" onclick="showAchievementDetails(${achievement.id}, false)">
+                    <div class="card-body text-center">
+                        <div class="achievement-badge available mb-3">
+                            <i class="fas fa-lock fa-3x text-muted"></i>
+                        </div>
+                        <h5 class="card-title">${achievement.name}</h5>
+                        <p class="card-text text-muted">${achievement.description}</p>
+                        <div class="achievement-points mb-2">
+                            <span class="badge bg-outline-primary">${achievement.points_value} points</span>
+                        </div>
+                        <div class="achievement-criteria">
+                            <small class="text-muted">
+                                ${getAchievementCriteriaText(achievement)}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function displayAchievementCategories() {
+    const container = document.getElementById('categoriesView');
+    container.dataset.loaded = 'true';
+    
+    const earned = achievementsData?.earned?.achievements || [];
+    const available = achievementsData?.available?.achievements || [];
+    const allAchievements = [...earned, ...available];
+    
+    const categories = {
+        'course_completion': { name: 'Course Completion', icon: 'graduation-cap', achievements: [] },
+        'quiz_score': { name: 'Quiz Performance', icon: 'brain', achievements: [] },
+        'streak': { name: 'Study Streaks', icon: 'fire', achievements: [] },
+        'participation': { name: 'Participation', icon: 'users', achievements: [] }
+    };
+    
+    allAchievements.forEach(achievement => {
+        const category = achievement.criteria_type || 'participation';
+        if (categories[category]) {
+            categories[category].achievements.push({
+                ...achievement,
+                earned: earned.some(e => e.achievement_id === achievement.id || e.id === achievement.id)
+            });
+        }
+    });
+    
+    let content = '<div class="row g-4">';
+    
+    Object.entries(categories).forEach(([key, category]) => {
+        if (category.achievements.length === 0) return;
+        
+        const earnedInCategory = category.achievements.filter(a => a.earned).length;
+        const totalInCategory = category.achievements.length;
+        const progressPercentage = (earnedInCategory / totalInCategory) * 100;
+        
+        content += `
+            <div class="col-md-6 col-lg-4">
+                <div class="card category-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="category-icon bg-gradient-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="fas fa-${category.icon} text-white fa-lg"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1">${category.name}</h5>
+                                <small class="text-muted">${earnedInCategory}/${totalInCategory} completed</small>
+                            </div>
+                        </div>
+                        
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-gradient-primary" style="width: ${progressPercentage}%"></div>
+                        </div>
+                        
+                        <div class="achievement-list">
+                            ${category.achievements.slice(0, 3).map(achievement => `
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-${achievement.earned ? 'check-circle text-success' : 'lock text-muted'} me-2"></i>
+                                    <small class="${achievement.earned ? 'text-success' : 'text-muted'}">${achievement.name}</small>
+                                </div>
+                            `).join('')}
+                            ${category.achievements.length > 3 ? `
+                                <small class="text-muted">+${category.achievements.length - 3} more...</small>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function getAchievementCriteriaText(achievement) {
+    switch (achievement.criteria_type) {
+        case 'course_completion':
+            return `Complete ${achievement.criteria_value} course(s)`;
+        case 'quiz_score':
+            return `Score ${achievement.criteria_value}% or higher on a quiz`;
+        case 'streak':
+            return `Study for ${achievement.criteria_value} consecutive days`;
+        case 'participation':
+            return `Complete ${achievement.criteria_value} lesson(s)`;
+        default:
+            return 'Complete the required criteria';
+    }
+}
+
+function showAchievementDetails(achievementId, isEarned) {
+    const achievements = isEarned ? 
+        (achievementsData?.earned?.achievements || []) : 
+        (achievementsData?.available?.achievements || []);
+    
+    const achievement = achievements.find(a => 
+        (a.achievement_id === achievementId) || (a.id === achievementId)
+    );
+    
+    if (!achievement) return;
+    
+    document.getElementById('achievementModalTitle').innerHTML = `
+        <i class="fas fa-${isEarned ? 'trophy' : 'lock'} me-2"></i>${achievement.name}
+    `;
+    
+    const modalBody = document.getElementById('achievementModalBody');
+    modalBody.innerHTML = `
+        <div class="text-center mb-4">
+            <div class="achievement-badge ${isEarned ? 'earned' : 'available'} mb-3">
+                <i class="fas fa-${isEarned ? 'trophy' : 'lock'} fa-4x ${isEarned ? 'text-warning' : 'text-muted'}"></i>
+            </div>
+            <h4 class="${isEarned ? 'text-warning' : 'text-muted'}">${achievement.name}</h4>
+        </div>
+        
+        <div class="achievement-details">
+            <h6>Description</h6>
+            <p class="text-muted">${achievement.description}</p>
+            
+            <h6>Criteria</h6>
+            <p class="text-muted">${getAchievementCriteriaText(achievement)}</p>
+            
+            <h6>Reward</h6>
+            <p class="text-muted">${achievement.points_value} Achievement Points</p>
+            
+            ${isEarned ? `
+                <h6>Earned</h6>
+                <p class="text-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    ${new Date(achievement.earned_at).toLocaleDateString()}
+                </p>
+            ` : `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Keep working towards your goals to unlock this achievement!
+                </div>
+            `}
+        </div>
+    `;
+    
+    new bootstrap.Modal(document.getElementById('achievementModal')).show();
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}

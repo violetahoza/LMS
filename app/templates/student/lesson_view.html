@@ -1,0 +1,559 @@
+{% extends "base.html" %}
+
+{% block title %}Lesson - Student - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-play-circle fa-3x"></i>
+                                </div>
+                                <div>
+                                    <h2 class="mb-1" id="lessonTitle">Loading...</h2>
+                                    <p class="mb-0 opacity-75" id="courseName">Course: Loading...</p>
+                                    <small class="opacity-75" id="lessonType">Loading...</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="text-center">
+                                <div id="lessonStatus" class="h5 mb-0">
+                                    <span class="badge bg-white text-primary">Not Started</span>
+                                </div>
+                                <small class="opacity-75">Status</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <button class="btn btn-outline-secondary" onclick="goBack()">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Course
+                    </button>
+                </div>
+                <div id="lessonNavigation" class="btn-group">
+                    <button class="btn btn-outline-primary" id="prevLessonBtn" onclick="navigateLesson('prev')" disabled>
+                        <i class="fas fa-chevron-left me-2"></i>Previous
+                    </button>
+                    <button class="btn btn-outline-primary" id="nextLessonBtn" onclick="navigateLesson('next')" disabled>
+                        Next<i class="fas fa-chevron-right ms-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div id="videoContainer" class="mb-4 d-none">
+                        <div class="ratio ratio-16x9">
+                            <iframe id="videoPlayer" class="rounded" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                    </div>
+
+                    <div id="lessonContent">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="mt-3">Loading lesson content...</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-top">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <button class="btn btn-success" id="completeBtn" onclick="completeLesson()" disabled>
+                                    <i class="fas fa-check me-2"></i>Mark as Complete
+                                </button>
+                            </div>
+                            <div>
+                                <small class="text-muted" id="timeSpent">Time spent: 0 minutes</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>Lesson Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="lessonInfo">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2 text-success"></i>Your Progress
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="progressInfo">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-success" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-list me-2 text-warning"></i>Course Lessons
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="lessonsListContainer">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-warning" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="timeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Complete Lesson</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>How much time did you spend on this lesson?</p>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label for="minutesInput" class="form-label">Minutes</label>
+                        <input type="number" class="form-control" id="minutesInput" min="1" max="300" value="15">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Suggested</label>
+                        <div class="form-control-plaintext" id="suggestedTime">15 minutes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitCompletion()">
+                    <i class="fas fa-check me-2"></i>Complete Lesson
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex align-items-center justify-content-center h-100">
+        <div class="text-center text-white">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>Processing...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const courseId = {{ course_id }};
+const lessonId = {{ lesson_id }};
+let lessonData = null;
+let courseLessons = [];
+let startTime = Date.now();
+let timeSpentInterval = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadLesson();
+    loadCourseLessons();
+    startTimeTracking();
+});
+
+async function loadLesson() {
+    try {
+        const response = await fetch(`/api/lessons/${lessonId}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            lessonData = data.data || data;
+            displayLesson();
+        } else {
+            showError('Failed to load lesson');
+        }
+    } catch (error) {
+        console.error('Error loading lesson:', error);
+        showError('Error loading lesson');
+    }
+}
+
+function displayLesson() {
+    if (!lessonData) return;
+    
+    document.getElementById('lessonTitle').textContent = lessonData.title;
+    document.getElementById('courseName').textContent = `Course: ${lessonData.course?.title || 'Unknown'}`;
+    document.getElementById('lessonType').textContent = `${lessonData.lesson_type.charAt(0).toUpperCase() + lessonData.lesson_type.slice(1)} Lesson`;
+    
+    const progress = lessonData.progress || {};
+    const statusElement = document.getElementById('lessonStatus');
+    
+    if (progress.completed) {
+        statusElement.innerHTML = '<span class="badge bg-success">Completed</span>';
+    } else if (progress.viewed) {
+        statusElement.innerHTML = '<span class="badge bg-warning">In Progress</span>';
+    } else {
+        statusElement.innerHTML = '<span class="badge bg-secondary">Not Started</span>';
+    }
+    
+    if (lessonData.lesson_type === 'video' || lessonData.lesson_type === 'mixed') {
+        if (lessonData.video_url) {
+            document.getElementById('videoContainer').classList.remove('d-none');
+            const videoPlayer = document.getElementById('videoPlayer');
+            
+            if (lessonData.video_url.includes('youtube.com') || lessonData.video_url.includes('youtu.be')) {
+                const videoId = extractYouTubeId(lessonData.video_url);
+                if (videoId) {
+                    videoPlayer.src = `https://www.youtube.com/embed/${videoId}`;
+                }
+            } else if (lessonData.video_url.includes('vimeo.com')) {
+                const videoId = extractVimeoId(lessonData.video_url);
+                if (videoId) {
+                    videoPlayer.src = `https://player.vimeo.com/video/${videoId}`;
+                }
+            } else {
+                videoPlayer.src = lessonData.video_url;
+            }
+        }
+    }
+    
+    document.getElementById('lessonContent').innerHTML = `
+        <div class="lesson-content">
+            ${lessonData.content || '<p class="text-muted">No content available for this lesson.</p>'}
+        </div>
+    `;
+    
+    document.getElementById('lessonInfo').innerHTML = `
+        <div class="row g-2 text-center">
+            <div class="col-6">
+                <div class="bg-light rounded p-2">
+                    <div class="fw-bold text-primary">${lessonData.order_number}</div>
+                    <small class="text-muted">Lesson #</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="bg-light rounded p-2">
+                    <div class="fw-bold text-warning">${lessonData.duration_minutes || 'N/A'}</div>
+                    <small class="text-muted">Minutes</small>
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+        
+        ${progress.last_viewed ? `
+            <div class="small">
+                <strong>Last viewed:</strong><br>
+                ${new Date(progress.last_viewed).toLocaleString()}
+            </div>
+        ` : ''}
+        
+        ${progress.time_spent_minutes ? `
+            <div class="small mt-2">
+                <strong>Time spent:</strong> ${progress.time_spent_minutes} minutes
+            </div>
+        ` : ''}
+    `;
+    
+    document.getElementById('progressInfo').innerHTML = `
+        <div class="text-center mb-3">
+            <div class="h4 ${progress.completed ? 'text-success' : 'text-warning'}">${progress.completed ? '100%' : progress.viewed ? '50%' : '0%'}</div>
+            <small class="text-muted">Lesson Progress</small>
+        </div>
+        
+        <div class="progress mb-3" style="height: 8px;">
+            <div class="progress-bar ${progress.completed ? 'bg-success' : 'bg-warning'}" 
+                 style="width: ${progress.completed ? '100%' : progress.viewed ? '50%' : '0%'}"></div>
+        </div>
+        
+        <div class="d-grid gap-2">
+            <div class="small text-center">
+                ${progress.completed ? 
+                    '<i class="fas fa-check-circle text-success me-1"></i>Lesson completed' :
+                    progress.viewed ? 
+                        '<i class="fas fa-eye text-warning me-1"></i>Lesson viewed' :
+                        '<i class="fas fa-play text-muted me-1"></i>Not started'
+                }
+            </div>
+        </div>
+    `;
+    
+    const completeBtn = document.getElementById('completeBtn');
+    if (progress.completed) {
+        completeBtn.innerHTML = '<i class="fas fa-check me-2"></i>Completed';
+        completeBtn.disabled = true;
+        completeBtn.className = 'btn btn-outline-success';
+    } else {
+        completeBtn.disabled = false;
+    }
+    
+    if (lessonData.duration_minutes) {
+        document.getElementById('suggestedTime').textContent = `${lessonData.duration_minutes} minutes`;
+        document.getElementById('minutesInput').value = lessonData.duration_minutes;
+    }
+}
+
+async function loadCourseLessons() {
+    try {
+        const response = await fetch(`/api/lessons/course/${courseId}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            courseLessons = (data.data?.lessons || data.lessons || []).sort((a, b) => a.order_number - b.order_number);
+            displayLessonsList();
+            updateNavigation();
+        }
+    } catch (error) {
+        console.error('Error loading course lessons:', error);
+    }
+}
+
+function displayLessonsList() {
+    const container = document.getElementById('lessonsListContainer');
+    
+    if (courseLessons.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No lessons available</p>';
+        return;
+    }
+    
+    let content = '<div class="list-group list-group-flush">';
+    
+    courseLessons.forEach((lesson, index) => {
+        const progress = lesson.progress || {};
+        const isCompleted = progress.completed;
+        const isCurrent = lesson.id === lessonId;
+        
+        const canAccess = index === 0 || courseLessons[index - 1]?.progress?.completed;
+        
+        const statusIcon = isCompleted ? 'fas fa-check-circle text-success' : 
+                          progress.viewed ? 'fas fa-play-circle text-warning' : 
+                          canAccess ? 'fas fa-circle text-muted' : 'fas fa-lock text-muted';
+        
+        content += `
+            <div class="list-group-item ${isCurrent ? 'active' : ''} ${!canAccess ? 'disabled' : ''}" 
+                 ${canAccess && !isCurrent ? `onclick="navigateToLesson(${lesson.id})" style="cursor: pointer;"` : ''}>
+                <div class="d-flex align-items-center">
+                    <div class="me-2">
+                        <span class="badge ${isCurrent ? 'bg-white text-primary' : 'bg-primary'} rounded-pill">${lesson.order_number}</span>
+                    </div>
+                    <div class="me-2">
+                        <i class="${statusIcon}"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold ${isCurrent ? 'text-white' : canAccess ? '' : 'text-muted'}">${lesson.title}</div>
+                        <small class="${isCurrent ? 'text-white-50' : 'text-muted'}">
+                            ${lesson.lesson_type.charAt(0).toUpperCase() + lesson.lesson_type.slice(1)}
+                            ${lesson.duration_minutes ? ` • ${lesson.duration_minutes} min` : ''}
+                            ${!canAccess ? ' • Complete previous lesson first' : ''}
+                        </small>
+                    </div>
+                    ${!canAccess && !isCurrent ? 
+                        '<div class="text-muted"><i class="fas fa-lock"></i></div>' : 
+                        ''
+                    }
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    container.innerHTML = content;
+}
+
+function updateNavigation() {
+    const currentIndex = courseLessons.findIndex(lesson => lesson.id === lessonId);
+    
+    const prevBtn = document.getElementById('prevLessonBtn');
+    const nextBtn = document.getElementById('nextLessonBtn');
+    
+    if (currentIndex > 0) {
+        prevBtn.disabled = false;
+        prevBtn.onclick = () => navigateToLesson(courseLessons[currentIndex - 1].id);
+    } else {
+        prevBtn.disabled = true;
+    }
+    
+    if (currentIndex < courseLessons.length - 1) {
+        const currentLessonCompleted = lessonData?.progress?.completed || false;
+        
+        nextBtn.disabled = !currentLessonCompleted;
+        
+        if (currentLessonCompleted) {
+            nextBtn.onclick = () => navigateToLesson(courseLessons[currentIndex + 1].id);
+            nextBtn.title = "Go to next lesson";
+        } else {
+            nextBtn.onclick = null;
+            nextBtn.title = "Complete this lesson first";
+        }
+    } else {
+        nextBtn.disabled = true;
+        nextBtn.title = "This is the last lesson";
+    }
+}
+
+function navigateToLesson(newLessonId) {
+    window.location.href = `/student/courses/${courseId}/lesson/${newLessonId}`;
+}
+
+function completeLesson() {
+    new bootstrap.Modal(document.getElementById('timeModal')).show();
+}
+
+async function submitCompletion() {
+    const timeSpent = parseInt(document.getElementById('minutesInput').value) || 15;
+    
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/lessons/${lessonId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                time_spent_minutes: timeSpent
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showSuccess(result.message || 'Lesson completed successfully!');
+            
+            bootstrap.Modal.getInstance(document.getElementById('timeModal')).hide();
+            
+            await loadLesson();
+            await loadCourseLessons();
+            
+            if (result.data?.course_completed) {
+                showSuccess('Congratulations! You have completed the entire course!');
+            }
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to complete lesson');
+        }
+    } catch (error) {
+        console.error('Error completing lesson:', error);
+        showError('Error completing lesson');
+    } finally {
+        hideLoading();
+    }
+}
+
+function startTimeTracking() {
+    timeSpentInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 60000);
+        document.getElementById('timeSpent').textContent = `Time spent: ${elapsed} minutes`;
+    }, 60000);
+}
+
+function goBack() {
+    window.location.href = `/student/courses/${courseId}`;
+}
+
+function extractYouTubeId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
+function extractVimeoId(url) {
+    const regExp = /vimeo\.com\/(\d+)/;
+    const match = url.match(regExp);
+    return match ? match[1] : null;
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+function showSuccess(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+window.addEventListener('beforeunload', function() {
+    if (timeSpentInterval) {
+        clearInterval(timeSpentInterval);
+    }
+});
+</script>
+{% endblock %}

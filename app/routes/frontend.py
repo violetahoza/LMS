@@ -675,6 +675,8 @@ def student_progress():
     if not session.get('access_token') or session.get('user_role') != 'student':
         flash('Access denied. Student privileges required.', 'error')
         return redirect(url_for('frontend.index'))
+    
+    return render_template('student/progress.html')
 
 @bp.route('/student/achievements')
 def student_achievements():
@@ -851,3 +853,4 @@ def teacher_student_progress(student_id):
         return redirect(url_for('frontend.teacher_courses'))
     
     return render_template('teacher/student_progress.html', student_id=student_id, course_id=course_id)
+
