@@ -89,7 +89,22 @@ class QuizService:
             can_retake, message = QuizService.can_retake_quiz(user_id, quiz_id)
             quiz_data['can_take'] = can_retake
             quiz_data['message'] = message
-            quiz_data['attempts'] = QuizService.get_student_quiz_attempts(user_id, quiz_id)
+            in_progress_attempt = QuizAttempt.query.filter_by(
+                student_id=user_id,
+                quiz_id=quiz_id,
+                status='in_progress'
+            ).first()
+
+            if in_progress_attempt:
+                quiz_data['in_progress_attempt_id'] = in_progress_attempt.id
+
+            attempts = QuizAttempt.query.filter_by(student_id=user_id, quiz_id=quiz_id).all()
+            quiz_data['attempts'] = {
+                'count': len(attempts),
+                'remaining': quiz.max_attempts - len(attempts),
+                'best_score': max([a.score for a in attempts if a.score is not None], default=0) if attempts else 0,
+                'has_passed': any(a.score >= quiz.passing_score for a in attempts if a.score is not None)
+            }
         
         return quiz_data
     
@@ -347,14 +362,22 @@ class QuizService:
         if not enrollment:
             raise PermissionException("Not enrolled in this course")
         
-        can_take, message = QuizService.can_retake_quiz(student_id, quiz_id)
-        if not can_take:
-            raise ValidationException(message)
+        in_progress = QuizAttempt.query.filter_by(
+            quiz_id=quiz_id,
+            student_id=student_id,
+            status='in_progress'
+        ).first()
+
+        if in_progress:
+            attempt = in_progress
+        else:
+            can_take, message = QuizService.can_retake_quiz(student_id, quiz_id)
+            if not can_take:
+                raise ValidationException(message)
+            attempt = QuizService.create_quiz_attempt(quiz_id, student_id)
         
-        attempt = QuizService.create_quiz_attempt(quiz_id, student_id)
-        
-        questions = QuizService.get_quiz_questions(quiz_id, include_answers=False)
-        
+        questions = QuizService._get_resume_questions(attempt.id)
+
         return {
             'attempt_id': attempt.id,
             'quiz': quiz.to_dict(),
@@ -677,7 +700,10 @@ class QuizService:
         
         attempts = query.order_by(QuizAttempt.started_at.desc()).all()
         
-        return [attempt.to_dict() for attempt in attempts]
+        return {
+            'attempts': [attempt.to_dict() for attempt in attempts],
+            'total': len(attempts)
+        }
     
     @staticmethod
     def can_retake_quiz(student_id: int, quiz_id: int):
@@ -705,4 +731,42 @@ class QuizService:
         
         return True, f"You have {quiz.max_attempts - attempts} attempts remaining"
     
-    
+    @staticmethod
+    def _get_resume_questions(attempt_id: int):
+        attempt = QuizAttempt.query.get(attempt_id)
+        if not attempt:
+            raise NotFoundException("Attempt not found")
+
+        answers_map = {a.question_id: a for a in attempt.student_answers}
+        questions = attempt.quiz.questions.order_by(Question.order_number).all()
+
+        result = []
+        for q in questions:
+            q_data = {
+                'id': q.id,
+                'question_text': q.question_text,
+                'question_type': q.question_type,
+                'points': q.points,
+                'order_number': q.order_number,
+            }
+
+            if q.question_type in ['multiple_choice', 'true_false']:
+                q_data['options'] = [
+                    {
+                        'id': opt.id,
+                        'option_text': opt.option_text
+                    } for opt in q.answer_options
+                ]
+
+            answer = answers_map.get(q.id)
+            if answer:
+                if q.question_type == 'short_answer':
+                    q_data['student_answer'] = answer.answer_text
+                else:
+                    q_data['selected_option_id'] = answer.selected_option_id
+
+            result.append(q_data)
+
+        return result
+
+

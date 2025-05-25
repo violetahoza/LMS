@@ -50,6 +50,9 @@
                         </div>
                     </div>
                     <div class="text-center mt-4">
+                         <a href="/student/courses/{{ course_id }}" class="btn btn-gradient-warning btn-lg me-3">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Course
+                        </a>
                         <button class="btn btn-gradient-warning btn-lg" id="startQuizBtn" onclick="startQuiz()">
                             <i class="fas fa-play me-2"></i>Start Quiz
                         </button>
@@ -72,7 +75,6 @@
                 <div class="card-body">
                     <form id="quizForm">
                         <div id="questionsContainer">
-                            <!-- Questions will be loaded here -->
                         </div>
                         
                         <div class="d-flex justify-content-between mt-4">
@@ -103,7 +105,6 @@
                 </div>
                 <div class="card-body">
                     <div id="attemptHistory">
-                        <!-- History will be loaded here -->
                     </div>
                 </div>
             </div>
@@ -202,7 +203,7 @@ function displayQuizInstructions() {
                     <li><strong>Passing Score:</strong> ${quizData.passing_score}%</li>
                     <li><strong>Time Limit:</strong> ${quizData.time_limit_minutes ? `${quizData.time_limit_minutes} minutes` : 'No time limit'}</li>
                     <li><strong>Attempts Allowed:</strong> ${quizData.max_attempts}</li>
-                    <li><strong>Attempts Remaining:</strong> ${quizData.can_take ? (quizData.attempts?.remaining || quizData.max_attempts) : 0}</li>
+                    <li><strong>Attempts Remaining:</strong> ${quizData.attempts?.remaining ?? 0}</li>
                 </ul>
                 
                 ${quizData.description ? `
@@ -244,24 +245,56 @@ function displayQuizInstructions() {
     
     document.getElementById('quizInstructions').innerHTML = instructionsHTML;
     
-    // Update start button
     const startBtn = document.getElementById('startQuizBtn');
     if (!quizData.can_take) {
+    const startBtnText = quizData.message?.includes('in-progress') ? 'Resume Quiz' : 'No Attempts Remaining';
+    if (quizData.message?.includes('in-progress')) {
+        startBtn.disabled = false;
+        startBtn.innerHTML = `<i class="fas fa-play me-2"></i>${startBtnText}`;
+        startBtn.onclick = startQuiz;
+    } else {
         startBtn.disabled = true;
-        startBtn.innerHTML = '<i class="fas fa-ban me-2"></i>No Attempts Remaining';
-    } else if (quizData.message) {
+        startBtn.innerHTML = `<i class="fas fa-ban me-2"></i>${startBtnText}`;
+    }
+}
+ else if (quizData.message) {
         startBtn.disabled = false;
         startBtn.innerHTML = `<i class="fas fa-play me-2"></i>${quizData.attempts?.count > 0 ? 'Retake Quiz' : 'Start Quiz'}`;
     }
 }
 
+
 async function loadQuizHistory() {
     if (!quizData.attempts || quizData.attempts.count === 0) return;
     
     try {
+        const response = await fetch(`/api/student/quiz-attempts?quiz_id=${quizId}`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        let attempts = [];
+        if (response.ok) {
+            const data = await response.json();
+            attempts = data.data?.attempts || data.attempts || [];
+        }
+        
         document.getElementById('historyCard').classList.remove('d-none');
         
-        const historyHTML = `
+        if (attempts.length === 0) {
+            const historyHTML = `
+                <div class="text-center py-3">
+                    <i class="fas fa-history fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">No previous attempts</p>
+                </div>
+            `;
+            document.getElementById('attemptHistory').innerHTML = historyHTML;
+            return;
+        }
+        
+        let historyHTML = `
             <div class="table-responsive">
                 <table class="table table-sm">
                     <thead>
@@ -269,22 +302,50 @@ async function loadQuizHistory() {
                             <th>Attempt</th>
                             <th>Score</th>
                             <th>Status</th>
+                            <th>Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>Previous attempts</td>
-                            <td>${quizData.attempts.best_score}%</td>
-                            <td>
-                                <span class="badge bg-${quizData.attempts.has_passed ? 'success' : 'warning'}">
-                                    ${quizData.attempts.has_passed ? 'Passed' : 'Not Passed'}
-                                </span>
-                            </td>
-                            <td>
-                                <small class="text-muted">${quizData.attempts.count} attempt(s) made</small>
-                            </td>
-                        </tr>
+        `;
+        
+        attempts.forEach((attempt, index) => {
+            const score = attempt.score || 0;
+            const passed = score >= quizData.passing_score;
+            const submittedDate = attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleDateString() : 'N/A';
+            const timeSpent = attempt.time_spent_minutes ? `${attempt.time_spent_minutes} min` : 'N/A';
+            
+            historyHTML += `
+                <tr>
+                    <td>
+                        <span class="fw-semibold">#${attempt.attempt_number || (index + 1)}</span>
+                        <br><small class="text-muted">Time: ${timeSpent}</small>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-${passed ? 'success' : 'danger'}">${score.toFixed(1)}%</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-${passed ? 'success' : 'warning'}">
+                            ${passed ? 'Passed' : 'Not Passed'}
+                        </span>
+                    </td>
+                    <td>
+                        <small class="text-muted">${submittedDate}</small>
+                    </td>
+                    <td>
+                        ${attempt.status === 'completed' ? `
+                            <button class="btn btn-outline-info btn-sm" onclick="viewQuizResults(${attempt.id})">
+                                <i class="fas fa-eye me-1"></i>View
+                            </button>
+                        ` : `
+                            <small class="text-muted">${attempt.status}</small>
+                        `}
+                    </td>
+                </tr>
+            `;
+        });
+        
+        historyHTML += `
                     </tbody>
                 </table>
             </div>
@@ -293,51 +354,17 @@ async function loadQuizHistory() {
         document.getElementById('attemptHistory').innerHTML = historyHTML;
     } catch (error) {
         console.error('Error loading quiz history:', error);
+        document.getElementById('attemptHistory').innerHTML = `
+            <div class="text-center py-3">
+                <i class="fas fa-exclamation-triangle text-warning"></i>
+                <small class="text-muted ms-2">Error loading attempt history</small>
+            </div>
+        `;
     }
 }
 
-async function startQuiz() {
-    if (!quizData.can_take) {
-        showError('Cannot start quiz: ' + (quizData.message || 'No attempts remaining'));
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/api/quizzes/${quizId}/start`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer {{ session.access_token }}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            attemptId = data.data?.attempt_id || data.attempt_id;
-            questions = data.data?.questions || data.questions || [];
-            timeLimit = quizData.time_limit_minutes;
-            startTime = new Date();
-            isQuizStarted = true;
-            
-            document.getElementById('instructionsCard').classList.add('d-none');
-            document.getElementById('quizCard').classList.remove('d-none');
-            
-            setupQuizInterface();
-            displayQuestion(0);
-            
-            if (timeLimit) {
-                startTimer();
-            }
-            
-            showSuccess('Quiz started successfully!');
-        } else {
-            const error = await response.json();
-            showError(error.error || 'Failed to start quiz');
-        }
-    } catch (error) {
-        console.error('Error starting quiz:', error);
-        showError('Error starting quiz');
-    }
+function viewQuizResults(attemptId) {
+    window.location.href = `/student/quiz/${attemptId}/results`;
 }
 
 function setupQuizInterface() {
@@ -603,6 +630,54 @@ function showSuccess(message) {
     
     alertContainer.insertBefore(alert, alertContainer.firstChild);
     setTimeout(() => alert.remove(), 5000);
+}
+
+async function startQuiz() {
+    try {
+        const startBtn = document.getElementById('startQuizBtn');
+        const originalText = startBtn.innerHTML;
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting Quiz...';
+        
+        const response = await fetch(`/api/quizzes/${quizId}/start`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            attemptId = data.attempt_id || data.data?.attempt_id;
+            questions = data.questions || data.data?.questions || [];
+            timeLimit = quizData.time_limit_minutes;
+            startTime = new Date();
+            isQuizStarted = true;
+            
+            document.getElementById('instructionsCard').classList.add('d-none');
+            document.getElementById('quizCard').classList.remove('d-none');
+            
+            setupQuizInterface();
+            displayQuestion(0);
+            
+            if (timeLimit) {
+                startTimer();
+            }
+            
+            showSuccess('Quiz started successfully!');
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to start quiz');
+            startBtn.disabled = false;
+            startBtn.innerHTML = originalText;
+        }
+    } catch (error) {
+        console.error('Error starting quiz:', error);
+        showError('Error starting quiz');
+        startBtn.disabled = false;
+        startBtn.innerHTML = originalText;
+    }
 }
 </script>
 {% endblock %}

@@ -194,4 +194,26 @@ def get_student_progress_by_teacher():
             student_id
         )
     
+
+@bp.route('/quiz-attempts', methods=['GET'])
+@student_required()
+def get_student_quiz_attempts():
+    """Get student's quiz attempts"""
+    user_id = get_jwt_identity()
+    quiz_id = request.args.get('quiz_id', type=int)
+    
+    from app.services.quiz_service import QuizService
+    
+    if quiz_id:
+        return BaseController.handle_request(
+            QuizService.get_student_quiz_attempts,
+            int(user_id),
+            quiz_id
+        )
+    else:
+        return BaseController.handle_request(
+            QuizService.get_student_quiz_attempts,
+            int(user_id)
+        )
+
     
