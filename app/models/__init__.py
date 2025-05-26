@@ -29,7 +29,6 @@ class User(UserMixin, db.Model):
     quiz_attempts = db.relationship('QuizAttempt', backref='student', lazy='dynamic')
     assignment_submissions = db.relationship('AssignmentSubmission', backref='student', lazy='dynamic', foreign_keys='AssignmentSubmission.student_id')
     achievements = db.relationship('StudentAchievement', backref='student', lazy='dynamic')
-    discussion_posts = db.relationship('DiscussionPost', backref='author', lazy='dynamic')
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -96,7 +95,6 @@ class Course(db.Model):
     enrollments = db.relationship('Enrollment', backref='course', lazy='dynamic', cascade='all, delete-orphan')
     quizzes = db.relationship('Quiz', backref='course', lazy='dynamic', cascade='all, delete-orphan')
     assignments = db.relationship('Assignment', backref='course', lazy='dynamic', cascade='all, delete-orphan')
-    discussions = db.relationship('Discussion', backref='course', lazy='dynamic', cascade='all, delete-orphan')
     certificates = db.relationship('Certificate', backref='course', lazy='dynamic', cascade='all, delete-orphan')
     
     def get_enrollment_count(self):
@@ -441,34 +439,6 @@ class StudentAchievement(db.Model):
     
     __table_args__ = (db.UniqueConstraint('student_id', 'achievement_id'),)
 
-class Discussion(db.Model):
-    __tablename__ = 'discussions'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_pinned = db.Column(db.Boolean, default=False)
-    is_locked = db.Column(db.Boolean, default=False)
-    
-    creator = db.relationship('User', backref='created_discussions')
-    posts = db.relationship('DiscussionPost', backref='discussion', lazy='dynamic', cascade='all, delete-orphan')
-
-class DiscussionPost(db.Model):
-    __tablename__ = 'discussion_posts'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    discussion_id = db.Column(db.Integer, db.ForeignKey('discussions.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    parent_post_id = db.Column(db.Integer, db.ForeignKey('discussion_posts.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    is_edited = db.Column(db.Boolean, default=False)
-    
-    parent_post = db.relationship('DiscussionPost', remote_side=[id], backref='replies')
-
 class Certificate(db.Model):
     __tablename__ = 'certificates'
     
@@ -554,12 +524,13 @@ class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    type = db.Column(db.Enum(NotificationType), nullable=False)
-    priority = db.Column(db.Enum(NotificationPriority), default=NotificationPriority.NORMAL)
+    type = db.Column(db.String(30), nullable=False)
+    priority = db.Column(db.String(20), default='normal')
+    
     title = db.Column(db.String(200), nullable=False)
     message = db.Column(db.Text, nullable=False)
     action_url = db.Column(db.String(500), nullable=True)
-    related_id = db.Column(db.Integer, nullable=True)  # ID of related object (course, assignment, etc.)
+    related_id = db.Column(db.Integer, nullable=True)
     is_read = db.Column(db.Boolean, default=False, nullable=False)
     read_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -579,8 +550,8 @@ class Notification(db.Model):
             'id': self.id,
             'recipient_id': self.recipient_id,
             'sender_id': self.sender_id,
-            'type': self.type.value,
-            'priority': self.priority.value,
+            'type': self.type,
+            'priority': self.priority,
             'title': self.title,
             'message': self.message,
             'action_url': self.action_url,
@@ -591,7 +562,6 @@ class Notification(db.Model):
             'sender_name': self.sender.full_name if self.sender else None,
             'recipient_name': self.recipient.full_name if self.recipient else None
         }
-    
 class CertificateRequest(db.Model):
     """Certificate request model"""
     __tablename__ = 'certificate_requests'

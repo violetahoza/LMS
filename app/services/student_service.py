@@ -5,7 +5,7 @@ from app.models import db, User, Enrollment, LessonProgress, QuizAttempt, Assign
 from app.services.achievement_service import AchievementService
 from app.services.certificate_service import CertificateService
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
-
+import io
 class StudentService:
     """Service for student-specific operations"""
     
@@ -450,3 +450,150 @@ class StudentService:
                 temp_streak = 1
         
         return max(longest_streak, temp_streak)
+    
+    @staticmethod
+    def generate_certificate_pdf(certificate) -> io.BytesIO:
+        """Generate a PDF certificate"""
+        try:
+            from reportlab.lib import colors
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import inch
+            from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+            from reportlab.lib.enums import TA_CENTER
+            
+        except ImportError:
+            return StudentService._generate_simple_pdf(certificate)
+        
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=0.5*inch, leftMargin=0.5*inch, topMargin=0.5*inch, bottomMargin=0.5*inch)
+        
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=28, spaceAfter=30, alignment=TA_CENTER, textColor=colors.HexColor('#1f2937'), fontName='Helvetica-Bold')
+        
+        story = []
+        story.append(Spacer(1, 0.5*inch))
+        story.append(Paragraph("🏆", title_style))
+        story.append(Paragraph("CERTIFICATE OF COMPLETION", title_style))
+        story.append(Spacer(1, 0.5*inch))
+        story.append(Paragraph(certificate.student.full_name, title_style))
+        story.append(Paragraph(certificate.course.title, title_style))
+        story.append(Spacer(1, 0.5*inch))
+        story.append(Paragraph(f"Issued: {certificate.issued_at.strftime('%B %d, %Y')}", styles['Normal']))
+        story.append(Paragraph(f"Certificate ID: {certificate.certificate_code}", styles['Normal']))
+        
+        doc.build(story)
+        buffer.seek(0)
+        return buffer
+
+    @staticmethod
+    def _generate_simple_pdf(certificate) -> io.BytesIO:
+        """Fallback PDF generation without reportlab"""
+        from fpdf import FPDF
+        
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font('Arial', 'B', 24)
+        pdf.cell(0, 20, 'CERTIFICATE OF COMPLETION', 0, 1, 'C')
+        pdf.ln(20)
+        pdf.set_font('Arial', 'B', 18)
+        pdf.cell(0, 15, certificate.student.full_name, 0, 1, 'C')
+        pdf.ln(10)
+        pdf.set_font('Arial', 'B', 16)
+        pdf.cell(0, 15, certificate.course.title, 0, 1, 'C')
+        pdf.ln(20)
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(0, 8, f'Issue Date: {certificate.issued_at.strftime("%B %d, %Y")}', 0, 1, 'C')
+        pdf.cell(0, 8, f'Certificate ID: {certificate.certificate_code}', 0, 1, 'C')
+        
+        buffer = io.BytesIO()
+        pdf_content = pdf.output(dest='S').encode('latin1')
+        buffer.write(pdf_content)
+        buffer.seek(0)
+        return buffer
+    
+    @staticmethod
+    def get_dashboard(student_id: int) -> Dict[str, Any]:
+        """Get student dashboard data"""
+        user = User.query.get(student_id)
+        if not user or not user.is_student():
+            raise PermissionException("Only students can access dashboard")
+        
+        active_enrollments = Enrollment.query.filter_by(
+            student_id=student_id,
+            status='active'
+        ).all()
+        
+        completed_enrollments = Enrollment.query.filter_by(
+            student_id=student_id,
+            status='completed'
+        ).all()
+        
+        total_progress = 0
+        if active_enrollments:
+            for enrollment in active_enrollments:
+                current_progress = enrollment.calculate_progress()
+                if enrollment.progress_percentage != current_progress:
+                    enrollment.progress_percentage = current_progress
+                    
+                    if current_progress >= 100:
+                        enrollment.status = 'completed'
+                        enrollment.completed_at = datetime.utcnow()
+            
+            db.session.commit()
+            
+            active_enrollments = Enrollment.query.filter_by(
+                student_id=student_id,
+                status='active'
+            ).all()
+            
+            completed_enrollments = Enrollment.query.filter_by(
+                student_id=student_id,
+                status='completed'
+            ).all()
+            
+            if active_enrollments:
+                total_progress = sum(e.progress_percentage for e in active_enrollments) / len(active_enrollments)
+        
+        recent_lessons = LessonProgress.query.filter_by(
+            student_id=student_id
+        ).order_by(desc(LessonProgress.viewed_at)).limit(5).all()
+        
+        recent_quiz_attempts = QuizAttempt.query.filter_by(
+            student_id=student_id
+        ).order_by(desc(QuizAttempt.started_at)).limit(5).all()
+        
+        achievements_data = AchievementService.get_student_achievements(student_id)
+        
+        upcoming_assignments = StudentService._get_upcoming_assignments(student_id)
+        
+        recent_activity = StudentService._format_recent_activity(recent_lessons, recent_quiz_attempts)
+        
+        all_courses = active_enrollments + completed_enrollments
+        active_courses_data = []
+        
+        for enrollment in all_courses:
+            course_data = {
+                'id': enrollment.course.id,
+                'title': enrollment.course.title,
+                'progress': enrollment.progress_percentage,
+                'teacher': enrollment.course.teacher.full_name if enrollment.course.teacher else 'Unknown',
+                'enrolled_at': enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else None,
+                'status': enrollment.status,
+                'completed_at': enrollment.completed_at.isoformat() if enrollment.completed_at else None
+            }
+            active_courses_data.append(course_data)
+        
+        return {
+            'stats': {
+                'active_courses': len(active_enrollments),
+                'completed_courses': len(completed_enrollments),
+                'overall_progress': round(total_progress, 1),
+                'total_achievements': achievements_data['total_achievements'],
+                'achievement_points': achievements_data['total_points']
+            },
+            'active_courses': active_courses_data, 
+            'recent_activity': recent_activity,
+            'upcoming_assignments': upcoming_assignments,
+            'achievements': achievements_data['achievements'][:5]
+        }

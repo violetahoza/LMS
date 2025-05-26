@@ -171,7 +171,6 @@ def check_achievement_criteria(user, achievement):
         return high_scores > 0
     
     elif achievement.criteria_type == 'streak':
-        # Check for consecutive days of activity
         return False
     
     elif achievement.criteria_type == 'participation':
@@ -229,3 +228,9 @@ def hash_file(filepath):
         for byte_block in iter(lambda: f.read(4096), b""):
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
+
+def generate_certificate_code() -> str:
+    """Generate a unique certificate code"""
+    year = datetime.utcnow().year
+    random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    return f"CERT-{year}-{random_part}"

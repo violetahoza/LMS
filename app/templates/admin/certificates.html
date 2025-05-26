@@ -270,7 +270,8 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadAllData() {
     await Promise.all([
         loadRequests(),
-        loadEligibleStudents()
+        loadEligibleStudents(), 
+        loadRecentHistory()
     ]);
     updateStats();
 }
@@ -322,11 +323,6 @@ async function loadEligibleStudents() {
 }
 
 async function loadRecentHistory() {
-    if (recentHistoryData) {
-        displayRecentHistory();
-        return;
-    }
-    
     try {
         const response = await fetch('/api/certificates/requests', {
             headers: {
@@ -338,7 +334,13 @@ async function loadRecentHistory() {
         if (response.ok) {
             const data = await response.json();
             recentHistoryData = data.data || data;
-            displayRecentHistory();
+            console.log('Recent history data loaded:', recentHistoryData);
+            
+            if (document.getElementById('history-tab').classList.contains('active')) {
+                displayRecentHistory();
+            }
+        } else {
+            console.error('Failed to load recent history');
         }
     } catch (error) {
         console.error('Error loading history:', error);
@@ -348,8 +350,14 @@ async function loadRecentHistory() {
 function updateStats() {
     const pendingCount = pendingRequestsData?.pending_requests?.length || 0;
     const eligibleCount = eligibleStudentsData?.pending_certificates?.length || 0;
-    const recentApproved = recentHistoryData?.recent_reviewed?.filter(r => r.status === 'approved').length || 0;
-    const recentRejected = recentHistoryData?.recent_reviewed?.filter(r => r.status === 'rejected').length || 0;
+    
+    let recentApproved = 0;
+    let recentRejected = 0;
+    
+    if (recentHistoryData?.recent_reviewed) {
+        recentApproved = recentHistoryData.recent_reviewed.filter(r => r.status === 'approved').length;
+        recentRejected = recentHistoryData.recent_reviewed.filter(r => r.status === 'rejected').length;
+    }
     
     document.getElementById('pendingCount').textContent = pendingCount;
     document.getElementById('eligibleCount').textContent = eligibleCount;
@@ -360,6 +368,8 @@ function updateStats() {
     
     document.getElementById('requestsBadge').textContent = pendingCount;
     document.getElementById('eligibleBadge').textContent = eligibleCount;
+    
+    console.log(`Stats updated - Pending: ${pendingCount}, Eligible: ${eligibleCount}, Approved: ${recentApproved}, Rejected: ${recentRejected}`);
 }
 
 function displayPendingRequests() {

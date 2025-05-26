@@ -71,7 +71,7 @@ class CertificateService:
         db.session.add(certificate)
         db.session.commit()
         
-        return certificate
+        return certificate.to_dict()
     
     @staticmethod
     def get_pending_certificates(admin_id: int) -> Dict[str, Any]:
@@ -115,7 +115,7 @@ class CertificateService:
         }
     
     @staticmethod
-    def issue_certificate(admin_id: int, student_id: int, course_id: int) -> Certificate:
+    def issue_certificate(admin_id: int, student_id: int, course_id: int) -> Dict[str, Any]:
         """Issue a certificate (admin only)"""
         user = User.query.get(admin_id)
         if not user or not user.is_admin():
@@ -169,9 +169,19 @@ class CertificateService:
         
         db.session.commit()
         
+        try:
+            from app.services.notification_service import NotificationService
+            NotificationService.notify_certificate_issued(
+                student_id=student_id,
+                course_id=course_id,
+                certificate_code=certificate_code
+            )
+        except Exception as e:
+            print(f"Failed to send certificate notification: {e}")
+        
         return {
             'message': 'Certificate issued successfully',
-            'certificate': certificate.to_dict()
+            'certificate': certificate.to_dict()  # This was missing .to_dict()
         }
 
     @staticmethod
@@ -249,7 +259,7 @@ class CertificateService:
     
     @staticmethod
     def request_certificate_approval(student_id: int, course_id: int) -> Dict[str, Any]:
-        """Student requests certificate"""
+        """Request certificate for completed course - FIXED DUPLICATE HANDLING"""
         user = User.query.get(student_id)
         if not user or not user.is_student():
             raise PermissionException("Only students can request certificates")
@@ -274,7 +284,7 @@ class CertificateService:
         
         if existing_cert:
             return {
-                'message': 'Certificate already exists',
+                'message': 'Certificate already exists for this course',
                 'certificate': existing_cert.to_dict()
             }
         
@@ -286,7 +296,12 @@ class CertificateService:
         if existing_request:
             if existing_request.status == 'pending':
                 return {
-                    'message': 'Certificate request already submitted and pending review',
+                    'message': 'Certificate request already submitted and is pending admin review',
+                    'request': existing_request.to_dict()
+                }
+            elif existing_request.status == 'approved':
+                return {
+                    'message': 'Certificate request has already been approved',
                     'request': existing_request.to_dict()
                 }
             elif existing_request.status == 'rejected':
@@ -296,25 +311,41 @@ class CertificateService:
                 existing_request.reviewed_at = None
                 existing_request.rejection_reason = None
                 db.session.commit()
+                
                 return {
                     'message': 'Certificate request resubmitted successfully',
                     'request': existing_request.to_dict()
                 }
         
-        cert_request = CertificateRequest(
-            student_id=student_id,
-            course_id=course_id,
-            requested_at=datetime.utcnow(),
-            status='pending'
-        )
-        
-        db.session.add(cert_request)
-        db.session.commit()
-        
-        return {
-            'message': 'Certificate request submitted successfully',
-            'request': cert_request.to_dict()
-        }
+        try:
+            cert_request = CertificateRequest(
+                student_id=student_id,
+                course_id=course_id,
+                requested_at=datetime.utcnow(),
+                status='pending'
+            )
+            
+            db.session.add(cert_request)
+            db.session.commit()
+            
+            return {
+                'message': 'Certificate request submitted successfully',
+                'request': cert_request.to_dict()
+            }
+        except Exception as e:
+            db.session.rollback()
+            existing_request = CertificateRequest.query.filter_by(
+                student_id=student_id,
+                course_id=course_id
+            ).first()
+            
+            if existing_request:
+                return {
+                    'message': 'Certificate request already submitted and is pending admin review',
+                    'request': existing_request.to_dict()
+                }
+            else:
+                raise e
     
     @staticmethod
     def get_certificate_requests(admin_id: int) -> Dict[str, Any]:
@@ -331,11 +362,22 @@ class CertificateService:
             CertificateRequest.reviewed_at >= thirty_days_ago
         ).order_by(CertificateRequest.reviewed_at.desc()).all()
         
+        recent_approved_count = len([r for r in recent_reviewed if r.status == 'approved'])
+        recent_rejected_count = len([r for r in recent_reviewed if r.status == 'rejected'])
+    
         return {
             'pending_requests': [req.to_dict() for req in pending_requests],
             'recent_reviewed': [req.to_dict() for req in recent_reviewed],
             'total_pending': len(pending_requests),
-            'total_recent_reviewed': len(recent_reviewed)
+            'total_recent_reviewed': len(recent_reviewed),
+            'recent_approved_count': recent_approved_count,
+            'recent_rejected_count': recent_rejected_count,
+            'stats': {
+                'pending': len(pending_requests),
+                'recent_approved': recent_approved_count,
+                'recent_rejected': recent_rejected_count,
+                'total_recent': len(recent_reviewed)
+            }
         }
     
     @staticmethod
@@ -358,12 +400,22 @@ class CertificateService:
             course_id=cert_request.course_id
         )
         
+        try:
+            from app.services.notification_service import NotificationService
+            NotificationService.notify_certificate_request_approved(
+                student_id=cert_request.student_id,
+                course_id=cert_request.course_id,
+                certificate_code=certificate.certificate_code
+            )
+        except Exception as e:
+            print(f"Error sending certificate approval notification: {e}")
+        
         return {
             'message': 'Certificate request approved and issued',
-            'certificate': certificate.to_dict(),
+            'certificate': certificate,
             'request': cert_request.to_dict()
         }
-    
+
     @staticmethod
     def reject_certificate_request(admin_id: int, request_id: int, reason: str) -> Dict[str, Any]:
         """Reject a certificate request (admin only)"""
@@ -384,6 +436,16 @@ class CertificateService:
         cert_request.rejection_reason = reason
         
         db.session.commit()
+        
+        try:
+            from app.services.notification_service import NotificationService
+            NotificationService.notify_certificate_request_rejected(
+                student_id=cert_request.student_id,
+                course_id=cert_request.course_id,
+                reason=reason
+            )
+        except Exception as e:
+            print(f"Error sending certificate rejection notification: {e}")
         
         return {
             'message': 'Certificate request rejected',

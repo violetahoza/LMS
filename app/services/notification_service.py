@@ -19,11 +19,17 @@ class NotificationService:
         related_id: Optional[int] = None
     ) -> Notification:
         """Create a new notification"""
+
+        if isinstance(priority, NotificationPriority):
+            priority_value = priority.value  
+        else:
+            priority_value = str(priority)
+
         notification = Notification(
             recipient_id=recipient_id,
             sender_id=sender_id,
-            type=notification_type,
-            priority=priority,
+            type=notification_type.value,
+            priority=priority_value,
             title=title,
             message=message,
             action_url=action_url,
@@ -144,14 +150,7 @@ class NotificationService:
                 'certificates': True
             }
         }
-    
-    @staticmethod
-    def update_notification_preferences(user_id: int, preferences: Dict[str, Any]) -> Dict[str, str]:
-        """Update user notification preferences (placeholder for future implementation)"""
-        # This would typically update a user_preferences table
-        return {'message': 'Notification preferences updated'}
-    
-    # Specific notification creators
+
     @staticmethod
     def notify_new_message(sender_id: int, recipient_id: int, subject: str):
         """Notify user about new message"""
@@ -293,23 +292,6 @@ class NotificationService:
         return notifications
     
     @staticmethod
-    def notify_certificate_issued(student_id: int, course_id: int, certificate_code: str):
-        """Notify student about certificate issuance"""
-        from app.models import Course
-        course = Course.query.get(course_id)
-        
-        return NotificationService.create_notification(
-            recipient_id=student_id,
-            notification_type=NotificationType.CERTIFICATE_ISSUED,
-            title="Certificate Issued",
-            message=f"Your certificate for '{course.title}' has been issued! Certificate ID: {certificate_code}",
-            action_url="/student/certificates",
-            related_id=course_id,
-            priority=NotificationPriority.HIGH
-        )
-    
-    
-    @staticmethod
     def notify_achievement_earned(student_id: int, achievement_name: str, points: int):
         """Notify student about achievement earned"""
         return NotificationService.create_notification(
@@ -371,3 +353,118 @@ class NotificationService:
         except Exception as e:
             print(f"Error sending quiz graded notification: {e}")
 
+    @staticmethod
+    def notify_certificate_request_submitted(student_id: int, course_id: int):
+        """Notify admins about new certificate request"""
+        from app.models import Course, User, UserRole
+        
+        student = User.query.get(student_id)
+        course = Course.query.get(course_id)
+        
+        if not student or not course:
+            return
+        
+        admins = User.query.filter_by(role=UserRole.ADMIN, is_active=True).all()
+        
+        notifications = []
+        for admin in admins:
+            notification = NotificationService.create_notification(
+                recipient_id=admin.id,
+                sender_id=student_id,
+                notification_type=NotificationType.CERTIFICATE_REQUEST,
+                title="New Certificate Request",
+                message=f"{student.full_name} has requested a certificate for '{course.title}'",
+                action_url="/admin/certificates",
+                related_id=course_id,
+                priority=NotificationPriority.HIGH
+            )
+            notifications.append(notification)
+        
+        return notifications
+
+    @staticmethod
+    def notify_certificate_request_resubmitted(student_id: int, course_id: int):
+        """Notify admins about resubmitted certificate request"""
+        from app.models import Course, User, UserRole
+        
+        student = User.query.get(student_id)
+        course = Course.query.get(course_id)
+        
+        if not student or not course:
+            return
+        
+        admins = User.query.filter_by(role=UserRole.ADMIN, is_active=True).all()
+        
+        notifications = []
+        for admin in admins:
+            notification = NotificationService.create_notification(
+                recipient_id=admin.id,
+                sender_id=student_id,
+                notification_type=NotificationType.CERTIFICATE_REQUEST,
+                title="Certificate Request Resubmitted",
+                message=f"{student.full_name} has resubmitted their certificate request for '{course.title}'",
+                action_url="/admin/certificates",
+                related_id=course_id,
+                priority=NotificationPriority.HIGH
+            )
+            notifications.append(notification)
+        
+        return notifications
+
+    @staticmethod
+    def notify_certificate_request_approved(student_id: int, course_id: int, certificate_code: str):
+        """Notify student about approved certificate request"""
+        from app.models import Course
+        
+        course = Course.query.get(course_id)
+        
+        if not course:
+            return
+        
+        return NotificationService.create_notification(
+            recipient_id=student_id,
+            notification_type=NotificationType.CERTIFICATE_APPROVED,
+            title="Certificate Request Approved",
+            message=f"Your certificate request for '{course.title}' has been approved and issued! Certificate ID: {certificate_code}",
+            action_url="/student/certificates",
+            related_id=course_id,
+            priority=NotificationPriority.HIGH
+        )
+
+    @staticmethod
+    def notify_certificate_request_rejected(student_id: int, course_id: int, reason: str):
+        """Notify student about rejected certificate request"""
+        from app.models import Course
+        
+        course = Course.query.get(course_id)
+        
+        if not course:
+            return
+        
+        return NotificationService.create_notification(
+            recipient_id=student_id,
+            notification_type=NotificationType.CERTIFICATE_REJECTED,
+            title="Certificate Request Rejected",
+            message=f"Your certificate request for '{course.title}' has been rejected. Reason: {reason}",
+            action_url="/student/certificates",
+            related_id=course_id,
+            priority=NotificationPriority.NORMAL
+        )
+
+    @staticmethod
+    def notify_certificate_issued(student_id: int, course_id: int, certificate_code: str):
+        """Notify student about certificate issuance"""
+        from app.models import Course
+        course = Course.query.get(course_id)
+        
+        return NotificationService.create_notification(
+            recipient_id=student_id,
+            notification_type=NotificationType.CERTIFICATE_ISSUED,
+            title="Certificate Issued",
+            message=f"Your certificate for '{course.title}' has been issued! Certificate ID: {certificate_code}",
+            action_url="/student/certificates",
+            related_id=course_id,
+            priority=NotificationPriority.HIGH
+        )
+    
+    

@@ -1,5 +1,6 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
+import io
 
 from app.services.student_service import StudentService
 from app.services.teacher_service import TeacherService
@@ -216,4 +217,79 @@ def get_student_quiz_attempts():
             int(user_id)
         )
 
+@bp.route('/certificates/<string:certificate_code>/download', methods=['GET'])
+@student_required()
+def download_certificate(certificate_code):
+    """Download certificate as PDF"""
+    user_id = int(get_jwt_identity())
     
+    try:
+        from app.services.certificate_service import CertificateService
+        from app.models import Certificate
+        
+        certificate = Certificate.query.filter_by(certificate_code=certificate_code).first()
+        if not certificate:
+            return jsonify({'error': 'Certificate not found'}), 404
+        
+        if certificate.student_id != user_id:
+            return jsonify({'error': 'Access denied'}), 403
+        
+        pdf_buffer = StudentService.generate_certificate_pdf(certificate)
+        
+        filename = f"certificate_{certificate.course.title.replace(' ', '_')}_{certificate_code}.pdf"
+        
+        return send_file(
+            pdf_buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        print(f"Error generating certificate PDF: {e}")
+        return jsonify({'error': 'Failed to generate certificate PDF'}), 500
+
+@bp.route('/certificates/bulk-download', methods=['POST'])
+@student_required()
+def bulk_download_certificates():
+    """Download all certificates as a ZIP file"""
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    certificate_codes = data.get('certificate_codes', [])
+    
+    try:
+        from app.models import Certificate
+        import zipfile
+        
+        certificates = Certificate.query.filter(
+            Certificate.certificate_code.in_(certificate_codes),
+            Certificate.student_id == user_id
+        ).all()
+        
+        if not certificates:
+            return jsonify({'error': 'No certificates found'}), 404
+        
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for certificate in certificates:
+                try:
+                    pdf_buffer = StudentService.generate_certificate_pdf(certificate)
+                    filename = f"certificate_{certificate.course.title.replace(' ', '_')}_{certificate.certificate_code}.pdf"
+                    zip_file.writestr(filename, pdf_buffer.getvalue())
+                except Exception as e:
+                    print(f"Error adding certificate {certificate.certificate_code} to ZIP: {e}")
+                    continue
+        
+        zip_buffer.seek(0)
+        
+        return send_file(
+            zip_buffer,
+            as_attachment=True,
+            download_name=f"certificates_{user_id}.zip",
+            mimetype='application/zip'
+        )
+        
+    except Exception as e:
+        print(f"Error generating certificates ZIP: {e}")
+        return jsonify({'error': 'Failed to generate certificates archive'}), 500

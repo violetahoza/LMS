@@ -281,51 +281,6 @@ def create_achievement():
         success_code=201
     )
 
-# Debug endpoints
-@bp.route('/test', methods=['GET'])
-def test_admin():
-    """Simple test endpoint to check admin access"""
-    try:
-        return jsonify({
-            'message': 'Admin test endpoint working',
-            'data': {'test': 'success'}
-        }), 200
-    except Exception as e:
-        return jsonify({
-            'error': f'Test failed: {str(e)}'
-        }), 500
-
-@bp.route('/test-auth', methods=['GET'])
-@jwt_required()
-def test_auth():
-    """Test JWT authentication"""
-    try:
-        user_id_str = get_jwt_identity()
-        
-        try:
-            user_id = int(user_id_str)
-        except (ValueError, TypeError):
-            return jsonify({
-                'error': 'Invalid user ID format',
-                'user_id_received': user_id_str,
-                'type': str(type(user_id_str))
-            }), 400
-        
-        user = User.query.get(user_id)
-        
-        return jsonify({
-            'message': 'Auth test successful',
-            'user_id_str': user_id_str,
-            'user_id_int': user_id,
-            'user_exists': user is not None,
-            'user_role': user.role.value if user else None,
-            'is_admin': user.is_admin() if user else False
-        }), 200
-    except Exception as e:
-        return jsonify({
-            'error': f'Auth test failed: {str(e)}'
-        }), 500
-    
 @bp.route('/reports/user-activity-overview', methods=['GET'])
 @admin_required()
 def get_user_activity_overview():

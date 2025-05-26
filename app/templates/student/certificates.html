@@ -134,7 +134,6 @@
             </div>
             <div class="modal-body p-0">
                 <div id="certificatePreview">
-                    <!-- Certificate preview will be loaded here -->
                 </div>
             </div>
             <div class="modal-footer">
@@ -161,7 +160,6 @@
             </div>
             <div class="modal-body">
                 <div id="requestModalContent">
-                    <!-- Request content will be loaded here -->
                 </div>
             </div>
             <div class="modal-footer">
@@ -317,7 +315,7 @@ function displayCertificates() {
                         </div>
                     </div>
                     <div class="card-footer bg-light">
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
                             <small class="text-muted">
                                 <i class="fas fa-calendar me-1"></i>${issuedDate}
                             </small>
@@ -325,11 +323,11 @@ function displayCertificates() {
                                 <i class="fas fa-hashtag me-1"></i>${certificate.certificate_code}
                             </small>
                         </div>
-                        <div class="mt-2 d-flex gap-2">
-                            <button class="btn btn-outline-success btn-sm flex-fill" onclick="event.stopPropagation(); downloadCertificate('${certificate.certificate_code}')">
-                                <i class="fas fa-download me-1"></i>Download
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success btn-sm flex-fill" onclick="event.stopPropagation(); downloadCertificate('${certificate.certificate_code}')" title="Download PDF">
+                                <i class="fas fa-download me-1"></i>Download PDF
                             </button>
-                            <button class="btn btn-outline-info btn-sm" onclick="event.stopPropagation(); shareCertificate('${certificate.certificate_code}')">
+                            <button class="btn btn-outline-info btn-sm" onclick="event.stopPropagation(); shareCertificate('${certificate.certificate_code}')" title="Share Certificate">
                                 <i class="fas fa-share me-1"></i>
                             </button>
                         </div>
@@ -520,45 +518,193 @@ async function performCertificateRequest(courseId) {
 
 function downloadCertificate(certificateCode) {
     const certificate = certificatesData.certificates.find(cert => cert.certificate_code === certificateCode);
-    if (certificate) {
-        showSuccess(`Downloading certificate for "${certificate.course_title}"...`);
+    if (!certificate) {
+        showError('Certificate not found');
+        return;
+    }
+    
+    showSuccess(`Preparing download for "${certificate.course_title}"...`);
+    
+    // Create download link
+    const downloadUrl = `/api/student/certificates/${certificateCode}/download`;
+    
+    fetch(downloadUrl, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer {{ session.access_token }}`
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('Download failed');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificate_${certificate.course_title.replace(/[^a-zA-Z0-9]/g, '_')}_${certificateCode}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
         
-        const element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(`Certificate: ${certificate.course_title}\nStudent: ${certificate.student_name}\nCode: ${certificate.certificate_code}`));
-        element.setAttribute('download', `certificate-${certificate.certificate_code}.txt`);
-        element.style.display = 'none';
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
+        showSuccess(`Certificate for "${certificate.course_title}" downloaded successfully!`);
+    })
+    .catch(error => {
+        console.error('Download error:', error);
+        showError('Failed to download certificate');
+    });
+}
+
+function downloadCertificate(certificateCode) {
+    const certificate = certificatesData.certificates.find(cert => cert.certificate_code === certificateCode);
+    if (!certificate) {
+        showError('Certificate not found');
+        return;
+    }
+    
+    showSuccess(`Preparing download for "${certificate.course_title}"...`);
+    
+    const downloadUrl = `/api/student/certificates/${certificateCode}/download`;
+    
+    fetch(downloadUrl, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer {{ session.access_token }}`
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        } else {
+            throw new Error('Download failed');
+        }
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificate_${certificate.course_title.replace(/[^a-zA-Z0-9]/g, '_')}_${certificateCode}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showSuccess(`Certificate for "${certificate.course_title}" downloaded successfully!`);
+    })
+    .catch(error => {
+        console.error('Download error:', error);
+        showError('Failed to download certificate');
+    });
+}
+
+async function downloadAllCertificates() {
+    if (!certificatesData || !certificatesData.certificates || certificatesData.certificates.length === 0) {
+        showError('No certificates available for download');
+        return;
+    }
+    
+    const certificateCodes = certificatesData.certificates.map(cert => cert.certificate_code);
+    
+    if (certificateCodes.length === 1) {
+        downloadCertificate(certificateCodes[0]);
+        return;
+    }
+    
+    showSuccess('Preparing bulk download of all certificates...');
+    showLoading();
+    
+    try {
+        const response = await fetch('/api/student/certificates/bulk-download', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                certificate_codes: certificateCodes
+            })
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `all_certificates.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showSuccess(`All ${certificateCodes.length} certificates downloaded successfully!`);
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to download certificates');
+        }
+    } catch (error) {
+        console.error('Bulk download error:', error);
+        showError('Failed to download certificates');
+    } finally {
+        hideLoading();
     }
 }
-
-function downloadAllCertificates() {
-    showSuccess('Preparing download of all certificates...');
-    
-    setTimeout(() => {
-        showSuccess('All certificates download completed!');
-    }, 2000);
-}
-
 function shareCertificate(certificateCode) {
     const certificate = certificatesData.certificates.find(cert => cert.certificate_code === certificateCode);
     if (!certificate) return;
     
     const shareUrl = `${window.location.origin}/verify-certificate/${certificate.certificate_code}`;
-    const shareText = `I've completed "${certificate.course_title}" and earned my certificate! Verify it here: ${shareUrl}`;
+    const shareText = `I've completed "${certificate.course_title}" and earned my certificate! 🎓 Verify it here: ${shareUrl}`;
     
     if (navigator.share) {
         navigator.share({
             title: `Certificate: ${certificate.course_title}`,
             text: shareText,
             url: shareUrl
+        }).then(() => {
+            showSuccess('Certificate shared successfully!');
+        }).catch(error => {
+            console.log('Share failed, copying to clipboard instead');
+            copyToClipboard(shareText);
         });
     } else {
-        navigator.clipboard.writeText(shareText).then(() => {
-            showSuccess('Certificate link copied to clipboard!');
-        });
+        copyToClipboard(shareText);
     }
+}
+
+function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showSuccess('Certificate link copied to clipboard!');
+        }).catch(() => {
+            fallbackCopyToClipboard(text);
+        });
+    } else {
+        fallbackCopyToClipboard(text);
+    }
+}
+
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        showSuccess('Certificate link copied to clipboard!');
+    } catch (err) {
+        showError('Failed to copy to clipboard');
+    }
+    
+    document.body.removeChild(textArea);
 }
 
 function showLoading() {

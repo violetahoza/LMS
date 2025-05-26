@@ -234,8 +234,12 @@ function updateStatistics() {
     document.getElementById('activeCount').textContent = activeCourses.length;
     document.getElementById('completedCount').textContent = completedCourses.length;
     
-    const totalProgress = activeCourses.reduce((sum, enrollment) => sum + (enrollment.progress_percentage || 0), 0);
-    const averageProgress = activeCourses.length > 0 ? (totalProgress / activeCourses.length).toFixed(1) : 0;
+    let averageProgress = 0;
+    if (activeCourses.length > 0) {
+        const totalProgress = activeCourses.reduce((sum, enrollment) => sum + (enrollment.progress_percentage || 0), 0);
+        averageProgress = (totalProgress / activeCourses.length).toFixed(1);
+    }
+    
     document.getElementById('averageProgress').textContent = `${averageProgress}%`;
 }
 
