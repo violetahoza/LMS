@@ -256,6 +256,9 @@ class CourseService:
             raise NotFoundException("Not enrolled in this course")
         
         enrollment.status = 'dropped'
+        enrollment.progress_percentage = 0.0
+        enrollment.completed_at = None
+        enrollment.enrolled_at = None 
         db.session.commit()
         
         return {'message': 'Course dropped successfully'}
@@ -351,9 +354,11 @@ class CourseService:
     
     @staticmethod
     def _add_enrollment_status(courses: List[Dict], student_id: int):
-        """Add enrollment status to courses for students"""
-        enrollments = Enrollment.query.filter_by(student_id=student_id).all()
+        enrollments = Enrollment.query.filter(
+            Enrollment.student_id == student_id,
+            Enrollment.status.in_(['active', 'completed'])
+        ).all()
         enrolled_course_ids = {e.course_id for e in enrollments}
-        
+
         for course in courses:
             course['is_enrolled'] = course['id'] in enrolled_course_ids

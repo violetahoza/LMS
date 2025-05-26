@@ -169,8 +169,11 @@ class CertificateService:
         
         db.session.commit()
         
-        return certificate
-    
+        return {
+            'message': 'Certificate issued successfully',
+            'certificate': certificate.to_dict()
+        }
+
     @staticmethod
     def bulk_issue_certificates(admin_id: int, certificate_requests: List[Dict[str, int]]) -> Dict[str, Any]:
         """Issue multiple certificates at once (admin only)"""
@@ -293,7 +296,6 @@ class CertificateService:
                 existing_request.reviewed_at = None
                 existing_request.rejection_reason = None
                 db.session.commit()
-                
                 return {
                     'message': 'Certificate request resubmitted successfully',
                     'request': existing_request.to_dict()
@@ -301,7 +303,9 @@ class CertificateService:
         
         cert_request = CertificateRequest(
             student_id=student_id,
-            course_id=course_id
+            course_id=course_id,
+            requested_at=datetime.utcnow(),
+            status='pending'
         )
         
         db.session.add(cert_request)

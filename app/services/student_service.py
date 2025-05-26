@@ -201,12 +201,8 @@ class StudentService:
                 'certificate': existing_cert.to_dict()
             }
         
-        certificate = CertificateService.generate_certificate(student_id, course_id)
-        
-        return {
-            'message': 'Certificate generated successfully',
-            'certificate': certificate.to_dict()
-        }
+        return CertificateService.request_certificate_approval(student_id, course_id)
+
     
     @staticmethod
     def get_study_streak(student_id: int) -> Dict[str, Any]:

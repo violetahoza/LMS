@@ -4,7 +4,6 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
@@ -25,7 +24,6 @@
         </div>
     </div>
 
-    <!-- Course Overview Cards -->
     <div class="row g-4 mb-5" id="overviewCards">
         <div class="col-xl-3 col-md-6">
             <div class="card stats-card h-100">
@@ -76,9 +74,7 @@
         </div>
     </div>
 
-    <!-- Charts Row -->
     <div class="row g-4 mb-5">
-        <!-- Enrollment Trends -->
         <div class="col-lg-8">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -94,7 +90,6 @@
             </div>
         </div>
 
-        <!-- Student Progress Distribution -->
         <div class="col-lg-4">
             <div class="card h-100">
                 <div class="card-header">
@@ -111,7 +106,6 @@
         </div>
     </div>
 
-    <!-- Lesson Engagement -->
     <div class="row g-4 mb-5">
         <div class="col-12">
             <div class="card">
@@ -133,7 +127,6 @@
         </div>
     </div>
 
-    <!-- Quiz Performance -->
     <div class="row g-4">
         <div class="col-12">
             <div class="card">
@@ -156,7 +149,6 @@
     </div>
 </div>
 
-<!-- Loading overlay -->
 <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
     <div class="d-flex align-items-center justify-content-center h-100">
         <div class="text-center text-white">
@@ -183,25 +175,39 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadAnalytics() {
     try {
         showLoading();
-        
+
         const response = await fetch(`/api/teacher/course/${courseId}/analytics`, {
-            method: 'GET',
             headers: {
-                'Authorization': `Bearer {{ session.access_token }}`,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer {{ session.access_token }}`
             }
         });
-        
-        if (response.ok) {
-            const data = await response.json();
-            analyticsData = data.data || data;
-            updateDashboard(analyticsData);
-            createCharts(analyticsData);
-            updateLessonEngagement(analyticsData.lesson_engagement || []);
-            updateQuizPerformance(analyticsData.quiz_performance || []);
-        } else {
-            showError('Failed to load analytics data');
+
+        if (!response.ok) {
+            throw new Error('Failed to load analytics');
         }
+
+        const data = await response.json();
+        analyticsData = data.data || data;
+
+        const studentsResponse = await fetch(`/api/teacher/course/${courseId}/students`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`
+            }
+        });
+
+        if (studentsResponse.ok) {
+            const studentsData = await studentsResponse.json();
+            analyticsData.student_reports = studentsData.data?.student_reports || [];
+        } else {
+            analyticsData.student_reports = [];
+            console.warn('Failed to load student progress report separately');
+        }
+
+        updateDashboard(analyticsData);
+        createCharts(analyticsData);
+        updateLessonEngagement(analyticsData.lesson_engagement || []);
+        updateQuizPerformance(analyticsData.quiz_performance || []);
+
     } catch (error) {
         console.error('Error loading analytics:', error);
         showError('Error loading analytics data');
@@ -210,19 +216,17 @@ async function loadAnalytics() {
     }
 }
 
+
 function updateDashboard(data) {
     const course = data.course || {};
     const stats = data.overall_stats || {};
     
-    // Update course title
     document.getElementById('courseTitle').textContent = `${course.title || 'Course'} - Analytics`;
     
-    // Update stats with real data
     document.getElementById('totalStudents').textContent = stats.total_students || 0;
     document.getElementById('completionRate').textContent = `${(stats.completion_rate || 0).toFixed(1)}%`;
     document.getElementById('avgTime').textContent = `${Math.round(stats.average_completion_days || 0)} days`;
     
-    // Calculate real average quiz score from quiz performance data
     const quizPerformance = data.quiz_performance || [];
     const avgQuizScore = quizPerformance.length > 0 
         ? quizPerformance.reduce((sum, quiz) => sum + (quiz.average_score || 0), 0) / quizPerformance.length 
@@ -238,7 +242,6 @@ function createCharts(data) {
 function createTrendsChart(enrollmentData) {
     const ctx = document.getElementById('trendsChart').getContext('2d');
     
-    // Use real enrollment trends data
     const labels = enrollmentData.map(item => {
         const date = new Date(item.date);
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -298,54 +301,41 @@ function createTrendsChart(enrollmentData) {
 function createProgressChart(data) {
     const ctx = document.getElementById('progressChart').getContext('2d');
     
-    // Calculate real progress distribution from lesson engagement data
-    const lessonEngagement = data.lesson_engagement || [];
-    const stats = data.overall_stats || {};
-    
+    const studentReports = data.student_reports || [];
     let notStarted = 0;
     let inProgress = 0;
     let completed = 0;
-    
-    if (lessonEngagement.length > 0) {
-        const totalStudents = stats.total_students || 1;
-        
-        // Calculate based on lesson completion rates
-        lessonEngagement.forEach(lesson => {
-            const completionRate = lesson.completion_rate || 0;
-            const completedCount = Math.round((completionRate / 100) * totalStudents);
-            const viewedCount = lesson.views || 0;
-            
-            completed += completedCount;
-            inProgress += Math.max(0, viewedCount - completedCount);
-            notStarted += Math.max(0, totalStudents - viewedCount);
-        });
-        
-        // Average across all lessons
-        const lessonCount = lessonEngagement.length;
-        notStarted = Math.round(notStarted / lessonCount);
-        inProgress = Math.round(inProgress / lessonCount);
-        completed = Math.round(completed / lessonCount);
-        
-        // Ensure total adds up to total students
-        const total = notStarted + inProgress + completed;
-        if (total !== totalStudents && totalStudents > 0) {
-            const diff = totalStudents - total;
-            notStarted += diff;
+
+    studentReports.forEach(report => {
+        const status = report.enrollment.status;
+        const progress = report.overall_progress;
+
+        if (status === 'completed') {
+            completed++;
+        } else if (status === 'active') {
+            if (typeof progress === 'number' && progress > 1) {
+                inProgress++;
+            } else {
+                notStarted++;
+            }
+        } else {
+            notStarted++;
         }
-    } else {
-        // Fallback if no lesson data
-        const totalStudents = stats.total_students || 0;
-        const completionRate = stats.completion_rate || 0;
-        
+    });
+
+    if (studentReports.length === 0) {
+        const totalStudents = data.overall_stats?.total_students || 0;
+        const completionRate = data.overall_stats?.completion_rate || 0;
+
         completed = Math.round((completionRate / 100) * totalStudents);
-        inProgress = Math.round(totalStudents * 0.4); // Estimate
+        inProgress = Math.round(totalStudents * 0.4);
         notStarted = totalStudents - completed - inProgress;
     }
-    
+
     const progressData = {
         labels: ['Not Started', 'In Progress', 'Completed'],
         datasets: [{
-            data: [Math.max(0, notStarted), Math.max(0, inProgress), Math.max(0, completed)],
+            data: [notStarted, inProgress, completed],
             backgroundColor: [
                 'rgba(239, 68, 68, 0.8)',
                 'rgba(245, 158, 11, 0.8)',
@@ -355,7 +345,10 @@ function createProgressChart(data) {
             hoverOffset: 4
         }]
     };
-    
+
+    if (progressChart) {
+        progressChart.destroy();
+    }
     progressChart = new Chart(ctx, {
         type: 'doughnut',
         data: progressData,
@@ -387,6 +380,7 @@ function createProgressChart(data) {
         }
     });
 }
+
 
 function updateLessonEngagement(lessons) {
     const container = document.getElementById('lessonEngagementContainer');

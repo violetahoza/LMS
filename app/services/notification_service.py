@@ -1,6 +1,6 @@
 from typing import Dict, Any, List, Optional
 from datetime import datetime
-from app.models import Quiz, db, User, Notification, NotificationType, NotificationPriority
+from app.models import Assignment, Quiz, db, User, Notification, NotificationType, NotificationPriority
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from sqlalchemy import desc, or_
 
@@ -307,6 +307,7 @@ class NotificationService:
             related_id=course_id,
             priority=NotificationPriority.HIGH
         )
+    
     
     @staticmethod
     def notify_achievement_earned(student_id: int, achievement_name: str, points: int):

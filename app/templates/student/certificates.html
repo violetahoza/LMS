@@ -498,8 +498,12 @@ async function performCertificateRequest(courseId) {
         
         if (response.ok) {
             const data = await response.json();
-            showSuccess(data.message || 'Certificate requested successfully!');
-            
+
+            if (data.message && data.message.toLowerCase().includes('already submitted')) {
+                    showWarning(data.message);
+                } else {
+                    showSuccess(data.message || 'Certificate requested successfully!');
+                }            
             bootstrap.Modal.getInstance(document.getElementById('requestModal')).hide();
             
             await loadCertificates();
@@ -592,5 +596,19 @@ function showSuccess(message) {
     alertContainer.insertBefore(alert, alertContainer.firstChild);
     setTimeout(() => alert.remove(), 5000);
 }
+
+function showWarning(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-warning alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+
 </script>
 {% endblock %}

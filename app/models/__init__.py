@@ -536,6 +536,9 @@ class NotificationType(enum.Enum):
     COURSE_COMPLETION = 'course_completion'
     NEW_CONTENT = 'new_content'
     CERTIFICATE_ISSUED = 'certificate_issued'
+    CERTIFICATE_REQUEST = 'certificate_request'
+    CERTIFICATE_APPROVED = 'certificate_approved'
+    CERTIFICATE_REJECTED = 'certificate_rejected'
     ACHIEVEMENT_EARNED = 'achievement_earned'
 
 class NotificationPriority(enum.Enum):

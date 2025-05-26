@@ -4,7 +4,6 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <!-- Welcome Section -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card bg-gradient-success text-white">
@@ -39,7 +38,6 @@
         </div>
     </div>
 
-    <!-- Statistics Cards -->
     <div class="row g-4 mb-5" id="statsCards">
         <div class="col-xl-3 col-md-6">
             <div class="card stats-card h-100">
@@ -90,9 +88,7 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="row g-4">
-        <!-- Active Courses -->
         <div class="col-lg-8">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -115,9 +111,7 @@
             </div>
         </div>
 
-        <!-- Sidebar -->
         <div class="col-lg-4">
-            <!-- Upcoming Assignments -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
@@ -135,7 +129,6 @@
                 </div>
             </div>
 
-            <!-- Recent Activity -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
@@ -153,7 +146,6 @@
                 </div>
             </div>
 
-            <!-- Recent Achievements -->
             <div class="card">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
@@ -173,7 +165,6 @@
         </div>
     </div>
 
-    <!-- Course Recommendations -->
     <div class="row mt-5">
         <div class="col-12">
             <div class="card">
@@ -196,7 +187,6 @@
     </div>
 </div>
 
-<!-- Course Details Modal -->
 <div class="modal fade" id="courseModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -221,7 +211,6 @@
     </div>
 </div>
 
-<!-- Loading overlay -->
 <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
     <div class="d-flex align-items-center justify-content-center h-100">
         <div class="text-center text-white">
@@ -276,7 +265,16 @@ function updateDashboard(data) {
     
     document.getElementById('activeCourses').textContent = stats.active_courses || 0;
     document.getElementById('completedCourses').textContent = stats.completed_courses || 0;
-    document.getElementById('overallProgress').textContent = `${stats.overall_progress || 0}%`;
+    
+    let overallProgress = stats.overall_progress || 0;
+    if (!overallProgress && data.active_courses && data.active_courses.length > 0) {
+        const totalProgress = data.active_courses.reduce((sum, course) => {
+            return sum + (course.progress_percentage || course.progress || 0);
+        }, 0);
+        overallProgress = totalProgress / data.active_courses.length;
+    }
+    
+    document.getElementById('overallProgress').textContent = `${overallProgress.toFixed(1)}%`;
     document.getElementById('totalAchievements').textContent = stats.total_achievements || 0;
     document.getElementById('achievementPoints').textContent = stats.achievement_points || 0;
     
@@ -310,7 +308,6 @@ function displayActiveCourses(courses) {
         const progressClass = progressPercentage >= 80 ? 'bg-success' : 
                              progressPercentage >= 60 ? 'bg-warning' : 'bg-primary';
         
-        // Determine if course is completed
         const isCompleted = course.status === 'completed';
         const statusBadge = isCompleted ? 
             '<span class="badge bg-success ms-2">Completed</span>' : 
