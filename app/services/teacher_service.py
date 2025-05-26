@@ -200,15 +200,24 @@ class TeacherService:
         if quiz.course.teacher_id != teacher_id:
             raise PermissionException("Access denied to this quiz")
         
-        attempts = db.session.query(QuizAttempt).filter(
+        best_attempts = db.session.query(QuizAttempt).filter(
             QuizAttempt.quiz_id == quiz_id,
-            QuizAttempt.status == 'completed'
+            QuizAttempt.status == 'completed',
+            QuizAttempt.score.isnot(None)
         ).join(User, QuizAttempt.student_id == User.id).all()
         
-        if attempts:
-            scores = [attempt.score for attempt in attempts if attempt.score is not None]
+        student_best_attempts = {}
+        for attempt in best_attempts:
+            student_id = attempt.student_id
+            if student_id not in student_best_attempts or attempt.score > student_best_attempts[student_id].score:
+                student_best_attempts[student_id] = attempt
+        
+        best_attempts = list(student_best_attempts.values())
+        
+        if best_attempts:
+            scores = [attempt.score for attempt in best_attempts if attempt.score is not None]
             stats = {
-                'total_attempts': len(attempts),
+                'total_attempts': len(best_attempts),
                 'average_score': sum(scores) / len(scores) if scores else 0,
                 'highest_score': max(scores) if scores else 0,
                 'lowest_score': min(scores) if scores else 0,
@@ -227,11 +236,14 @@ class TeacherService:
         questions = quiz.questions.order_by(Question.order_number).all()
         
         for question in questions:
-            student_answers = db.session.query(StudentAnswer).filter(
-                StudentAnswer.question_id == question.id
-            ).join(QuizAttempt).filter(
-                QuizAttempt.status == 'completed'
-            ).all()
+            student_answers = []
+            for attempt in best_attempts:
+                answer = db.session.query(StudentAnswer).filter(
+                    StudentAnswer.attempt_id == attempt.id,
+                    StudentAnswer.question_id == question.id
+                ).first()
+                if answer:
+                    student_answers.append(answer)
             
             correct_count = len([ans for ans in student_answers if ans.is_correct == True])
             total_answers = len(student_answers)
@@ -265,7 +277,7 @@ class TeacherService:
             })
         
         student_performance = []
-        for attempt in attempts:
+        for attempt in best_attempts:
             answers = db.session.query(StudentAnswer).filter(
                 StudentAnswer.attempt_id == attempt.id
             ).join(Question).order_by(Question.order_number).all()
@@ -319,7 +331,7 @@ class TeacherService:
             'question_statistics': question_analytics,
             'student_performance': student_performance,
             'total_students': len(student_performance)
-        }
+    }
     
     @staticmethod
     def get_individual_student_progress(teacher_id: int, student_id: int, course_id: int) -> Dict[str, Any]:

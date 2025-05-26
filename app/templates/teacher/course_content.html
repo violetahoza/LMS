@@ -676,7 +676,27 @@ async function loadAssignments() {
         
         if (response.ok) {
             const data = await response.json();
-            displayAssignments(data.data?.assignments || data.assignments || []);
+            const assignments = data.data?.assignments || data.assignments || [];
+            
+            for (let assignment of assignments) {
+                try {
+                    const submissionResponse = await fetch(`/api/assignments/${assignment.id}/submissions`, {
+                        headers: {
+                            'Authorization': `Bearer {{ session.access_token }}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (submissionResponse.ok) {
+                        const submissionData = await submissionResponse.json();
+                        assignment.submission_count = submissionData.data?.submissions?.length || submissionData.submissions?.length || 0;
+                    }
+                } catch (e) {
+                    assignment.submission_count = 0;
+                }
+            }
+            
+            displayAssignments(assignments);
         } else {
             showError('Failed to load assignments');
         }
@@ -710,6 +730,8 @@ function displayAssignments(assignments) {
         const isOverdue = dueDate && dueDate < new Date();
         const dueDateText = dueDate ? dueDate.toLocaleDateString() : 'No due date';
         
+        const submissionCount = assignment.submission_count || 0;
+        
         content += `
             <div class="col-md-6 col-lg-4">
                 <div class="card assignment-card h-100">
@@ -725,7 +747,7 @@ function displayAssignments(assignments) {
                                         <i class="fas fa-edit me-2"></i>Edit
                                     </a></li>
                                     <li><a class="dropdown-item" href="/teacher/assignment/${assignment.id}/submissions">
-                                        <i class="fas fa-file-alt me-2"></i>Submissions
+                                        <i class="fas fa-file-alt me-2"></i>Submissions (${submissionCount})
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger" href="#" onclick="deleteAssignment(${assignment.id})">
@@ -744,7 +766,7 @@ function displayAssignments(assignments) {
                         <div class="row g-2 text-center">
                             <div class="col-6">
                                 <div class="bg-light rounded p-2">
-                                    <div class="fw-bold text-success">${assignment.submission_count || 0}</div>
+                                    <div class="fw-bold text-success">${submissionCount}</div>
                                     <small class="text-muted">Submitted</small>
                                 </div>
                             </div>
@@ -789,7 +811,6 @@ async function loadStudents() {
 }
 
 function displayStudents(studentReports) {
-    // Store for global access
     window.currentStudentReports = studentReports;
     
     const container = document.getElementById('studentsContainer');
@@ -825,9 +846,18 @@ function displayStudents(studentReports) {
         const progress = report.progress || {};
         const enrollment = report.enrollment || {};
         
-        const progressPercentage = progress.overall_percentage || 0;
+        const progressPercentage = progress.overall_percentage || enrollment.progress_percentage || 0;
         const progressClass = progressPercentage >= 80 ? 'bg-success' : 
                              progressPercentage >= 60 ? 'bg-warning' : 'bg-danger';
+        
+        const lessons = progress.lessons || { completed: 0, total: 0 };
+        const lessonText = `${lessons.completed || 0}/${lessons.total || 0}`;
+        
+        const quizzes = progress.quizzes || {};
+        const quizAverage = quizzes.average_score || 0;
+        
+        const assignments = progress.assignments || {};
+        const assignmentAverage = assignments.average_score || 0;
         
         content += `
             <tr>
@@ -849,14 +879,13 @@ function displayStudents(studentReports) {
                     <small class="text-muted">${progressPercentage.toFixed(1)}%</small>
                 </td>
                 <td class="text-center">
-                    <span class="fw-bold">${progress.lessons?.completed || 0}</span>
-                    <small class="text-muted">/${progress.lessons?.total || 0}</small>
+                    <span class="fw-bold">${lessonText}</span>
                 </td>
                 <td class="text-center">
-                    <span class="fw-bold">${(progress.quiz_average || 0).toFixed(1)}%</span>
+                    <span class="fw-bold">${quizAverage.toFixed(1)}%</span>
                 </td>
                 <td class="text-center">
-                    <span class="fw-bold">${(progress.assignment_average || 0).toFixed(1)}%</span>
+                    <span class="fw-bold">${assignmentAverage.toFixed(1)}%</span>
                 </td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm">
@@ -979,7 +1008,6 @@ function addQuiz() {
 }
 
 function editQuiz(quizId) {
-    // Find quiz in current data or load it
     let quiz = null;
     if (courseData && courseData.quizzes) {
         quiz = courseData.quizzes.find(q => q.id === quizId);
@@ -1036,7 +1064,6 @@ async function saveQuiz() {
             bootstrap.Modal.getInstance(document.getElementById('quizModal')).hide();
             showSuccess(quizId ? 'Quiz updated successfully' : 'Quiz created successfully');
             
-            // If creating a new quiz, redirect to questions page
             if (!quizId && result.data?.quiz?.id) {
                 setTimeout(() => {
                     if (confirm('Quiz created! Would you like to add questions now?')) {
@@ -1233,19 +1260,15 @@ async function messageStudent(studentId) {
     }
     
     try {
-        // For course content page, we need to find the student in the loaded data
         let student = null;
         
-        // Try to find student in current data
         if (typeof studentsContainer !== 'undefined') {
-            // If students are loaded, find the student
             const studentReports = window.currentStudentReports || [];
             const report = studentReports.find(r => r.student.id === studentId);
             student = report ? report.student : null;
         }
         
         if (!student) {
-            // Fallback: get student details from API
             const response = await fetch(`/api/admin/users/${studentId}`, {
                 headers: {
                     'Authorization': `Bearer {{ session.access_token }}`,
@@ -1261,14 +1284,12 @@ async function messageStudent(studentId) {
             }
         }
         
-        // Fill the message modal
         document.getElementById('recipientId').value = studentId;
         document.getElementById('recipientInfo').innerHTML = `
             <div class="fw-semibold">${student.full_name}</div>
             <small class="text-muted">${student.email}</small>
         `;
         
-        // Pre-fill subject with course context
         if (courseData && courseData.title) {
             document.getElementById('messageSubject').value = `Regarding ${courseData.title}`;
         }
@@ -1292,10 +1313,8 @@ async function exportStudents() {
         });
         
         if (response.ok) {
-            // Get the CSV content
             const csvContent = await response.text();
             
-            // Create and download the file
             const blob = new Blob([csvContent], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');

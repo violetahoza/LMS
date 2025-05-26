@@ -256,3 +256,4 @@ def get_quiz_grading_summary():
         TeacherService.get_quiz_grading_summary,
         teacher_id
     )
+
