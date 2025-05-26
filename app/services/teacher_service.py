@@ -205,7 +205,7 @@ class TeacherService:
         stats = calculate_quiz_statistics(attempts)
         
         question_analytics = []
-        for question in quiz.questions:
+        for question in quiz.questions.order_by(Question.order_number):
             correct_count = 0
             total_answers = 0
             answer_distribution = {}
@@ -226,6 +226,10 @@ class TeacherService:
                         if option_id:
                             option_text = student_answer.selected_option.option_text
                             answer_distribution[option_text] = answer_distribution.get(option_text, 0) + 1
+                    elif question.question_type == 'short_answer':
+                        if student_answer.answer_text:
+                            answer_text = student_answer.answer_text[:50] + "..." if len(student_answer.answer_text) > 50 else student_answer.answer_text
+                            answer_distribution[answer_text] = answer_distribution.get(answer_text, 0) + 1
             
             question_analytics.append({
                 'question': question.to_dict(),
@@ -237,18 +241,53 @@ class TeacherService:
         
         student_performance = []
         for attempt in attempts:
-            student_performance.append({
-                'student': attempt.student.to_dict(),
-                'attempt': attempt.to_dict()
-            })
+            student_data = {
+                'student': {
+                    'id': attempt.student.id,
+                    'full_name': attempt.student.full_name,
+                    'email': attempt.student.email,
+                    'username': attempt.student.username
+                },
+                'attempt': {
+                    'id': attempt.id,
+                    'attempt_number': attempt.attempt_number,
+                    'score': attempt.score,
+                    'submitted_at': attempt.submitted_at.isoformat() if attempt.submitted_at else None,
+                    'time_spent_minutes': attempt.time_spent_minutes,
+                    'status': attempt.status,
+                    'graded_at': attempt.graded_at.isoformat() if attempt.graded_at else None
+                },
+                'question_breakdown': []
+            }
+            
+            for answer in attempt.student_answers:
+                question = answer.question
+                student_data['question_breakdown'].append({
+                    'question_id': question.id,
+                    'question_text': question.question_text[:100] + "..." if len(question.question_text) > 100 else question.question_text,
+                    'question_type': question.question_type,
+                    'points': question.points,
+                    'points_earned': answer.points_earned,
+                    'is_correct': answer.is_correct,
+                    'student_answer': answer.answer_text if question.question_type == 'short_answer' else (
+                        answer.selected_option.option_text if answer.selected_option else None
+                    )
+                })
+            
+            student_performance.append(student_data)
         
-        student_performance.sort(key=lambda x: x['attempt']['score'], reverse=True)
+        student_performance.sort(key=lambda x: x['attempt']['score'] or 0, reverse=True)
         
         return {
             'quiz': quiz.to_dict(),
             'statistics': stats,
             'question_analytics': question_analytics,
-            'student_performance': student_performance
+            'student_performance': student_performance,
+            'total_students': len(student_performance),
+            'grading_summary': {
+                'pending_grading': len([a for a in attempts if not a.graded_at and any(q.question_type == 'short_answer' for q in quiz.questions)]),
+                'fully_graded': len([a for a in attempts if a.graded_at or not any(q.question_type == 'short_answer' for q in quiz.questions)])
+            }
         }
     
     @staticmethod
@@ -702,8 +741,9 @@ class TeacherService:
                 attempts = quiz.attempts.filter_by(status='completed').all()
                 total_attempts += len(attempts)
                 
+                has_short_answer = any(q.question_type == 'short_answer' for q in quiz.questions)
+                
                 for attempt in attempts:
-                    has_short_answer = any(q.question_type == 'short_answer' for q in quiz.questions)
                     if has_short_answer and not attempt.graded_at:
                         pending_grading += 1
                     

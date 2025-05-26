@@ -282,6 +282,7 @@ async function loadDashboardData() {
         if (response.ok) {
             const data = await response.json();
             updateDashboard(data.data || data);
+            await loadQuizGradingStats();
         } else {
             console.error('Failed to load dashboard data');
             showError('Failed to load dashboard data');
@@ -498,7 +499,6 @@ async function loadQuizGradingStats() {
         console.error('Error loading quiz grading stats:', error);
     }
 }
-
 
 function showLoading() {
     document.getElementById('loadingOverlay').classList.remove('d-none');

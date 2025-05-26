@@ -324,6 +324,7 @@ class QuizAttempt(db.Model):
             'score': self.score,
             'started_at': self.started_at.isoformat() if self.started_at else None,
             'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None,
+            'graded_at': self.graded_at.isoformat() if self.graded_at else None,  
             'time_spent_minutes': self.time_spent_minutes,
             'status': self.status
         }

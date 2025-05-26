@@ -648,8 +648,12 @@ class QuizService:
         if attempt.status != 'completed':
             raise ValueError("Quiz has not been completed")
         
+        attempt_data = attempt.to_dict()
+        attempt_data['student_name'] = attempt.student.full_name if attempt.student else 'Unknown'
+        attempt_data['student_email'] = attempt.student.email if attempt.student else 'Unknown'
+        
         results = {
-            'attempt': attempt.to_dict(),
+            'attempt': attempt_data,
             'quiz': attempt.quiz.to_dict(),
             'questions': []
         }
@@ -664,7 +668,8 @@ class QuizService:
                 'student_answer': None,
                 'correct_answer': None,
                 'is_correct': answer.is_correct,
-                'points_earned': answer.points_earned
+                'points_earned': answer.points_earned,
+                'answer_id': answer.id  
             }
             
             if question.question_type in ['multiple_choice', 'true_false']:
@@ -784,10 +789,12 @@ class QuizService:
         if not course or course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
 
+        student_answers = attempt.student_answers
+        
         total_possible_points = 0
         total_earned_points = 0
         
-        for answer in attempt.student_answers:
+        for answer in student_answers:
             question = Question.query.get(answer.question_id)
             if not question:
                 continue
@@ -796,7 +803,7 @@ class QuizService:
 
             if question.question_type in ['multiple_choice', 'true_false']:
                 if answer.is_correct:
-                    total_earned_points += answer.points_earned or question.points
+                    total_earned_points += question.points
             elif question.question_type == 'short_answer':
                 if str(answer.id) in short_answer_grades:
                     is_correct = bool(short_answer_grades[str(answer.id)])
@@ -810,7 +817,7 @@ class QuizService:
         final_score = (total_earned_points / total_possible_points * 100) if total_possible_points > 0 else 0
         
         attempt.score = round(final_score, 2)
-        attempt.graded_at = datetime.utcnow()
+        attempt.graded_at = datetime.utcnow()  
         attempt.status = 'completed'
         
         db.session.commit()

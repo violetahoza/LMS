@@ -255,8 +255,4 @@ def get_quiz_grading_summary():
     return BaseController.handle_request(
         TeacherService.get_quiz_grading_summary,
         teacher_id
-    ).handle_request(
-            lambda: (_ for _ in ()).throw(ValueError("Invalid teacher ID")),
-            success_message="Dashboard data retrieved"
-        )
-    
+    )

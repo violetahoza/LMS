@@ -15,9 +15,6 @@
                     <button class="btn btn-outline-info me-2" onclick="refreshAttempts()">
                         <i class="fas fa-sync-alt me-2"></i>Refresh
                     </button>
-                    <button class="btn btn-gradient-primary" onclick="gradeAllModal()">
-                        <i class="fas fa-check-circle me-2"></i>Auto-Grade All
-                    </button>
                 </div>
             </div>
         </div>
@@ -132,7 +129,6 @@
     </div>
 </div>
 
-<!-- Quick Grade Modal -->
 <div class="modal fade" id="quickGradeModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -142,7 +138,6 @@
             </div>
             <div class="modal-body">
                 <div id="quickGradeContent">
-                    <!-- Quiz grading content will be loaded here -->
                 </div>
             </div>
             <div class="modal-footer">
@@ -155,7 +150,6 @@
     </div>
 </div>
 
-<!-- Detailed Grading Modal -->
 <div class="modal fade" id="detailedGradingModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -165,7 +159,6 @@
             </div>
             <div class="modal-body">
                 <div id="detailedGradingContent">
-                    <!-- Detailed grading content will be loaded here -->
                 </div>
             </div>
             <div class="modal-footer">
@@ -204,7 +197,7 @@ async function loadQuizAttempts() {
         if (response.ok) {
             const data = await response.json();
             attempts = data.data?.attempts || data.attempts || [];
-            updateSummaryCards();
+            await updateSummaryCards();
             displayAttempts(attempts);
         } else {
             showError('Failed to load quiz attempts');
@@ -245,34 +238,32 @@ function populateCourseFilter() {
     });
 }
 
-function updateSummaryCards() {
-    const pendingCount = attempts.filter(a => needsGrading(a)).length;
-    const gradedToday = attempts.filter(a => {
-        return a.graded_at && 
-               new Date(a.graded_at).toDateString() === new Date().toDateString();
-    }).length;
-    
-    const completedAttempts = attempts.filter(a => a.status === 'completed' && a.score !== null);
-    const avgScore = completedAttempts.length > 0 
-        ? completedAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / completedAttempts.length 
-        : 0;
-    
-    const failedCount = attempts.filter(a => 
-        a.status === 'completed' && a.score !== null && 
-        a.score < (a.quiz?.passing_score || 60)
-    ).length;
-    
-    document.getElementById('pendingCount').textContent = pendingCount;
-    document.getElementById('gradedToday').textContent = gradedToday;
-    document.getElementById('avgScore').textContent = `${avgScore.toFixed(1)}%`;
-    document.getElementById('failedCount').textContent = failedCount;
+async function updateSummaryCards() {
+    try {
+        const response = await fetch('/api/teacher/quiz-grading/summary', {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const stats = data.data || data;
+            
+            document.getElementById('pendingCount').textContent = stats.pending_grading || 0;
+            document.getElementById('gradedToday').textContent = stats.graded_today || 0;
+            document.getElementById('avgScore').textContent = `${stats.average_score || 0}%`;
+            document.getElementById('failedCount').textContent = stats.failed_attempts || 0;
+        }
+    } catch (error) {
+        console.error('Error loading quiz grading stats:', error);
+        updateSummaryCardsLocal();
+    }
 }
 
 function needsGrading(attempt) {
-    // Check if attempt has short answer questions that need manual grading
     if (attempt.status !== 'completed') return false;
-    
-    // If it has short answer questions and no graded_at timestamp, it needs grading
     const hasShortAnswer = attempt.quiz?.questions?.some(q => q.question_type === 'short_answer');
     return hasShortAnswer && !attempt.graded_at;
 }
@@ -314,7 +305,7 @@ function displayAttempts(attempts) {
         const needsManualGrading = needsGrading(attempt);
         
         content += `
-            <tr ${needsManualGrading ? 'class="table-warning"' : ''}>
+            <tr ${needsManualGrading ? 'class="table-warning"' : ''} data-attempt-id="${attempt.id}">
                 <td>
                     <div class="fw-semibold">${attempt.student?.full_name || 'Unknown'}</div>
                     <small class="text-muted">${attempt.student?.email || ''}</small>
@@ -336,8 +327,9 @@ function displayAttempts(attempts) {
                 <td>
                     <div>${submittedDate}</div>
                     <small class="text-muted">${new Date(attempt.submitted_at || attempt.started_at).toLocaleTimeString()}</small>
+                    ${attempt.graded_at ? `<br><small class="text-success">Graded: ${new Date(attempt.graded_at).toLocaleDateString()}</small>` : ''}
                 </td>
-                <td>${statusBadge}</td>
+                <td class="status-cell">${statusBadge}</td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm">
                         ${needsManualGrading ? `
@@ -345,17 +337,9 @@ function displayAttempts(attempts) {
                                 <i class="fas fa-edit"></i>
                             </button>
                         ` : ''}
-                        <button class="btn btn-outline-primary" onclick="detailedGrade(${attempt.id})" title="Detailed View">
+                        <button class="btn btn-outline-primary" onclick="detailedGrade(${attempt.id})" title="View Results">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-outline-info" onclick="viewResults(${attempt.id})" title="View Results">
-                            <i class="fas fa-chart-bar"></i>
-                        </button>
-                        ${attempt.status === 'completed' ? `
-                            <button class="btn btn-outline-success" onclick="downloadResults(${attempt.id})" title="Download">
-                                <i class="fas fa-download"></i>
-                            </button>
-                        ` : ''}
                     </div>
                 </td>
             </tr>
@@ -370,10 +354,14 @@ function getStatusBadge(attempt) {
     if (attempt.status === 'in_progress') {
         return '<span class="badge bg-info">In Progress</span>';
     } else if (attempt.status === 'completed') {
-        if (needsGrading(attempt)) {
+        const hasShortAnswer = attempt.quiz?.questions?.some(q => q.question_type === 'short_answer');
+        
+        if (hasShortAnswer && !attempt.graded_at) {
             return '<span class="badge bg-warning">Needs Grading</span>';
         } else if (attempt.graded_at) {
-            return '<span class="badge bg-success">Graded</span>';
+            return '<span class="badge bg-success">Manually Graded</span>';
+        } else if (hasShortAnswer) {
+            return '<span class="badge bg-warning">Needs Grading</span>';
         } else {
             return '<span class="badge bg-primary">Auto-Graded</span>';
         }
@@ -480,7 +468,6 @@ function displayQuickGradeModal(attempt) {
 async function saveQuickGrade() {
     const shortAnswerGrades = {};
     
-    // Collect grades for short answer questions
     document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
         const answerId = radio.name.split('_')[1];
         shortAnswerGrades[answerId] = radio.value === '1';
@@ -497,9 +484,19 @@ async function saveQuickGrade() {
         });
         
         if (response.ok) {
+            const result = await response.json();
             showSuccess('Quiz graded successfully');
             bootstrap.Modal.getInstance(document.getElementById('quickGradeModal')).hide();
-            await loadQuizAttempts();
+            
+          const attemptIndex = attempts.findIndex(a => a.id === currentAttemptId);
+            if (attemptIndex !== -1) {
+                attempts[attemptIndex].graded_at = new Date().toISOString();
+                attempts[attemptIndex].score = result.final_score || result.attempt?.score;
+                attempts[attemptIndex].status = 'completed';
+            }  
+            
+            displayAttempts(attempts);
+            await updateSummaryCards();
         } else {
             const error = await response.json();
             showError(error.error || 'Failed to grade quiz');
@@ -516,10 +513,6 @@ function detailedGrade(attemptId) {
 
 function viewResults(attemptId) {
     window.location.href = `/teacher/quiz/${attemptId}/results`;
-}
-
-function downloadResults(attemptId) {
-    showInfo('Download functionality coming soon!');
 }
 
 function applyFilters() {
@@ -562,10 +555,6 @@ function applyFilters() {
 function refreshAttempts() {
     loadQuizAttempts();
     showSuccess('Quiz attempts refreshed');
-}
-
-function gradeAllModal() {
-    showInfo('Auto-grade functionality for short answer questions coming soon!');
 }
 
 function showSuccess(message) {
