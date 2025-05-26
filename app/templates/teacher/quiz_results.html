@@ -1,0 +1,571 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Results - Teacher - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card" id="resultsHeader">
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading results...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card mb-4" id="summaryCard" style="display: none;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Quiz Summary
+                    </h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-success" id="gradeBtn" onclick="showGradingModal()" style="display: none;">
+                            <i class="fas fa-edit me-1"></i>Grade
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="goBack()">
+                            <i class="fas fa-arrow-left me-1"></i>Back
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="summaryContent">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4" id="questionsCard" style="display: none;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Question Review
+                    </h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="filterOptions" id="showAll" value="all" checked>
+                        <label class="btn btn-outline-primary" for="showAll">All</label>
+                        
+                        <input type="radio" class="btn-check" name="filterOptions" id="showCorrect" value="correct">
+                        <label class="btn btn-outline-success" for="showCorrect">Correct</label>
+                        
+                        <input type="radio" class="btn-check" name="filterOptions" id="showIncorrect" value="incorrect">
+                        <label class="btn btn-outline-danger" for="showIncorrect">Incorrect</label>
+                        
+                        <input type="radio" class="btn-check" name="filterOptions" id="showShortAnswer" value="short_answer">
+                        <label class="btn btn-outline-warning" for="showShortAnswer">Short Answer</label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="questionsReview">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="actionsCard" style="display: none;">
+                <div class="card-body text-center">
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                        <button type="button" class="btn btn-outline-primary" onclick="goBack()">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Grading
+                        </button>
+                        <button class="btn btn-outline-info" onclick="viewAnalytics()">
+                            <i class="fas fa-chart-line me-2"></i>View Analytics
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="printResults()">
+                            <i class="fas fa-print me-2"></i>Print Results
+                        </button>
+                        <button class="btn btn-outline-success" onclick="downloadResults()">
+                            <i class="fas fa-download me-2"></i>Download
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="gradingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-warning text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Grade Short Answer Questions
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="gradingContent">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="saveGrades()">
+                    <i class="fas fa-save me-2"></i>Save Grades
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const attemptId = {{ attempt_id }};
+let resultsData = null;
+let allQuestions = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadQuizResults();
+    
+    document.querySelectorAll('input[name="filterOptions"]').forEach(radio => {
+        radio.addEventListener('change', filterQuestions);
+    });
+});
+
+async function loadQuizResults() {
+    try {
+        const response = await fetch(`/api/quizzes/attempt/${attemptId}/results`, {
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            resultsData = data.data || data;
+            allQuestions = resultsData.questions || [];
+            displayResults();
+        } else {
+            showError('Failed to load quiz results');
+        }
+    } catch (error) {
+        console.error('Error loading results:', error);
+        showError('Error loading quiz results');
+    }
+}
+
+function displayResults() {
+    if (!resultsData) return;
+    
+    displayResultsHeader();
+    displaySummary();
+    displayQuestions();
+    setupActions();
+    
+    document.getElementById('summaryCard').style.display = 'block';
+    document.getElementById('questionsCard').style.display = 'block';
+    document.getElementById('actionsCard').style.display = 'block';
+}
+
+function displayResultsHeader() {
+    const attempt = resultsData.attempt;
+    const quiz = resultsData.quiz;
+    const score = attempt.score || 0;
+    const passed = score >= quiz.passing_score;
+    
+    const hasUngraded = allQuestions.some(q => q.question_type === 'short_answer' && q.is_correct === null);
+    
+    const headerHTML = `
+        <div class="card ${passed ? 'bg-gradient-success' : hasUngraded ? 'bg-gradient-warning' : 'bg-gradient-danger'} text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center">
+                            <div class="me-4">
+                                <i class="fas fa-${hasUngraded ? 'clock' : passed ? 'check-circle' : 'exclamation-triangle'} fa-4x"></i>
+                            </div>
+                            <div>
+                                <h2 class="mb-1">${quiz.title}</h2>
+                                <h3 class="mb-2">${score.toFixed(1)}%</h3>
+                                <p class="mb-0 opacity-75">
+                                    Student: ${attempt.student_name || 'Unknown'}
+                                </p>
+                                <p class="mb-0 opacity-75">
+                                    ${hasUngraded ? 'Contains ungraded short answer questions' : 
+                                      passed ? 'Student passed this quiz!' : 'Student did not pass'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <div class="text-center">
+                            <div class="h1 mb-0">${hasUngraded ? 'PENDING' : passed ? 'PASSED' : 'FAILED'}</div>
+                            <small class="opacity-75">Required: ${quiz.passing_score}%</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('resultsHeader').innerHTML = headerHTML;
+    
+    if (hasUngraded) {
+        document.getElementById('gradeBtn').style.display = 'inline-block';
+    }
+}
+
+function displaySummary() {
+    const attempt = resultsData.attempt;
+    const quiz = resultsData.quiz;
+    const questions = resultsData.questions;
+    
+    const correctAnswers = questions.filter(q => q.is_correct === true).length;
+    const incorrectAnswers = questions.filter(q => q.is_correct === false).length;
+    const unanswered = questions.filter(q => q.is_correct === null).length;
+    const totalPoints = questions.reduce((sum, q) => sum + (q.points_earned || 0), 0);
+    const maxPoints = questions.reduce((sum, q) => sum + q.points, 0);
+    
+    const timeSpent = attempt.time_spent_minutes || 0;
+    const timeSpentDisplay = timeSpent >= 60 ? 
+        `${Math.floor(timeSpent / 60)}h ${timeSpent % 60}m` : 
+        `${timeSpent}m`;
+    
+    const summaryHTML = `
+        <div class="row g-4">
+            <div class="col-md-6">
+                <h6>Performance Overview</h6>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-success mb-1">${correctAnswers}</div>
+                            <small class="text-muted">Correct</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-danger mb-1">${incorrectAnswers}</div>
+                            <small class="text-muted">Incorrect</small>
+                        </div>
+                    </div>
+                    ${unanswered > 0 ? `
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-warning mb-1">${unanswered}</div>
+                            <small class="text-muted">Ungraded</small>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h6>Student Information</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Student:</strong> ${attempt.student_name || 'Unknown'}</li>
+                    <li><strong>Score:</strong> ${attempt.score?.toFixed(1) || 0}%</li>
+                    <li><strong>Points:</strong> ${totalPoints}/${maxPoints}</li>
+                    <li><strong>Time Spent:</strong> ${timeSpentDisplay}</li>
+                    <li><strong>Attempt:</strong> #${attempt.attempt_number}</li>
+                    <li><strong>Submitted:</strong> ${new Date(attempt.submitted_at).toLocaleString()}</li>
+                    <li><strong>Status:</strong> 
+                        <span class="badge bg-${attempt.score >= quiz.passing_score ? 'success' : unanswered > 0 ? 'warning' : 'danger'}">
+                            ${unanswered > 0 ? 'Pending Grading' : attempt.score >= quiz.passing_score ? 'Passed' : 'Failed'}
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h6>Score Breakdown</h6>
+            <div class="progress mb-2" style="height: 25px;">
+                <div class="progress-bar bg-success" style="width: ${(correctAnswers / questions.length) * 100}%">
+                    ${correctAnswers} Correct
+                </div>
+                <div class="progress-bar bg-danger" style="width: ${(incorrectAnswers / questions.length) * 100}%">
+                    ${incorrectAnswers} Incorrect
+                </div>
+                ${unanswered > 0 ? `
+                <div class="progress-bar bg-warning" style="width: ${(unanswered / questions.length) * 100}%">
+                    ${unanswered} Ungraded
+                </div>
+                ` : ''}
+            </div>
+            <small class="text-muted">Total Questions: ${questions.length}</small>
+        </div>
+    `;
+    
+    document.getElementById('summaryContent').innerHTML = summaryHTML;
+}
+
+function displayQuestions() {
+    renderQuestions(allQuestions);
+}
+
+function renderQuestions(questions) {
+    let questionsHTML = '';
+    
+    questions.forEach((question, index) => {
+        const statusClass = question.is_correct === true ? 'success' : 
+                           question.is_correct === false ? 'danger' : 'warning';
+        const statusIcon = question.is_correct === true ? 'check-circle' : 
+                          question.is_correct === false ? 'times-circle' : 'question-circle';
+        
+        questionsHTML += `
+            <div class="card mb-3 border-${statusClass}">
+                <div class="card-header bg-${statusClass} bg-opacity-10">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-${statusIcon} text-${statusClass} me-2"></i>
+                            Question ${index + 1}
+                        </h6>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-${statusClass} me-2">
+                                ${question.points_earned || 0}/${question.points} points
+                            </span>
+                            <span class="badge bg-primary">${question.question_type.replace('_', ' ')}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="question-text mb-3">
+                        <strong>${question.question_text}</strong>
+                    </div>
+                    
+                    ${renderQuestionDetails(question)}
+                </div>
+            </div>
+        `;
+    });
+    
+    if (questions.length === 0) {
+        questionsHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-filter fa-2x text-muted mb-3"></i>
+                <h6 class="text-muted">No questions match the current filter</h6>
+            </div>
+        `;
+    }
+    
+    document.getElementById('questionsReview').innerHTML = questionsHTML;
+}
+
+function renderQuestionDetails(question) {
+    if (question.question_type === 'short_answer') {
+        return `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Student's Answer:</h6>
+                    <div class="p-3 bg-light rounded">
+                        ${question.student_answer || '<em class="text-muted">No answer provided</em>'}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">Grading Status:</h6>
+                    <div class="p-3 bg-light rounded">
+                        ${question.is_correct === null ? 
+                            '<span class="badge bg-warning">Pending Review</span>' :
+                            question.is_correct ? 
+                                '<span class="badge bg-success">Correct</span>' :
+                                '<span class="badge bg-danger">Incorrect</span>'
+                        }
+                        ${question.is_correct === null ? 
+                            '<button class="btn btn-sm btn-warning ms-2" onclick="gradeQuestion(' + question.id + ')">Grade Now</button>' : ''
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        let optionsHTML = '<div class="options">';
+        
+        question.options?.forEach(option => {
+            const isSelected = option.selected;
+            const isCorrect = option.is_correct;
+            
+            let optionClass = '';
+            let optionIcon = '';
+            
+            if (isCorrect) {
+                optionClass = 'border-success bg-success bg-opacity-10';
+                optionIcon = '<i class="fas fa-check text-success me-2"></i>';
+            } else if (isSelected && !isCorrect) {
+                optionClass = 'border-danger bg-danger bg-opacity-10';
+                optionIcon = '<i class="fas fa-times text-danger me-2"></i>';
+            } else if (isSelected) {
+                optionIcon = '<i class="fas fa-arrow-right text-primary me-2"></i>';
+            }
+            
+            optionsHTML += `
+                <div class="p-3 mb-2 border rounded ${optionClass}">
+                    ${optionIcon}${option.option_text}
+                    ${isCorrect ? '<span class="badge bg-success ms-2">Correct Answer</span>' : ''}
+                    ${isSelected && !isCorrect ? '<span class="badge bg-danger ms-2">Student Choice</span>' : ''}
+                    ${isSelected && isCorrect ? '<span class="badge bg-success ms-2">Student Choice ✓</span>' : ''}
+                </div>
+            `;
+        });
+        
+        optionsHTML += '</div>';
+        
+        return `
+            <h6 class="text-muted mb-3">Answer Options:</h6>
+            ${optionsHTML}
+        `;
+    }
+}
+
+function filterQuestions() {
+    const filter = document.querySelector('input[name="filterOptions"]:checked').value;
+    let filteredQuestions = allQuestions;
+    
+    if (filter === 'correct') {
+        filteredQuestions = allQuestions.filter(q => q.is_correct === true);
+    } else if (filter === 'incorrect') {
+        filteredQuestions = allQuestions.filter(q => q.is_correct === false);
+    } else if (filter === 'short_answer') {
+        filteredQuestions = allQuestions.filter(q => q.question_type === 'short_answer');
+    }
+    
+    renderQuestions(filteredQuestions);
+}
+
+function showGradingModal() {
+    const shortAnswerQuestions = allQuestions.filter(q => 
+        q.question_type === 'short_answer' && q.is_correct === null
+    );
+    
+    if (shortAnswerQuestions.length === 0) {
+        showInfo('No short answer questions need grading.');
+        return;
+    }
+    
+    let content = '<h6 class="mb-3">Grade Short Answer Questions</h6>';
+    
+    shortAnswerQuestions.forEach(question => {
+        content += `
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>Question:</strong> ${question.question_text}
+                    <span class="badge bg-primary ms-2">${question.points} points</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Student's Answer:</label>
+                        <div class="p-3 bg-light rounded">
+                            ${question.student_answer || '<em class="text-muted">No answer provided</em>'}
+                        </div>
+                    </div>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="grade_${question.id}" id="correct_${question.id}" value="1">
+                        <label class="btn btn-outline-success" for="correct_${question.id}">
+                            <i class="fas fa-check me-1"></i>Correct (${question.points} pts)
+                        </label>
+                        <input type="radio" class="btn-check" name="grade_${question.id}" id="incorrect_${question.id}" value="0">
+                        <label class="btn btn-outline-danger" for="incorrect_${question.id}">
+                            <i class="fas fa-times me-1"></i>Incorrect (0 pts)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    document.getElementById('gradingContent').innerHTML = content;
+    new bootstrap.Modal(document.getElementById('gradingModal')).show();
+}
+
+async function saveGrades() {
+    const grades = {};
+    
+    const studentAnswers = allQuestions.filter(q => q.question_type === 'short_answer');
+    
+    document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+        const questionId = parseInt(radio.name.split('_')[1]);
+        const question = studentAnswers.find(q => q.id === questionId);
+        
+        if (question && question.answer_id) {
+            grades[question.answer_id] = radio.value === '1';
+        }
+    });
+    
+    try {
+        const response = await fetch(`/api/teacher/quiz-attempts/${attemptId}/grade`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ short_answer_grades: grades })
+        });
+        
+        if (response.ok) {
+            showSuccess('Grades saved successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('gradingModal')).hide();
+            await loadQuizResults(); 
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to save grades');
+        }
+    } catch (error) {
+        console.error('Error saving grades:', error);
+        showError('Error saving grades');
+    }
+}
+
+function setupActions() {
+}
+
+function goBack() {
+    window.location.href = '/teacher/grading';
+}
+
+function viewAnalytics() {
+    const quiz = resultsData.quiz;
+    window.location.href = `/teacher/quiz/${quiz.id}/analytics`;
+}
+
+function printResults() {
+    window.print();
+}
+
+function downloadResults() {
+    showInfo('Download functionality will be implemented soon.');
+}
+
+function showError(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+function showSuccess(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+function showInfo(message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-info alert-dismissible fade show';
+    alert.innerHTML = `
+        <i class="fas fa-info-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}

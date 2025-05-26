@@ -771,6 +771,7 @@ class QuizService:
 
     @staticmethod
     def grade_attempt(teacher_id: int, attempt_id: int, short_answer_grades: dict) -> dict:
+        """Grade a quiz attempt, particularly for short answer questions"""
         attempt = QuizAttempt.query.get(attempt_id)
         if not attempt:
             raise NotFoundException("Quiz attempt not found")
@@ -783,43 +784,54 @@ class QuizService:
         if not course or course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
 
-        score = 0.0
+        total_possible_points = 0
+        total_earned_points = 0
+        
         for answer in attempt.student_answers:
             question = Question.query.get(answer.question_id)
             if not question:
                 continue
+            
+            total_possible_points += question.points
 
             if question.question_type in ['multiple_choice', 'true_false']:
                 if answer.is_correct:
-                    score += answer.points_earned or 0
+                    total_earned_points += answer.points_earned or question.points
             elif question.question_type == 'short_answer':
                 if str(answer.id) in short_answer_grades:
                     is_correct = bool(short_answer_grades[str(answer.id)])
-                    if is_correct:
-                        awarded_points = question.points  
-                        answer.is_correct = True
-                    else:
-                        awarded_points = 0.0
-                        answer.is_correct = False
+                    answer.is_correct = is_correct
+                    answer.points_earned = question.points if is_correct else 0
+                    total_earned_points += answer.points_earned
+                else:
+                    answer.is_correct = False
+                    answer.points_earned = 0
 
-                    answer.points_earned = awarded_points
-                    score += awarded_points
-
-        attempt.score = round(score, 2)
+        final_score = (total_earned_points / total_possible_points * 100) if total_possible_points > 0 else 0
+        
+        attempt.score = round(final_score, 2)
+        attempt.graded_at = datetime.utcnow()
         attempt.status = 'completed'
-        attempt.submitted_at = datetime.utcnow()
+        
         db.session.commit()
 
-        NotificationService.notify_quiz_graded(
-            student_id=attempt.student_id,
-            teacher_id=teacher_id,
-            quiz_id=quiz.id,
-            score=attempt.score
-        )
+        try:
+            from app.services.notification_service import NotificationService
+            NotificationService.notify_quiz_graded(
+                student_id=attempt.student_id,
+                teacher_id=teacher_id,
+                quiz_id=quiz.id,
+                score=attempt.score
+            )
+        except Exception as e:
+            print(f"Failed to send quiz graded notification: {e}")
 
         return {
             'message': 'Quiz graded successfully',
-            'attempt': attempt.to_dict()
+            'attempt': attempt.to_dict(),
+            'total_points': total_possible_points,
+            'earned_points': total_earned_points,
+            'final_score': final_score
         }
 
     

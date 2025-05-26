@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from sqlalchemy import desc, func
-from app.models import db, User, Course, Enrollment, Lesson, Quiz, Assignment, QuizAttempt, AssignmentSubmission, LessonProgress
+from app.models import Question, db, User, Course, Enrollment, Lesson, Quiz, Assignment, QuizAttempt, AssignmentSubmission, LessonProgress
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from app.utils.helpers import calculate_course_statistics, calculate_quiz_statistics
 from collections import defaultdict
@@ -599,3 +599,131 @@ class TeacherService:
             'total': len(all_submissions)
         }
 
+    @staticmethod
+    def get_all_quiz_attempts(teacher_id: int) -> Dict[str, Any]:
+        """Get all quiz attempts for teacher's courses"""
+        user = User.query.get(teacher_id)
+        if not user or not user.is_teacher():
+            raise PermissionException("Only teachers can access quiz attempts")
+        
+        courses = user.taught_courses.all()
+        all_attempts = []
+        
+        for course in courses:
+            for quiz in course.quizzes:
+                attempts = quiz.attempts.filter(
+                    QuizAttempt.status.in_(['completed', 'in_progress'])
+                ).order_by(desc(QuizAttempt.submitted_at)).all()
+                
+                for attempt in attempts:
+                    attempt_data = attempt.to_dict()
+                    attempt_data['student'] = attempt.student.to_dict()
+                    attempt_data['quiz'] = quiz.to_dict()
+                    attempt_data['course'] = course.to_dict()
+                    
+                    questions = []
+                    for question in quiz.questions:
+                        question_data = question.to_dict()
+                        questions.append(question_data)
+                    attempt_data['quiz']['questions'] = questions
+                    
+                    all_attempts.append(attempt_data)
+        
+        all_attempts.sort(key=lambda x: x.get('submitted_at') or x.get('started_at'), reverse=True)
+        
+        return {
+            'attempts': all_attempts,
+            'total': len(all_attempts)
+        }
+
+    @staticmethod
+    def get_quiz_attempt_details(teacher_id: int, attempt_id: int) -> Dict[str, Any]:
+        """Get detailed quiz attempt information for grading"""
+        user = User.query.get(teacher_id)
+        if not user or not user.is_teacher():
+            raise PermissionException("Only teachers can access quiz attempt details")
+        
+        attempt = QuizAttempt.query.get(attempt_id)
+        if not attempt:
+            raise NotFoundException("Quiz attempt not found")
+        
+        quiz = attempt.quiz
+        if quiz.course.teacher_id != teacher_id:
+            raise PermissionException("Access denied to this quiz attempt")
+        
+        attempt_data = attempt.to_dict()
+        attempt_data['student'] = attempt.student.to_dict()
+        attempt_data['quiz'] = quiz.to_dict()
+        attempt_data['course'] = quiz.course.to_dict()
+        
+        questions = []
+        student_answers = {sa.question_id: sa for sa in attempt.student_answers}
+        
+        for question in quiz.questions.order_by(Question.order_number):
+            question_data = question.to_dict()
+            student_answer = student_answers.get(question.id)
+            
+            if student_answer:
+                question_data['student_answer'] = student_answer.answer_text if question.question_type == 'short_answer' else None
+                question_data['selected_option_id'] = student_answer.selected_option_id
+                question_data['is_correct'] = student_answer.is_correct
+                question_data['points_earned'] = student_answer.points_earned
+                question_data['answer_id'] = student_answer.id
+                
+                if student_answer.selected_option:
+                    question_data['selected_option_text'] = student_answer.selected_option.option_text
+            
+            questions.append(question_data)
+        
+        attempt_data['questions'] = questions
+        
+        return attempt_data
+
+    @staticmethod
+    def get_quiz_grading_summary(teacher_id: int) -> Dict[str, Any]:
+        """Get summary statistics for quiz grading dashboard"""
+        user = User.query.get(teacher_id)
+        if not user or not user.is_teacher():
+            raise PermissionException("Only teachers can access grading summary")
+        
+        courses = user.taught_courses.all()
+        
+        total_attempts = 0
+        pending_grading = 0
+        graded_today = 0
+        total_score = 0
+        completed_attempts = 0
+        failed_attempts = 0
+        
+        today = datetime.utcnow().date()
+        
+        for course in courses:
+            for quiz in course.quizzes:
+                attempts = quiz.attempts.filter_by(status='completed').all()
+                total_attempts += len(attempts)
+                
+                for attempt in attempts:
+                    has_short_answer = any(q.question_type == 'short_answer' for q in quiz.questions)
+                    if has_short_answer and not attempt.graded_at:
+                        pending_grading += 1
+                    
+                    if attempt.graded_at and attempt.graded_at.date() == today:
+                        graded_today += 1
+                    
+                    if attempt.score is not None:
+                        total_score += attempt.score
+                        completed_attempts += 1
+                        
+                        if attempt.score < quiz.passing_score:
+                            failed_attempts += 1
+        
+        avg_score = total_score / completed_attempts if completed_attempts > 0 else 0
+        
+        return {
+            'total_attempts': total_attempts,
+            'pending_grading': pending_grading,
+            'graded_today': graded_today,
+            'average_score': round(avg_score, 1),
+            'failed_attempts': failed_attempts,
+            'completed_attempts': completed_attempts
+        }

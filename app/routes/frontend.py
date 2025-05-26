@@ -902,3 +902,12 @@ def teacher_quiz_grading():
         return redirect(url_for('frontend.index'))
 
     return render_template('teacher/quiz_grading.html')
+
+@bp.route('/teacher/quiz/<int:attempt_id>/results')
+def teacher_quiz_results(attempt_id):
+    """View quiz results as teacher"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+    
+    return render_template('teacher/quiz_results.html', attempt_id=attempt_id)

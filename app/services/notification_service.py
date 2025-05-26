@@ -340,20 +340,33 @@ class NotificationService:
         )
 
     @staticmethod
-    def notify_quiz_graded(student_id, teacher_id, quiz_id, score):
-        from app.models import Notification, NotificationType, NotificationPriority
-        quiz = Quiz.query.get(quiz_id)
-        if not quiz:
-            return
-
-        message = f"Your quiz '{quiz.title}' has been graded. Score: {score:.1f}."
-        NotificationService._send_notification(
-            recipient_id=student_id,
-            sender_id=teacher_id,
-            type=NotificationType.QUIZ_GRADED,
-            priority=NotificationPriority.NORMAL,
-            title="Quiz Graded",
-            message=message,
-            related_id=quiz_id
-        )
+    def notify_quiz_graded(student_id: int, teacher_id: int, quiz_id: int, score: float):
+        """Notify student when their quiz has been graded"""
+        try:
+            from app.models import Quiz, User
+            
+            quiz = Quiz.query.get(quiz_id)
+            teacher = User.query.get(teacher_id)
+            
+            if not quiz or not teacher:
+                return
+            
+            passed = score >= quiz.passing_score
+            status_text = "passed" if passed else "needs improvement"
+            
+            notification = Notification(
+                recipient_id=student_id,
+                sender_id=teacher_id,
+                type=NotificationType.QUIZ_GRADED,
+                priority=NotificationPriority.HIGH if passed else NotificationPriority.NORMAL,
+                title=f"Quiz Graded: {quiz.title}",
+                message=f"Your quiz '{quiz.title}' has been graded by {teacher.full_name}. Score: {score:.1f}% ({status_text})",
+                action_url=f"/student/quiz/{quiz_id}/results"
+            )
+            
+            db.session.add(notification)
+            db.session.commit()
+            
+        except Exception as e:
+            print(f"Error sending quiz graded notification: {e}")
 

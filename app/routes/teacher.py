@@ -210,3 +210,53 @@ def export_course_students(course_id):
             success_message="Export completed"
         )
     
+@bp.route('/quiz-attempts/all', methods=['GET'])
+@teacher_required()
+def get_all_quiz_attempts():
+    """Get all quiz attempts for teacher's courses"""
+    teacher_id = int(get_jwt_identity())
+    return BaseController.handle_request(
+        TeacherService.get_all_quiz_attempts,
+        teacher_id
+    )
+
+@bp.route('/quiz-attempts/<int:attempt_id>/details', methods=['GET'])
+@teacher_required()
+def get_quiz_attempt_details(attempt_id):
+    """Get detailed quiz attempt information for grading"""
+    teacher_id = int(get_jwt_identity())
+    return BaseController.handle_request(
+        TeacherService.get_quiz_attempt_details,
+        teacher_id,
+        attempt_id
+    )
+
+@bp.route('/quiz-attempts/<int:attempt_id>/grade', methods=['POST'])
+@teacher_required()
+def grade_quiz_attempt(attempt_id):
+    """Grade a quiz attempt (mainly for short answer questions)"""
+    teacher_id = int(get_jwt_identity())
+    data = request.get_json()
+    
+    from app.services.quiz_service import QuizService
+    return BaseController.handle_request(
+        QuizService.grade_attempt,
+        teacher_id,
+        attempt_id,
+        data.get('short_answer_grades', {}),
+        success_message="Quiz graded successfully"
+    )
+
+@bp.route('/quiz-grading/summary', methods=['GET'])
+@teacher_required()
+def get_quiz_grading_summary():
+    """Get quiz grading summary statistics"""
+    teacher_id = int(get_jwt_identity())
+    return BaseController.handle_request(
+        TeacherService.get_quiz_grading_summary,
+        teacher_id
+    ).handle_request(
+            lambda: (_ for _ in ()).throw(ValueError("Invalid teacher ID")),
+            success_message="Dashboard data retrieved"
+        )
+    
