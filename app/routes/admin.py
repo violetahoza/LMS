@@ -307,3 +307,4 @@ def get_course_categories():
     except Exception as e:
         print(f"Course category distribution error: {str(e)}")
         return jsonify({}), 500
+    

@@ -399,10 +399,298 @@ function editQuestion(questionId) {
     window.location.href = `/teacher/quiz/${quizId}/questions`;
 }
 
-function viewQuestionDetails(questionId) {
-    console.log(`View details for question ${questionId}`);
+async function viewQuestionDetails(questionId) {
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/quizzes/${quizId}/questions/${questionId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const question = data.data || data;
+            showQuestionDetailsModal(question);
+        } else {
+            showError('Failed to load question details');
+        }
+    } catch (error) {
+        console.error('Error loading question details:', error);
+        showError('Error loading question details');
+    } finally {
+        hideLoading();
+    }
 }
 
+async function viewQuestionDetails(questionId) {
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/quizzes/${quizId}/questions/${questionId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const question = data.data || data;
+            showQuestionDetailsModal(question);
+        } else {
+            showError('Failed to load question details');
+        }
+    } catch (error) {
+        console.error('Error loading question details:', error);
+        showError('Error loading question details');
+    } finally {
+        hideLoading();
+    }
+}
+
+function showQuestionDetailsModal(question) {
+    let optionsHTML = '';
+    let statisticsHTML = '';
+    
+    if (question.question_type === 'multiple_choice' && question.options) {
+        optionsHTML = `
+            <div class="mb-3">
+                <h6 class="fw-semibold mb-2">Answer Options & Selection Statistics:</h6>
+                <div class="list-group">
+                    ${question.options.map((option, index) => {
+                        const letter = String.fromCharCode(65 + index); // A, B, C, D...
+                        const isCorrect = option.is_correct;
+                        const selectionCount = option.selection_count || 0;
+                        const selectionPercentage = option.selection_percentage || 0;
+                        
+                        return `
+                            <div class="list-group-item ${isCorrect ? 'list-group-item-success' : ''}">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="flex-grow-1">
+                                        <strong>${letter}.</strong> ${option.option_text}
+                                        ${isCorrect ? '<span class="badge bg-success ms-2"><i class="fas fa-check"></i> Correct</span>' : ''}
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1 me-3">
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar ${isCorrect ? 'bg-success' : 'bg-info'}" 
+                                                 style="width: ${selectionPercentage}%"
+                                                 title="${selectionCount} students (${selectionPercentage}%)">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted">
+                                            <strong>${selectionCount}</strong> students<br>
+                                            <span class="badge bg-light text-dark">${selectionPercentage}%</span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    } else if (question.question_type === 'true_false') {
+        const trueOption = question.options?.find(opt => opt.option_text.toLowerCase() === 'true') || 
+                          { option_text: 'True', is_correct: question.correct_answer === true, selection_count: 0, selection_percentage: 0 };
+        const falseOption = question.options?.find(opt => opt.option_text.toLowerCase() === 'false') || 
+                           { option_text: 'False', is_correct: question.correct_answer === false, selection_count: 0, selection_percentage: 0 };
+        
+        optionsHTML = `
+            <div class="mb-3">
+                <h6 class="fw-semibold mb-2">Answer Options & Selection Statistics:</h6>
+                <div class="list-group">
+                    ${[trueOption, falseOption].map((option, index) => {
+                        const letter = String.fromCharCode(65 + index);
+                        const selectionCount = option.selection_count || 0;
+                        const selectionPercentage = option.selection_percentage || 0;
+                        
+                        return `
+                            <div class="list-group-item ${option.is_correct ? 'list-group-item-success' : ''}">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="flex-grow-1">
+                                        <strong>${letter}.</strong> ${option.option_text}
+                                        ${option.is_correct ? '<span class="badge bg-success ms-2"><i class="fas fa-check"></i> Correct</span>' : ''}
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1 me-3">
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar ${option.is_correct ? 'bg-success' : 'bg-info'}" 
+                                                 style="width: ${selectionPercentage}%"
+                                                 title="${selectionCount} students (${selectionPercentage}%)">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted">
+                                            <strong>${selectionCount}</strong> students<br>
+                                            <span class="badge bg-light text-dark">${selectionPercentage}%</span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    } else if (question.question_type === 'short_answer') {
+        optionsHTML = `
+            <div class="mb-3">
+                <h6 class="fw-semibold mb-2">Correct Answer:</h6>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    ${question.correct_answer || 'No correct answer specified'}
+                </div>
+            </div>
+        `;
+        
+        if (question.common_answers && question.common_answers.length > 0) {
+            optionsHTML += `
+                <div class="mb-3">
+                    <h6 class="fw-semibold mb-2">Most Common Student Answers:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Answer</th>
+                                    <th class="text-center">Count</th>
+                                    <th class="text-center">Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${question.common_answers.map(answer => `
+                                    <tr>
+                                        <td>${answer.answer_text}</td>
+                                        <td class="text-center"><span class="badge bg-primary">${answer.count}</span></td>
+                                        <td class="text-center">${answer.percentage}%</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    if (question.performance_statistics) {
+        const stats = question.performance_statistics;
+        const difficultyColor = stats.difficulty_level === 'Easy' ? 'success' : 
+                               stats.difficulty_level === 'Medium' ? 'warning' : 'danger';
+        
+        statisticsHTML = `
+            <div class="mb-3">
+                <h6 class="fw-semibold mb-2">Performance Statistics:</h6>
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <div class="text-center p-2 bg-light rounded">
+                            <div class="h6 mb-1 text-primary">${stats.total_attempts}</div>
+                            <small class="text-muted">Total Attempts</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-2 bg-light rounded">
+                            <div class="h6 mb-1 text-success">${stats.correct_answers}</div>
+                            <small class="text-muted">Correct</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-2 bg-light rounded">
+                            <div class="h6 mb-1 text-${difficultyColor}">${stats.accuracy_rate}%</div>
+                            <small class="text-muted">Accuracy</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-2 bg-light rounded">
+                            <span class="badge bg-${difficultyColor}">${stats.difficulty_level}</span><br>
+                            <small class="text-muted">Difficulty</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    const modalHTML = `
+        <div class="modal fade" id="questionDetailsModal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-gradient-info text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-question-circle me-2"></i>Question Details & Analytics
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-semibold mb-0">Question:</h6>
+                                <div>
+                                    <span class="badge bg-light text-dark me-2">${formatQuestionType(question.question_type)}</span>
+                                    <span class="badge bg-primary">${question.points || 10} points</span>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-light rounded">
+                                ${question.question_text || 'No question text'}
+                            </div>
+                        </div>
+                        
+                        ${statisticsHTML}
+                        
+                        ${optionsHTML}
+                        
+                        ${question.explanation ? `
+                            <div class="mb-3">
+                                <h6 class="fw-semibold mb-2">Explanation:</h6>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    ${question.explanation}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <strong>Order:</strong> ${question.order_number || 'Not set'}
+                                </small>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <small class="text-muted">
+                                    <strong>ID:</strong> ${question.id}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-outline-warning" onclick="editQuestion(${question.id})">
+                            <i class="fas fa-edit me-2"></i>Edit Question
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const existingModal = document.getElementById('questionDetailsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    new bootstrap.Modal(document.getElementById('questionDetailsModal')).show();
+}
 
 function editQuiz() {
     if (!quizData || !quizData.quiz) {

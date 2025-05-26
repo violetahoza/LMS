@@ -312,21 +312,23 @@ class NotificationService:
             return
 
         message = f"Your submission for '{assignment.title}' was returned for revision."
-        NotificationService._send_notification(
+        NotificationService.create_notification(
             recipient_id=student_id,
-            sender_id=teacher_id,
             type=NotificationType.ASSIGNMENT_GRADED,
-            priority=NotificationPriority.NORMAL,
             title="Assignment Returned",
             message=message,
+            sender_id=teacher_id,
+            priority=NotificationPriority.NORMAL,
+            action_url=f"/student/courses/{assignment.course_id}/assignment/{assignment_id}",
             related_id=assignment_id
         )
 
     @staticmethod
-    def notify_quiz_graded(student_id: int, teacher_id: int, quiz_id: int, score: float):
+    def notify_quiz_graded(student_id: int, teacher_id: int, quiz_id: int, score: float, 
+                        attempt_number: int = None, attempt_id: int = None):
         """Notify student when their quiz has been graded"""
         try:
-            from app.models import Quiz, User
+            from app.models import Quiz, User, QuizAttempt
             
             quiz = Quiz.query.get(quiz_id)
             teacher = User.query.get(teacher_id)
@@ -334,21 +336,36 @@ class NotificationService:
             if not quiz or not teacher:
                 return
             
-            passed = score >= quiz.passing_score
+            if attempt_id:
+                attempt = QuizAttempt.query.get(attempt_id)
+                if attempt:
+                    attempt_number = attempt.attempt_number
+                    actual_score = attempt.score  
+                else:
+                    actual_score = score
+            else:
+                actual_score = score
+            
+            passed = actual_score >= quiz.passing_score
             status_text = "passed" if passed else "needs improvement"
+            
+            attempt_text = f" (Attempt #{attempt_number})" if attempt_number else ""
             
             notification = Notification(
                 recipient_id=student_id,
                 sender_id=teacher_id,
-                type=NotificationType.QUIZ_GRADED,
-                priority=NotificationPriority.HIGH if passed else NotificationPriority.NORMAL,
+                type=NotificationType.QUIZ_GRADED.value,
+                priority=NotificationPriority.HIGH.value if passed else NotificationPriority.NORMAL.value,
                 title=f"Quiz Graded: {quiz.title}",
-                message=f"Your quiz '{quiz.title}' has been graded by {teacher.full_name}. Score: {score:.1f}% ({status_text})",
-                action_url=f"/student/quiz/{quiz_id}/results"
+                message=f"Your quiz '{quiz.title}'{attempt_text} has been graded by {teacher.full_name}. Score: {actual_score:.1f}% ({status_text})",
+                action_url=f"/student/quiz/{attempt_id}/results" if attempt_id else f"/student/courses/{quiz.course_id}",
+                related_id=attempt_id or quiz_id  
             )
             
             db.session.add(notification)
             db.session.commit()
+            
+            print(f"Notification sent: attempt_id={attempt_id}, attempt_number={attempt_number}, score={actual_score}")
             
         except Exception as e:
             print(f"Error sending quiz graded notification: {e}")

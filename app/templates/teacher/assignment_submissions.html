@@ -266,6 +266,7 @@ async function loadAssignmentData() {
         if (response.ok) {
             const data = await response.json();
             assignmentData = data.data || data;
+            submissions = assignmentData.submissions || [];
             updateAssignmentInfo(assignmentData);
             submissions = assignmentData.submissions || [];
             displaySubmissions(submissions);
@@ -284,6 +285,14 @@ function updateAssignmentInfo(data) {
     document.getElementById('assignmentInfoTitle').textContent = assignment.title;
     document.getElementById('assignmentInfoDescription').textContent = assignment.description || 'No description';
     
+    const submissionCount = submissions.length;
+    const gradedCount = submissions.filter(s => s.status === 'graded').length;
+    
+    document.getElementById('submissionCount').textContent = submissionCount;
+    document.getElementById('gradedCount').textContent = gradedCount;
+}
+
+function updateSubmissionCounts() {
     const submissionCount = submissions.length;
     const gradedCount = submissions.filter(s => s.status === 'graded').length;
     
@@ -433,7 +442,6 @@ async function viewSubmission(submissionId) {
     
     currentSubmission = submission;
     
-    // Update modal content
     document.getElementById('submissionId').value = submissionId;
     document.getElementById('maxPoints').textContent = assignmentData.assignment.total_points;
     document.getElementById('maxPointsText').textContent = assignmentData.assignment.total_points;
@@ -441,7 +449,6 @@ async function viewSubmission(submissionId) {
     document.getElementById('gradeInput').value = submission.grade || '';
     document.getElementById('feedbackInput').value = submission.feedback || '';
     
-    // Student info
     document.getElementById('studentInfo').innerHTML = `
         <div class="fw-semibold">${submission.student.full_name}</div>
         <small class="text-muted">${submission.student.email}</small>
@@ -450,7 +457,6 @@ async function viewSubmission(submissionId) {
         </div>
     `;
     
-    // Submission content
     let submissionHtml = '';
     
     if (submission.submission_text) {
@@ -537,7 +543,16 @@ async function saveGrade() {
         if (response.ok) {
             showSuccess('Grade saved successfully');
             bootstrap.Modal.getInstance(document.getElementById('gradeModal')).hide();
-            loadAssignmentData();
+            
+            const submissionIndex = submissions.findIndex(s => s.id == submissionId);
+            if (submissionIndex !== -1) {
+                submissions[submissionIndex].status = 'graded';
+                submissions[submissionIndex].grade = grade;
+                submissions[submissionIndex].feedback = feedback;
+            }
+            
+            updateSubmissionCounts();
+            filterSubmissions();
         } else {
             const error = await response.json();
             showError(error.error || 'Failed to save grade');
@@ -571,7 +586,16 @@ async function saveQuickGrade() {
         if (response.ok) {
             showSuccess('Grade saved successfully');
             bootstrap.Modal.getInstance(document.getElementById('quickGradeModal')).hide();
-            loadAssignmentData();
+            
+            const submissionIndex = submissions.findIndex(s => s.id == submissionId);
+            if (submissionIndex !== -1) {
+                submissions[submissionIndex].status = 'graded';
+                submissions[submissionIndex].grade = grade;
+                submissions[submissionIndex].feedback = feedback;
+            }
+            
+            updateSubmissionCounts();
+            filterSubmissions(); 
         } else {
             const error = await response.json();
             showError(error.error || 'Failed to save grade');
@@ -603,7 +627,15 @@ async function returnSubmission() {
         if (response.ok) {
             showSuccess('Submission returned to student');
             bootstrap.Modal.getInstance(document.getElementById('gradeModal')).hide();
-            loadAssignmentData();
+            
+            const submissionIndex = submissions.findIndex(s => s.id == submissionId);
+            if (submissionIndex !== -1) {
+                submissions[submissionIndex].status = 'returned';
+                submissions[submissionIndex].feedback = feedback;
+            }
+            
+            updateSubmissionCounts();
+            filterSubmissions(); 
         } else {
             const error = await response.json();
             showError(error.error || 'Failed to return submission');
@@ -653,7 +685,6 @@ function downloadCSV(csvData, filename) {
 }
 
 function gradeAllSubmissions() {
-    // This would open a modal for bulk grading
     showInfo('Bulk grading feature coming soon!');
 }
 

@@ -82,7 +82,7 @@
                             <label for="statusFilter" class="form-label fw-semibold">Status</label>
                             <select class="form-select" id="statusFilter">
                                 <option value="">All Status</option>
-                                <option value="completed">Auto-Graded</option>
+                                <option value="completed">Graded</option>
                                 <option value="needs_grading">Needs Manual Grading</option>
                                 <option value="in_progress">In Progress</option>
                             </select>
@@ -303,9 +303,13 @@ function displayAttempts(attempts) {
         const score = attempt.score !== null ? `${attempt.score.toFixed(1)}%` : 'Not Graded';
         const statusBadge = getStatusBadge(attempt);
         const needsManualGrading = needsGrading(attempt);
+        const isInProgress = attempt.status === 'in_progress';
+        
+        // Add special styling for in-progress attempts
+        const rowClass = isInProgress ? 'table-info' : (needsManualGrading ? 'table-warning' : '');
         
         content += `
-            <tr ${needsManualGrading ? 'class="table-warning"' : ''} data-attempt-id="${attempt.id}">
+            <tr ${rowClass ? `class="${rowClass}"` : ''} data-attempt-id="${attempt.id}">
                 <td>
                     <div class="fw-semibold">${attempt.student?.full_name || 'Unknown'}</div>
                     <small class="text-muted">${attempt.student?.email || ''}</small>
@@ -315,6 +319,7 @@ function displayAttempts(attempts) {
                     <small class="text-muted">
                         Attempt #${attempt.attempt_number} • ${attempt.quiz?.total_points || 100} pts
                         ${needsManualGrading ? '<span class="text-warning ms-1">(Needs Grading)</span>' : ''}
+                        ${isInProgress ? '<span class="text-info ms-1">(In Progress)</span>' : ''}
                     </small>
                 </td>
                 <td>
@@ -331,16 +336,25 @@ function displayAttempts(attempts) {
                 </td>
                 <td class="status-cell">${statusBadge}</td>
                 <td class="text-center">
-                    <div class="btn-group btn-group-sm">
-                        ${needsManualGrading ? `
-                            <button class="btn btn-warning" onclick="quickGrade(${attempt.id})" title="Quick Grade">
-                                <i class="fas fa-edit"></i>
+                    ${isInProgress ? `
+                        <div class="text-muted">
+                            <small>
+                                <i class="fas fa-clock me-1"></i>
+                                Student still taking quiz
+                            </small>
+                        </div>
+                    ` : `
+                        <div class="btn-group btn-group-sm">
+                            ${needsManualGrading ? `
+                                <button class="btn btn-warning" onclick="quickGrade(${attempt.id})" title="Quick Grade">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-outline-primary" onclick="detailedGrade(${attempt.id})" title="View Results">
+                                <i class="fas fa-eye"></i>
                             </button>
-                        ` : ''}
-                        <button class="btn btn-outline-primary" onclick="detailedGrade(${attempt.id})" title="View Results">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
+                        </div>
+                    `}
                 </td>
             </tr>
         `;

@@ -359,9 +359,6 @@ function renderQuestionDetails(question) {
                                 '<span class="badge bg-success">Correct</span>' :
                                 '<span class="badge bg-danger">Incorrect</span>'
                         }
-                        ${question.is_correct === null ? 
-                            '<button class="btn btn-sm btn-warning ms-2" onclick="gradeQuestion(' + question.id + ')">Grade Now</button>' : ''
-                        }
                     </div>
                 </div>
             </div>

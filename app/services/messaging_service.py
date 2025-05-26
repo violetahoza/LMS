@@ -102,7 +102,7 @@ class MessagingService:
             raise PermissionException("Access denied")
         
         if message.recipient_id == user_id and message.read_at is None:
-            message.read_at = datetime.utcnow()
+            message.read_at = datetime.now()
             db.session.commit()
         
         return message.to_dict()
@@ -122,7 +122,7 @@ class MessagingService:
             raise PermissionException("Access denied")
         
         if message.read_at is None:
-            message.read_at = datetime.utcnow()
+            message.read_at = datetime.now()
             db.session.commit()
         
         return {'message': 'Message marked as read'}
@@ -204,7 +204,7 @@ class MessagingService:
         ).all()
         
         for message in unread_messages:
-            message.read_at = datetime.utcnow()
+            message.read_at = datetime.now()
         
         if unread_messages:
             db.session.commit()

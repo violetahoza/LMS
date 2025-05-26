@@ -31,7 +31,7 @@ class TeacherService:
             total_students += len(enrollments)
             active_students += len([e for e in enrollments if e.status == 'active'])
         
-        week_ago = datetime.utcnow() - timedelta(days=7)
+        week_ago = datetime.now() - timedelta(days=7)
         recent_enrollments = 0
         recent_submissions = 0
         
@@ -545,7 +545,7 @@ class TeacherService:
                 enrollment.progress_percentage = current_progress
                 if current_progress >= 100 and enrollment.status == 'active':
                     enrollment.status = 'completed'
-                    enrollment.completed_at = datetime.utcnow()
+                    enrollment.completed_at = datetime.now()
         
         db.session.commit()
         
@@ -589,7 +589,7 @@ class TeacherService:
         if course.teacher_id != teacher_id:
             raise PermissionException("Access denied to this course")
         
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
         enrollment_data = []
         
         for i in range(30):
@@ -717,7 +717,7 @@ class TeacherService:
         quiz_performance = []
 
         enrollment_trends_counter = defaultdict(int)
-        start_date = datetime.utcnow() - timedelta(days=30)
+        start_date = datetime.now() - timedelta(days=30)
 
         for course in courses:
             stats = TeacherService.get_course_analytics(teacher_id, course.id)
@@ -944,7 +944,7 @@ class TeacherService:
         completed_attempts = 0
         failed_attempts = 0
         
-        today = datetime.utcnow().date()
+        today = datetime.now().date()
         
         for course in courses:
             for quiz in course.quizzes:

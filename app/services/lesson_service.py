@@ -302,7 +302,7 @@ class LessonService:
             )
             db.session.add(progress)
         
-        progress.completed_at = datetime.utcnow()
+        progress.completed_at = datetime.now()
         if time_spent_minutes and time_spent_minutes > 0:
             progress.time_spent_minutes = time_spent_minutes
         
@@ -312,7 +312,7 @@ class LessonService:
         
         if course_completed and enrollment.status == 'active':
             enrollment.status = 'completed'
-            enrollment.completed_at = datetime.utcnow()
+            enrollment.completed_at = datetime.now()
 
             NotificationService.notify_course_completion(
                 teacher_id=lesson.course.teacher_id,
@@ -427,7 +427,7 @@ class LessonService:
             )
             db.session.add(progress)
         else:
-            progress.viewed_at = datetime.utcnow()
+            progress.viewed_at = datetime.now()
         
         db.session.commit()
         return progress

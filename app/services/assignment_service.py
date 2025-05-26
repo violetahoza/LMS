@@ -40,7 +40,7 @@ class AssignmentService:
                 assignment_dict['submitted'] = submission is not None
                 assignment_dict['overdue'] = (
                     assignment.due_date and 
-                    assignment.due_date < datetime.utcnow() and 
+                    assignment.due_date < datetime.now() and 
                     not submission
                 )
             
@@ -81,7 +81,7 @@ class AssignmentService:
                 submission.status == 'returned'
             ) and (
                 not assignment.due_date or 
-                assignment.due_date > datetime.utcnow()
+                assignment.due_date > datetime.now()
             )
         
         return assignment_data
@@ -149,7 +149,7 @@ class AssignmentService:
             else:
                 assignment.due_date = None
         
-        assignment.updated_at = datetime.utcnow()
+        assignment.updated_at = datetime.now()
         db.session.commit()
         
         return {
@@ -205,7 +205,7 @@ class AssignmentService:
         if existing_submission and existing_submission.status not in ['returned']:
             raise ValidationException("Assignment already submitted")
         
-        if assignment.due_date and assignment.due_date < datetime.utcnow():
+        if assignment.due_date and assignment.due_date < datetime.now():
             raise ValidationException("Assignment is past due date")
         
         if not submission_text and not file:
@@ -222,7 +222,7 @@ class AssignmentService:
                 
                 existing_submission.submission_text = submission_text
                 existing_submission.file_path = file_path
-                existing_submission.submitted_at = datetime.utcnow()
+                existing_submission.submitted_at = datetime.now()
                 existing_submission.status = 'submitted'
                 existing_submission.grade = None
                 existing_submission.feedback = None
@@ -247,7 +247,7 @@ class AssignmentService:
             
             if course_completed and enrollment.status == 'active':
                 enrollment.status = 'completed'
-                enrollment.completed_at = datetime.utcnow()
+                enrollment.completed_at = datetime.now()
                 NotificationService.notify_course_completion(assignment.course.teacher_id, student_id, assignment.course_id)
             
             db.session.commit()
@@ -311,7 +311,7 @@ class AssignmentService:
         
         submission.grade = grade
         submission.feedback = feedback
-        submission.graded_at = datetime.utcnow()
+        submission.graded_at = datetime.now()
         submission.graded_by = teacher_id
         submission.status = 'graded'
         
@@ -328,7 +328,7 @@ class AssignmentService:
             
             if course_completed and enrollment.status == 'active':
                 enrollment.status = 'completed'
-                enrollment.completed_at = datetime.utcnow()
+                enrollment.completed_at = datetime.now()
                 NotificationService.notify_course_completion(teacher_id, submission.student_id, submission.assignment.course_id)
        
         db.session.commit()
@@ -360,7 +360,7 @@ class AssignmentService:
         
         submission.feedback = feedback
         submission.status = 'returned'
-        submission.graded_at = datetime.utcnow()
+        submission.graded_at = datetime.now()
         submission.graded_by = teacher_id
         
         db.session.commit()

@@ -1,0 +1,585 @@
+{% extends "base.html" %}
+
+{% block title %}Course Students - Teacher - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-gradient-primary mb-1" id="pageTitle">Course Students</h1>
+                    <p class="text-muted mb-0">Manage enrolled students and track their progress</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary me-2" onclick="goBack()">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </button>
+                    <button class="btn btn-outline-info me-2" onclick="exportStudents()">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                    <button class="btn btn-gradient-primary" onclick="viewCourseAnalytics()">
+                        <i class="fas fa-chart-line me-2"></i>Course Analytics
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5" id="statsCards">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-primary rounded-circle mx-auto mb-3">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="stats-number text-primary" id="totalStudents">0</h3>
+                    <p class="text-muted mb-0">Total Enrolled</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-success rounded-circle mx-auto mb-3">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h3 class="stats-number text-success" id="completedStudents">0</h3>
+                    <p class="text-muted mb-0">Completed</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-info rounded-circle mx-auto mb-3">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="stats-number text-info" id="avgProgress">0%</h3>
+                    <p class="text-muted mb-0">Avg Progress</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-gradient-warning rounded-circle mx-auto mb-3">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3 class="stats-number text-warning" id="recentActivity">0</h3>
+                    <p class="text-muted mb-0">Active This Week</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="searchStudents" class="form-label fw-semibold">Search Students</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="searchStudents" 
+                                       placeholder="Search by name or email">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="statusFilter" class="form-label fw-semibold">Status</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="progressFilter" class="form-label fw-semibold">Progress</label>
+                            <select class="form-select" id="progressFilter">
+                                <option value="">All Progress</option>
+                                <option value="0-25">0-25%</option>
+                                <option value="26-50">26-50%</option>
+                                <option value="51-75">51-75%</option>
+                                <option value="76-100">76-100%</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="sortBy" class="form-label fw-semibold">Sort By</label>
+                            <select class="form-select" id="sortBy">
+                                <option value="name">Name A-Z</option>
+                                <option value="progress">Progress</option>
+                                <option value="enrolled">Enrollment Date</option>
+                                <option value="activity">Last Activity</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="applyFilters()">
+                                <i class="fas fa-filter me-2"></i>Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users me-2 text-primary"></i>Enrolled Students
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="studentsContainer">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student Details Modal -->
+<div class="modal fade" id="studentDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title">Student Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="studentDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Message Student Modal -->
+<div class="modal fade" id="messageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-info text-white">
+                <h5 class="modal-title">Send Message</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="messageForm">
+                    <input type="hidden" id="recipientId">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">To:</label>
+                        <div class="p-2 bg-light rounded" id="recipientInfo">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="messageSubject" class="form-label fw-semibold">Subject</label>
+                        <input type="text" class="form-control" id="messageSubject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="messageContent" class="form-label fw-semibold">Message</label>
+                        <textarea class="form-control" id="messageContent" rows="6" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-gradient-info" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane me-2"></i>Send Message
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const courseId = {{ course_id }};
+let allStudents = [];
+let courseData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCourseStudents();
+    
+    // Add search functionality
+    let searchTimeout;
+    document.getElementById('searchStudents').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(applyFilters, 500);
+    });
+});
+
+async function loadCourseStudents() {
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/teacher/course/${courseId}/students`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Students data:', data);
+            
+            const studentsData = data.data || data;
+            allStudents = studentsData.student_reports || [];
+            courseData = studentsData.course || {};
+            
+            updatePageTitle();
+            updateStats();
+            displayStudents(allStudents);
+        } else {
+            showError('Failed to load course students');
+        }
+    } catch (error) {
+        console.error('Error loading students:', error);
+        showError('Error loading course students');
+    } finally {
+        hideLoading();
+    }
+}
+
+function updatePageTitle() {
+    if (courseData && courseData.title) {
+        document.getElementById('pageTitle').textContent = `${courseData.title} - Students`;
+    }
+}
+
+function updateStats() {
+    const totalStudents = allStudents.length;
+    const completedStudents = allStudents.filter(s => s.enrollment?.status === 'completed').length;
+    const avgProgress = totalStudents > 0 ? 
+        allStudents.reduce((sum, s) => sum + (s.overall_progress || 0), 0) / totalStudents : 0;
+    
+    // Calculate recent activity (students active in last 7 days)
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const recentlyActive = allStudents.filter(s => {
+        if (!s.last_activity) return false;
+        return new Date(s.last_activity) >= weekAgo;
+    }).length;
+    
+    document.getElementById('totalStudents').textContent = totalStudents;
+    document.getElementById('completedStudents').textContent = completedStudents;
+    document.getElementById('avgProgress').textContent = `${avgProgress.toFixed(1)}%`;
+    document.getElementById('recentActivity').textContent = recentlyActive;
+}
+
+function displayStudents(students) {
+    const container = document.getElementById('studentsContainer');
+    
+    if (students.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-4x text-muted mb-4"></i>
+                <h4 class="text-muted">No students found</h4>
+                <p class="text-muted">No students match the current filters</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let content = '<div class="table-responsive"><table class="table table-hover">';
+    content += `
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th class="text-center">Progress</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Enrolled</th>
+                <th class="text-center">Last Activity</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    students.forEach(studentReport => {
+        const student = studentReport.student || {};
+        const enrollment = studentReport.enrollment || {};
+        const progress = studentReport.overall_progress || 0;
+        const lastActivity = studentReport.last_activity;
+        
+        const statusBadge = enrollment.status === 'completed' 
+            ? '<span class="badge bg-success">Completed</span>'
+            : '<span class="badge bg-primary">Active</span>';
+        
+        const progressClass = progress >= 80 ? 'bg-success' : 
+                             progress >= 60 ? 'bg-warning' : 
+                             progress >= 40 ? 'bg-info' : 'bg-danger';
+        
+        const enrolledDate = enrollment.enrolled_at ? 
+            new Date(enrollment.enrolled_at).toLocaleDateString() : 'Unknown';
+        
+        const lastActivityText = lastActivity ? 
+            formatRelativeTime(new Date(lastActivity)) : 'Never';
+        
+        content += `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar bg-gradient-primary rounded-circle me-3 d-flex align-items-center justify-content-center" 
+                             style="width: 40px; height: 40px;">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">${student.full_name || 'Unknown'}</div>
+                            <small class="text-muted">${student.email || ''}</small>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <div class="progress mb-1" style="height: 8px;">
+                        <div class="progress-bar ${progressClass}" style="width: ${progress}%"></div>
+                    </div>
+                    <small class="fw-semibold">${progress.toFixed(1)}%</small>
+                </td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">
+                    <small class="text-muted">${enrolledDate}</small>
+                </td>
+                <td class="text-center">
+                    <small class="text-muted">${lastActivityText}</small>
+                </td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="viewStudentProgress(${student.id})" title="View Progress">
+                            <i class="fas fa-chart-line"></i>
+                        </button>
+                        <button class="btn btn-outline-info" onclick="messageStudent(${student.id}, '${student.full_name}', '${student.email}')" title="Send Message">
+                            <i class="fas fa-envelope"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    content += '</tbody></table></div>';
+    container.innerHTML = content;
+}
+
+function applyFilters() {
+    const search = document.getElementById('searchStudents').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    const progressRange = document.getElementById('progressFilter').value;
+    const sortBy = document.getElementById('sortBy').value;
+    
+    let filtered = [...allStudents];
+    
+    // Apply search filter
+    if (search) {
+        filtered = filtered.filter(studentReport => {
+            const student = studentReport.student || {};
+            return (student.full_name || '').toLowerCase().includes(search) ||
+                   (student.email || '').toLowerCase().includes(search);
+        });
+    }
+    
+    // Apply status filter
+    if (status) {
+        filtered = filtered.filter(studentReport => {
+            const enrollment = studentReport.enrollment || {};
+            return enrollment.status === status;
+        });
+    }
+    
+    // Apply progress filter
+    if (progressRange) {
+        const [min, max] = progressRange.split('-').map(Number);
+        filtered = filtered.filter(studentReport => {
+            const progress = studentReport.overall_progress || 0;
+            return progress >= min && progress <= max;
+        });
+    }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+        switch (sortBy) {
+            case 'name':
+                return (a.student?.full_name || '').localeCompare(b.student?.full_name || '');
+            case 'progress':
+                return (b.overall_progress || 0) - (a.overall_progress || 0);
+            case 'enrolled':
+                const dateA = new Date(a.enrollment?.enrolled_at || 0);
+                const dateB = new Date(b.enrollment?.enrolled_at || 0);
+                return dateB - dateA;
+            case 'activity':
+                const activityA = new Date(a.last_activity || 0);
+                const activityB = new Date(b.last_activity || 0);
+                return activityB - activityA;
+            default:
+                return 0;
+        }
+    });
+    
+    displayStudents(filtered);
+}
+
+
+function messageStudent(studentId, studentName, studentEmail) {
+    document.getElementById('recipientId').value = studentId;
+    document.getElementById('recipientInfo').innerHTML = `
+        <div class="fw-semibold">${studentName}</div>
+        <small class="text-muted">${studentEmail}</small>
+    `;
+    
+    if (courseData && courseData.title) {
+        document.getElementById('messageSubject').value = `Regarding ${courseData.title}`;
+    }
+    
+    new bootstrap.Modal(document.getElementById('messageModal')).show();
+}
+
+async function sendMessage() {
+    const recipientId = document.getElementById('recipientId').value;
+    const subject = document.getElementById('messageSubject').value;
+    const content = document.getElementById('messageContent').value;
+    
+    if (!subject.trim() || !content.trim()) {
+        showError('Subject and message content are required');
+        return;
+    }
+    
+    try {
+        const messageData = {
+            recipient_id: parseInt(recipientId),
+            subject: subject.trim(),
+            content: content.trim(),
+            course_id: courseId
+        };
+        
+        const response = await fetch('/api/messages/send', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(messageData)
+        });
+        
+        if (response.ok) {
+            showSuccess('Message sent successfully');
+            bootstrap.Modal.getInstance(document.getElementById('messageModal')).hide();
+            document.getElementById('messageForm').reset();
+        } else {
+            const error = await response.json();
+            showError(error.error || 'Failed to send message');
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+        showError('Error sending message');
+    }
+}
+
+function viewStudentDetails(studentId) {
+    // This could load detailed student information
+    showInfo('Student details feature coming soon');
+}
+
+async function exportStudents() {
+    try {
+        const response = await fetch(`/api/teacher/course/${courseId}/students/export`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer {{ session.access_token }}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `course_${courseId}_students.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showSuccess('Students exported successfully');
+        } else {
+            showError('Failed to export students');
+        }
+    } catch (error) {
+        console.error('Error exporting students:', error);
+        showError('Error exporting students');
+    }
+}
+
+function viewCourseAnalytics() {
+    window.location.href = `/teacher/courses/${courseId}/analytics`;
+}
+
+function goBack() {
+    window.location.href = '/teacher/courses';
+}
+
+function formatRelativeTime(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffDays > 0) {
+        return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    } else if (diffHours > 0) {
+        return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    } else if (diffMinutes > 0) {
+        return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+    } else {
+        return 'Just now';
+    }
+}
+
+function showLoading() {
+    // Loading is shown by default in the container
+}
+
+function hideLoading() {
+    // Loading is hidden when content is displayed
+}
+
+function showSuccess(message) {
+    showAlert('success', message);
+}
+
+function showError(message) {
+    showAlert('danger', message);
+}
+
+function showInfo(message) {
+    showAlert('info', message);
+}
+
+function showAlert(type, message) {
+    const alertContainer = document.querySelector('.container-fluid');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    setTimeout(() => alert.remove(), 5000);
+}
+</script>
+{% endblock %}

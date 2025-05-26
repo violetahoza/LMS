@@ -168,7 +168,7 @@ class QuizService:
             if field in quiz_data:
                 setattr(quiz, field, quiz_data[field])
         
-        quiz.updated_at = datetime.utcnow()
+        quiz.updated_at = datetime.now()
         db.session.commit()
         
         return {
@@ -427,7 +427,7 @@ class QuizService:
             
             if course_completed and enrollment.status == 'active':
                 enrollment.status = 'completed'
-                enrollment.completed_at = datetime.utcnow()
+                enrollment.completed_at = datetime.now()
 
                 NotificationService.notify_course_completion(
                     teacher_id=attempt.quiz.course.teacher_id,
@@ -625,7 +625,7 @@ class QuizService:
             db.session.add(student_answer)
         
         attempt.score = (earned_points / total_points * 100) if total_points > 0 else 0
-        attempt.submitted_at = datetime.utcnow()
+        attempt.submitted_at = datetime.now()
         attempt.time_spent_minutes = calculate_time_spent(attempt.started_at, attempt.submitted_at)
         attempt.status = 'completed'
         
@@ -789,6 +789,8 @@ class QuizService:
         if not course or course.teacher_id != teacher_id:
             raise PermissionException("Access denied")
 
+        print(f"Grading attempt ID: {attempt_id}, attempt number: {attempt.attempt_number}, student: {attempt.student_id}")
+
         student_answers = attempt.student_answers
         
         total_possible_points = 0
@@ -802,25 +804,29 @@ class QuizService:
             total_possible_points += question.points
 
             if question.question_type in ['multiple_choice', 'true_false']:
-                if answer.is_correct:
-                    total_earned_points += question.points
+                total_earned_points += (answer.points_earned or 0)
             elif question.question_type == 'short_answer':
                 if str(answer.id) in short_answer_grades:
                     is_correct = bool(short_answer_grades[str(answer.id)])
                     answer.is_correct = is_correct
                     answer.points_earned = question.points if is_correct else 0
                     total_earned_points += answer.points_earned
+                    print(f"Graded short answer {answer.id}: {'correct' if is_correct else 'incorrect'}")
                 else:
                     answer.is_correct = False
                     answer.points_earned = 0
 
         final_score = (total_earned_points / total_possible_points * 100) if total_possible_points > 0 else 0
         
+        previous_score = attempt.score
+        
         attempt.score = round(final_score, 2)
-        attempt.graded_at = datetime.utcnow()  
+        attempt.graded_at = datetime.now()
         attempt.status = 'completed'
         
         db.session.commit()
+
+        print(f"Score updated from {previous_score} to {attempt.score} for attempt ID {attempt_id} (attempt #{attempt.attempt_number})")
 
         try:
             from app.services.notification_service import NotificationService
@@ -828,8 +834,11 @@ class QuizService:
                 student_id=attempt.student_id,
                 teacher_id=teacher_id,
                 quiz_id=quiz.id,
-                score=attempt.score
+                score=attempt.score,
+                attempt_number=attempt.attempt_number,
+                attempt_id=attempt_id 
             )
+            print(f"Notification sent for attempt_id={attempt_id}, attempt_number={attempt.attempt_number}")
         except Exception as e:
             print(f"Failed to send quiz graded notification: {e}")
 
@@ -838,7 +847,106 @@ class QuizService:
             'attempt': attempt.to_dict(),
             'total_points': total_possible_points,
             'earned_points': total_earned_points,
-            'final_score': final_score
+            'final_score': final_score,
+            'attempt_id': attempt_id, 
+            'attempt_number': attempt.attempt_number,  
+            'previous_score': previous_score
         }
 
-    
+    @staticmethod
+    def get_question_details(teacher_id: int, quiz_id: int, question_id: int) -> Dict[str, Any]:
+        """Get detailed information about a specific question with answer statistics"""
+        quiz = Quiz.query.get(quiz_id)
+        if not quiz:
+            raise NotFoundException("Quiz not found")
+        
+        if quiz.course.teacher_id != teacher_id:
+            raise PermissionException("Access denied")
+        
+        question = Question.query.get(question_id)
+        if not question or question.quiz_id != quiz_id:
+            raise NotFoundException("Question not found")
+        
+        question_data = question.to_dict()
+        
+        completed_attempts = QuizAttempt.query.filter_by(
+            quiz_id=quiz_id,
+            status='completed'
+        ).all()
+        
+        attempt_ids = [attempt.id for attempt in completed_attempts]
+        total_responses = len(attempt_ids)
+        
+        student_answers = StudentAnswer.query.filter(
+            StudentAnswer.question_id == question_id,
+            StudentAnswer.attempt_id.in_(attempt_ids)
+        ).all() if attempt_ids else []
+        
+        if question.question_type in ['multiple_choice', 'true_false']:
+            options_with_stats = []
+            
+            for opt in question.answer_options:
+                selection_count = sum(1 for answer in student_answers if answer.selected_option_id == opt.id)
+                percentage = (selection_count / total_responses * 100) if total_responses > 0 else 0
+                
+                options_with_stats.append({
+                    'id': opt.id,
+                    'option_text': opt.option_text,
+                    'is_correct': opt.is_correct,
+                    'selection_count': selection_count,
+                    'selection_percentage': round(percentage, 1)
+                })
+            
+            question_data['options'] = options_with_stats
+            
+            answered_count = len([a for a in student_answers if a.selected_option_id is not None])
+            skipped_count = total_responses - answered_count
+            
+            question_data['answer_statistics'] = {
+                'total_responses': total_responses,
+                'answered': answered_count,
+                'skipped': skipped_count,
+                'skip_percentage': round((skipped_count / total_responses * 100) if total_responses > 0 else 0, 1)
+            }
+            
+        elif question.question_type == 'short_answer':
+            answer_texts = [answer.answer_text for answer in student_answers if answer.answer_text]
+            
+            from collections import Counter
+            answer_frequency = Counter(answer.strip().lower() for answer in answer_texts if answer and answer.strip())
+            
+            common_answers = []
+            for answer_text, count in answer_frequency.most_common(10):
+                percentage = (count / total_responses * 100) if total_responses > 0 else 0
+                common_answers.append({
+                    'answer_text': answer_text,
+                    'count': count,
+                    'percentage': round(percentage, 1)
+                })
+            
+            question_data['common_answers'] = common_answers
+            question_data['correct_answer'] = getattr(question, 'correct_answer', None)
+            
+            answered_count = len([a for a in student_answers if a.answer_text and a.answer_text.strip()])
+            skipped_count = total_responses - answered_count
+            
+            question_data['answer_statistics'] = {
+                'total_responses': total_responses,
+                'answered': answered_count,
+                'skipped': skipped_count,
+                'skip_percentage': round((skipped_count / total_responses * 100) if total_responses > 0 else 0, 1),
+                'unique_answers': len(answer_frequency)
+            }
+        
+        correct_answers = len([a for a in student_answers if a.is_correct])
+        accuracy_rate = (correct_answers / total_responses * 100) if total_responses > 0 else 0
+        
+        question_data['performance_statistics'] = {
+            'total_attempts': total_responses,
+            'correct_answers': correct_answers,
+            'incorrect_answers': total_responses - correct_answers,
+            'accuracy_rate': round(accuracy_rate, 1),
+            'difficulty_level': 'Easy' if accuracy_rate >= 80 else 'Medium' if accuracy_rate >= 60 else 'Hard'
+        }
+        
+        return question_data

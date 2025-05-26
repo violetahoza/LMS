@@ -47,7 +47,7 @@ class CertificateService:
         
         if current_progress >= 100 and enrollment.status != 'completed':
             enrollment.status = 'completed'
-            enrollment.completed_at = datetime.utcnow()
+            enrollment.completed_at = datetime.now()
         
         if enrollment.status != 'completed':
             raise ValidationException("Student has not completed this course")
@@ -165,7 +165,7 @@ class CertificateService:
         if pending_request:
             pending_request.status = 'approved'
             pending_request.reviewed_by = admin_id
-            pending_request.reviewed_at = datetime.utcnow()
+            pending_request.reviewed_at = datetime.now()
         
         db.session.commit()
         
@@ -245,7 +245,7 @@ class CertificateService:
         return {
             'certificate': certificate.to_dict(),
             'valid': True,
-            'verified_at': datetime.utcnow().isoformat()
+            'verified_at': datetime.now().isoformat()
         }
     
     @staticmethod
@@ -306,7 +306,7 @@ class CertificateService:
                 }
             elif existing_request.status == 'rejected':
                 existing_request.status = 'pending'
-                existing_request.requested_at = datetime.utcnow()
+                existing_request.requested_at = datetime.now()
                 existing_request.reviewed_by = None
                 existing_request.reviewed_at = None
                 existing_request.rejection_reason = None
@@ -321,7 +321,7 @@ class CertificateService:
             cert_request = CertificateRequest(
                 student_id=student_id,
                 course_id=course_id,
-                requested_at=datetime.utcnow(),
+                requested_at=datetime.now(),
                 status='pending'
             )
             
@@ -356,7 +356,7 @@ class CertificateService:
         
         pending_requests = CertificateRequest.query.filter_by(status='pending').all()
         
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
         recent_reviewed = CertificateRequest.query.filter(
             CertificateRequest.status.in_(['approved', 'rejected']),
             CertificateRequest.reviewed_at >= thirty_days_ago
@@ -432,7 +432,7 @@ class CertificateService:
         
         cert_request.status = 'rejected'
         cert_request.reviewed_by = admin_id
-        cert_request.reviewed_at = datetime.utcnow()
+        cert_request.reviewed_at = datetime.now()
         cert_request.rejection_reason = reason
         
         db.session.commit()

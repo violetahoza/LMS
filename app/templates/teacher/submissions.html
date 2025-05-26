@@ -250,11 +250,56 @@ function populateCourseFilter() {
 
 function updateSummaryCards() {
     const pendingCount = submissions.filter(s => s.status === 'submitted').length;
-    const gradedToday = submissions.filter(s => {
-        return s.status === 'graded' && 
-               s.graded_at && 
-               new Date(s.graded_at).toDateString() === new Date().toDateString();
-    }).length;
+    
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    
+    console.log('Date range for "today":', {
+        todayStart: todayStart.toISOString(),
+        tomorrowStart: tomorrowStart.toISOString(),
+        now: now.toISOString()
+    });
+    
+    const gradedTodaySubmissions = submissions.filter(s => {
+        console.log(`Checking submission ${s.id}:`, {
+            grade: s.grade,
+            status: s.status,
+            graded_at: s.graded_at,
+            updated_at: s.updated_at
+        });
+        
+        if (s.grade === null || s.grade === undefined) {
+            return false;
+        }
+        
+        let gradedDate = null;
+        
+        if (s.graded_at) {
+            gradedDate = new Date(s.graded_at);
+            console.log(`Submission ${s.id}: graded_at parsed as:`, gradedDate.toISOString());
+        }
+        else if (s.updated_at && s.status === 'graded') {
+            gradedDate = new Date(s.updated_at);
+            console.log(`Submission ${s.id}: using updated_at:`, gradedDate.toISOString());
+        }
+        
+        if (gradedDate) {
+            const isToday = gradedDate >= todayStart && gradedDate < tomorrowStart;
+            console.log(`Submission ${s.id}: date check:`, {
+                gradedDate: gradedDate.toISOString(),
+                isToday,
+                todayStart: todayStart.toISOString(),
+                tomorrowStart: tomorrowStart.toISOString()
+            });
+            return isToday;
+        }
+        
+        return false;
+    });
+    
+    console.log('Graded today submissions:', gradedTodaySubmissions);
+    const gradedToday = gradedTodaySubmissions.length;
     
     const gradedSubmissions = submissions.filter(s => s.grade !== null && s.grade !== undefined);
     const avgGrade = gradedSubmissions.length > 0 
@@ -412,9 +457,30 @@ async function saveQuickGrade() {
         });
         
         if (response.ok) {
+            const responseData = await response.json();
+            console.log('Backend response:', responseData);
+            
             showSuccess('Grade saved successfully');
             bootstrap.Modal.getInstance(document.getElementById('quickGradeModal')).hide();
-            loadPendingSubmissions(); 
+            
+            const submissionIndex = submissions.findIndex(s => s.id == submissionId);
+            if (submissionIndex !== -1) {
+                const now = new Date();
+                const currentTimestamp = now.toISOString();
+                
+                console.log('Forcing current timestamp:', currentTimestamp);
+                
+                submissions[submissionIndex].status = 'graded';
+                submissions[submissionIndex].grade = grade;
+                submissions[submissionIndex].feedback = feedback;
+                submissions[submissionIndex].graded_at = currentTimestamp;
+                submissions[submissionIndex].updated_at = currentTimestamp;
+                
+                console.log('Updated submission:', submissions[submissionIndex]);
+            }
+            
+            updateSummaryCards();
+            applyFilters(); 
         } else {
             const error = await response.json();
             showError(error.error || 'Failed to save grade');

@@ -152,7 +152,7 @@ class CourseService:
         if 'end_date' in course_data:
             course.end_date = datetime.fromisoformat(course_data['end_date']) if course_data['end_date'] else None
         
-        course.updated_at = datetime.utcnow()
+        course.updated_at = datetime.now()
         db.session.commit()
         
         return {
@@ -205,11 +205,10 @@ class CourseService:
                 raise ValidationException("You have already completed this course")
             elif existing_enrollment.status == 'dropped':
                 existing_enrollment.status = 'active'
-                existing_enrollment.enrolled_at = datetime.utcnow()
-                existing_enrollment.progress_percentage = 0.0  # Reset progress
+                existing_enrollment.enrolled_at = datetime.now()
+                existing_enrollment.progress_percentage = 0.0  
                 db.session.commit()
                 
-                # Notify teacher about re-enrollment
                 NotificationService.notify_student_enrollment(course.teacher_id, student_id, course_id)
                 
                 return {
@@ -273,21 +272,18 @@ class CourseService:
         
         query = Enrollment.query.filter_by(student_id=student_id)
         
-        # Update enrollment progress before filtering
         all_enrollments = query.all()
         for enrollment in all_enrollments:
             current_progress = enrollment.calculate_progress()
             if enrollment.progress_percentage != current_progress:
                 enrollment.progress_percentage = current_progress
                 
-                # Auto-complete course if progress is 100%
                 if current_progress >= 100 and enrollment.status == 'active':
                     enrollment.status = 'completed'
-                    enrollment.completed_at = datetime.utcnow()
+                    enrollment.completed_at = datetime.now()
         
         db.session.commit()
         
-        # Now apply filters
         if status == 'active':
             query = query.filter_by(status='active')
         elif status == 'completed':

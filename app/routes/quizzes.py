@@ -160,3 +160,14 @@ def get_quiz_statistics(quiz_id):
         quiz_id
     )
 
+@bp.route('/<int:quiz_id>/questions/<int:question_id>', methods=['GET'])
+@teacher_required()
+def get_question(quiz_id, question_id):
+    """Get a specific question with its details"""
+    user_id = get_jwt_identity()
+    return BaseController.handle_request(
+        QuizService.get_question_details,
+        int(user_id),
+        quiz_id,
+        question_id
+    )

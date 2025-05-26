@@ -35,7 +35,7 @@ class StudentService:
                     
                     if current_progress >= 100:
                         enrollment.status = 'completed'
-                        enrollment.completed_at = datetime.utcnow()
+                        enrollment.completed_at = datetime.now()
             
             db.session.commit()
             
@@ -114,7 +114,7 @@ class StudentService:
                 
                 if current_progress >= 100 and enrollment.status != 'completed':
                     enrollment.status = 'completed'
-                    enrollment.completed_at = datetime.utcnow()
+                    enrollment.completed_at = datetime.now()
             
             lesson_progress = StudentService._get_lesson_progress(student_id, course.id)
             quiz_progress = StudentService._get_quiz_progress(student_id, course)
@@ -184,7 +184,7 @@ class StudentService:
         
         if current_progress >= 100 and enrollment.status != 'completed':
             enrollment.status = 'completed'
-            enrollment.completed_at = datetime.utcnow()
+            enrollment.completed_at = datetime.now()
             db.session.commit()
         
         if enrollment.status != 'completed':
@@ -299,7 +299,7 @@ class StudentService:
     @staticmethod
     def _get_upcoming_assignments(student_id: int) -> List[Dict[str, Any]]:
         """Get upcoming assignments for student"""
-        week_from_now = datetime.utcnow() + timedelta(days=7)
+        week_from_now = datetime.now() + timedelta(days=7)
         
         upcoming_assignments = Assignment.query.join(
             Enrollment, Assignment.course_id == Enrollment.course_id
@@ -307,7 +307,7 @@ class StudentService:
             Enrollment.student_id == student_id,
             Enrollment.status.in_(['active', 'completed']),  
             Assignment.due_date <= week_from_now,
-            Assignment.due_date >= datetime.utcnow()
+            Assignment.due_date >= datetime.now()
         ).order_by(Assignment.due_date).all()
         
         return [
@@ -316,7 +316,7 @@ class StudentService:
                 'title': a.title,
                 'course': a.course.title,
                 'due_date': a.due_date.isoformat() if a.due_date else None,
-                'days_remaining': (a.due_date - datetime.utcnow()).days if a.due_date else 0
+                'days_remaining': (a.due_date - datetime.now()).days if a.due_date else 0
             }
             for a in upcoming_assignments
         ]
@@ -417,7 +417,7 @@ class StudentService:
         if not sorted_dates:
             return 0
         
-        today = datetime.utcnow().date()
+        today = datetime.now().date()
         current_streak = 0
         
         if sorted_dates[0] == today or sorted_dates[0] == today - timedelta(days=1):
@@ -538,7 +538,7 @@ class StudentService:
                     
                     if current_progress >= 100:
                         enrollment.status = 'completed'
-                        enrollment.completed_at = datetime.utcnow()
+                        enrollment.completed_at = datetime.now()
             
             db.session.commit()
             

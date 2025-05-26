@@ -20,8 +20,8 @@ class User(UserMixin, db.Model):
     role = db.Column(db.Enum(UserRole), nullable=False)
     phone = db.Column(db.String(20))
     age = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     is_active = db.Column(db.Boolean, default=True)
     
     taught_courses = db.relationship('Course', backref='teacher', lazy='dynamic', foreign_keys='Course.teacher_id')
@@ -87,8 +87,8 @@ class Course(db.Model):
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
     max_students = db.Column(db.Integer, default=50)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     is_published = db.Column(db.Boolean, default=False)
     
     lessons = db.relationship('Lesson', backref='course', lazy='dynamic', cascade='all, delete-orphan')
@@ -130,8 +130,8 @@ class Lesson(db.Model):
     lesson_type = db.Column(db.Enum('video', 'text', 'mixed'), default='text')
     video_url = db.Column(db.String(500))
     duration_minutes = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
     progress_records = db.relationship('LessonProgress', backref='lesson', lazy='dynamic', cascade='all, delete-orphan')
     quizzes = db.relationship('Quiz', backref='lesson', lazy='dynamic')
@@ -156,7 +156,7 @@ class Enrollment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
-    enrolled_at = db.Column(db.DateTime, default=datetime.utcnow)
+    enrolled_at = db.Column(db.DateTime, default=datetime.now)
     completed_at = db.Column(db.DateTime)
     status = db.Column(db.Enum('active', 'completed', 'dropped'), default='active')
     progress_percentage = db.Column(db.Float, default=0.0)
@@ -238,8 +238,8 @@ class Quiz(db.Model):
     passing_score = db.Column(db.Integer, default=60)
     time_limit_minutes = db.Column(db.Integer)
     max_attempts = db.Column(db.Integer, default=3)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
     questions = db.relationship('Question', backref='quiz', lazy='dynamic', cascade='all, delete-orphan')
     attempts = db.relationship('QuizAttempt', backref='quiz', lazy='dynamic', cascade='all, delete-orphan')
@@ -268,7 +268,7 @@ class Question(db.Model):
     question_type = db.Column(db.Enum('multiple_choice', 'true_false', 'short_answer'), nullable=False)
     points = db.Column(db.Integer, default=10)
     order_number = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     answer_options = db.relationship('AnswerOption', backref='question', lazy='dynamic', cascade='all, delete-orphan')
     student_answers = db.relationship('StudentAnswer', backref='question', lazy='dynamic')
@@ -307,7 +307,7 @@ class QuizAttempt(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     attempt_number = db.Column(db.Integer, nullable=False)
     score = db.Column(db.Float)
-    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    started_at = db.Column(db.DateTime, default=datetime.now)
     submitted_at = db.Column(db.DateTime)
     time_spent_minutes = db.Column(db.Integer)
     status = db.Column(db.Enum('in_progress', 'completed', 'abandoned'), default='in_progress')
@@ -351,8 +351,8 @@ class Assignment(db.Model):
     description = db.Column(db.Text)
     due_date = db.Column(db.DateTime)
     total_points = db.Column(db.Integer, default=100)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
     submissions = db.relationship('AssignmentSubmission', backref='assignment', lazy='dynamic', cascade='all, delete-orphan')
     
@@ -376,7 +376,7 @@ class AssignmentSubmission(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     submission_text = db.Column(db.Text)
     file_path = db.Column(db.String(500))
-    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    submitted_at = db.Column(db.DateTime, default=datetime.now)
     grade = db.Column(db.Float)
     feedback = db.Column(db.Text)
     graded_at = db.Column(db.DateTime)
@@ -408,7 +408,7 @@ class LessonProgress(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'), nullable=False)
-    viewed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    viewed_at = db.Column(db.DateTime, default=datetime.now)
     completed_at = db.Column(db.DateTime)
     time_spent_minutes = db.Column(db.Integer, default=0)
     
@@ -435,7 +435,7 @@ class StudentAchievement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     achievement_id = db.Column(db.Integer, db.ForeignKey('achievements.id'), nullable=False)
-    earned_at = db.Column(db.DateTime, default=datetime.utcnow)
+    earned_at = db.Column(db.DateTime, default=datetime.now)
     
     __table_args__ = (db.UniqueConstraint('student_id', 'achievement_id'),)
 
@@ -446,7 +446,7 @@ class Certificate(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
     certificate_code = db.Column(db.String(100), unique=True, nullable=False)
-    issued_at = db.Column(db.DateTime, default=datetime.utcnow)
+    issued_at = db.Column(db.DateTime, default=datetime.now)
     
     __table_args__ = (db.UniqueConstraint('student_id', 'course_id'),)
     
@@ -473,7 +473,7 @@ class Message(db.Model):
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=True)
     subject = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    sent_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    sent_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
     read_at = db.Column(db.DateTime, nullable=True)
     is_announcement = db.Column(db.Boolean, default=False, nullable=False)
     
@@ -509,6 +509,8 @@ class NotificationType(enum.Enum):
     CERTIFICATE_REQUEST = 'certificate_request'
     CERTIFICATE_APPROVED = 'certificate_approved'
     CERTIFICATE_REJECTED = 'certificate_rejected'
+    USER_REGISTRATION = 'user_registration' 
+    COURSE_PUBLISHED = 'course_published'  
     ACHIEVEMENT_EARNED = 'achievement_earned'
 
 class NotificationPriority(enum.Enum):
@@ -524,8 +526,8 @@ class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    type = db.Column(db.String(30), nullable=False)
-    priority = db.Column(db.String(20), default='normal')
+    type = db.Column(db.String(40), nullable=False)
+    priority = db.Column(db.String(30), default='normal')
     
     title = db.Column(db.String(200), nullable=False)
     message = db.Column(db.Text, nullable=False)
@@ -533,7 +535,7 @@ class Notification(db.Model):
     related_id = db.Column(db.Integer, nullable=True)
     is_read = db.Column(db.Boolean, default=False, nullable=False)
     read_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
     
     recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_notifications')
     sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_notifications')
@@ -542,7 +544,7 @@ class Notification(db.Model):
         """Mark notification as read"""
         if not self.is_read:
             self.is_read = True
-            self.read_at = datetime.utcnow()
+            self.read_at = datetime.now()
             db.session.commit()
     
     def to_dict(self):
@@ -569,7 +571,7 @@ class CertificateRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
-    requested_at = db.Column(db.DateTime, default=datetime.utcnow)
+    requested_at = db.Column(db.DateTime, default=datetime.now)
     status = db.Column(db.Enum('pending', 'approved', 'rejected'), default='pending')
     reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     reviewed_at = db.Column(db.DateTime)

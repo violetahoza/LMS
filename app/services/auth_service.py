@@ -190,7 +190,7 @@ class AuthService:
                         else:
                             setattr(user, field, None)
             
-            user.updated_at = datetime.utcnow()
+            user.updated_at = datetime.now()
             db.session.commit()
             
             return {
@@ -227,7 +227,7 @@ class AuthService:
                 raise ValidationException(message)
             
             user.set_password(new_password)
-            user.updated_at = datetime.utcnow()
+            user.updated_at = datetime.now()
             db.session.commit()
             
             return {'message': 'Password changed successfully'}

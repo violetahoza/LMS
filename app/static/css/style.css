@@ -1213,7 +1213,7 @@ body {
 }
 
 @media print {
-    .btn, .modal, #loadingOverlay {
+    .btn, .modal, #loadingOverlay, .card-header .btn-group, #actionsCard  {
         display: none !important;
     }
     
@@ -1233,6 +1233,12 @@ body {
     
     .certificate-full-preview {
         background: white !important;
+    }
+    .bg-gradient-success,
+    .bg-gradient-warning,
+    .bg-gradient-danger {
+        background: #f8f9fa !important;
+        color: #000 !important;
     }
 }
 

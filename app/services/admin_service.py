@@ -29,7 +29,7 @@ class AdminService:
             total_quizzes = Quiz.query.count()
             total_quiz_attempts = QuizAttempt.query.count()
             
-            week_ago = datetime.utcnow() - timedelta(days=7)
+            week_ago = datetime.now() - timedelta(days=7)
             recent_users = User.query.filter(User.created_at >= week_ago).count()
             recent_enrollments = Enrollment.query.filter(Enrollment.enrolled_at >= week_ago).count()
             recent_courses = Course.query.filter(Course.created_at >= week_ago).count()
@@ -208,7 +208,7 @@ class AdminService:
                 
                 setattr(user, field, user_data[field])
         
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now()
         db.session.commit()
         
         return {
@@ -227,7 +227,7 @@ class AdminService:
             raise PermissionException("Cannot deactivate other admin users")
         
         user.is_active = not user.is_active
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now()
         db.session.commit()
         
         status = 'activated' if user.is_active else 'deactivated'
@@ -289,7 +289,7 @@ class AdminService:
             csv_content = output.getvalue()
             output.close()
             
-            filename = f"users_{datetime.utcnow().strftime('%Y%m%d')}.csv"
+            filename = f"users_{datetime.now().strftime('%Y%m%d')}.csv"
             
             return {
                 'csv_content': csv_content,
@@ -432,7 +432,7 @@ class AdminService:
             csv_content = output.getvalue()
             output.close()
             
-            timestamp = datetime.utcnow().strftime('%Y%m%d')
+            timestamp = datetime.now().strftime('%Y%m%d')
             filename = f"courses_{timestamp}.csv"
             
             return {
@@ -453,7 +453,7 @@ class AdminService:
             raise NotFoundException("Course not found")
         
         course.is_published = not course.is_published
-        course.updated_at = datetime.utcnow()
+        course.updated_at = datetime.now()
         db.session.commit()
         
         status = 'published' if course.is_published else 'unpublished'
@@ -466,7 +466,7 @@ class AdminService:
     def get_user_activity_report(days: int = 30) -> Dict[str, Any]:
         """Get user activity report"""
         try:
-            start_date = datetime.utcnow() - timedelta(days=days)
+            start_date = datetime.now() - timedelta(days=days)
             
             user_registrations = db.session.query(
                 func.date(User.created_at).label('date'),
@@ -631,7 +631,7 @@ class AdminService:
     def get_user_overview_chart(days: int = 30) -> Dict[str, Any]:
         """Return new user counts for dashboard chart. Active users not tracked."""
         try:
-            today = datetime.utcnow().date()
+            today = datetime.now().date()
             start_date = today - timedelta(days=days - 1)
 
             labels = [(start_date + timedelta(days=i)).isoformat() for i in range(days)]
