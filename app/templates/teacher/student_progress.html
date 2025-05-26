@@ -1,4 +1,3 @@
-<!-- app/templates/teacher/student_progress.html -->
 {% extends "base.html" %}
 
 {% block title %}Student Progress - Teacher - EduPlatform{% endblock %}
@@ -27,7 +26,6 @@
         </div>
     </div>
 
-    <!-- Student Info Card -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card bg-gradient-info text-white">
@@ -51,10 +49,6 @@
                                     <div class="h4 mb-0" id="overallProgress">0%</div>
                                     <small class="opacity-75">Overall Progress</small>
                                 </div>
-                                <div class="text-center">
-                                    <div class="h4 mb-0" id="lastActivity">-</div>
-                                    <small class="opacity-75">Last Activity</small>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -63,7 +57,6 @@
         </div>
     </div>
 
-    <!-- Progress Cards -->
     <div class="row g-4 mb-5" id="progressCards">
         <div class="col-xl-4 col-md-6">
             <div class="card h-100">
@@ -80,7 +73,10 @@
                     </div>
                     <h5 class="text-primary">Lessons Progress</h5>
                     <p class="mb-0"><span id="completedLessons">0</span> of <span id="totalLessons">0</span> completed</p>
-                    <small class="text-muted">Time spent: <span id="timeSpent">0 min</span></small>
+                    <small class="text-muted">
+                        Viewed: <span id="viewedLessons">0</span> • 
+                        Time: <span id="timeSpent">0 min</span>
+                    </small>
                 </div>
             </div>
         </div>
@@ -100,7 +96,10 @@
                     </div>
                     <h5 class="text-warning">Quiz Performance</h5>
                     <p class="mb-0"><span id="passedQuizzes">0</span> of <span id="totalQuizzes">0</span> passed</p>
-                    <small class="text-muted">Average: <span id="quizAverage">0%</span></small>
+                    <small class="text-muted">
+                        Attempted: <span id="attemptedQuizzes">0</span> • 
+                        Avg: <span id="quizAverage">0%</span>
+                    </small>
                 </div>
             </div>
         </div>
@@ -120,13 +119,15 @@
                     </div>
                     <h5 class="text-success">Assignments</h5>
                     <p class="mb-0"><span id="submittedAssignments">0</span> of <span id="totalAssignments">0</span> submitted</p>
-                    <small class="text-muted">Average: <span id="assignmentAverage">0%</span></small>
+                    <small class="text-muted">
+                        Graded: <span id="gradedAssignments">0</span> • 
+                        Avg: <span id="assignmentAverage">0%</span>
+                    </small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Detailed Progress Tabs -->
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -147,17 +148,11 @@
                                 <i class="fas fa-tasks me-2"></i>Assignments
                             </button>
                         </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline" type="button" role="tab">
-                                <i class="fas fa-clock me-2"></i>Activity Timeline
-                            </button>
-                        </li>
                     </ul>
                 </div>
                 
                 <div class="card-body">
                     <div class="tab-content" id="progressTabsContent">
-                        <!-- Lessons Tab -->
                         <div class="tab-pane fade show active" id="lessons" role="tabpanel">
                             <div id="lessonsContainer">
                                 <div class="text-center py-4">
@@ -168,7 +163,6 @@
                             </div>
                         </div>
 
-                        <!-- Quizzes Tab -->
                         <div class="tab-pane fade" id="quizzes" role="tabpanel">
                             <div id="quizzesContainer">
                                 <div class="text-center py-4">
@@ -179,22 +173,10 @@
                             </div>
                         </div>
 
-                        <!-- Assignments Tab -->
                         <div class="tab-pane fade" id="assignments" role="tabpanel">
                             <div id="assignmentsContainer">
                                 <div class="text-center py-4">
                                     <div class="spinner-border text-success" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Timeline Tab -->
-                        <div class="tab-pane fade" id="timeline" role="tabpanel">
-                            <div id="timelineContainer">
-                                <div class="text-center py-4">
-                                    <div class="spinner-border text-info" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
                                 </div>
@@ -207,7 +189,6 @@
     </div>
 </div>
 
-<!-- Message Modal -->
 <div class="modal fade" id="messageModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -221,7 +202,6 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">To:</label>
                         <div class="p-2 bg-light rounded" id="recipientInfo">
-                            <!-- Recipient info will be loaded here -->
                         </div>
                     </div>
                     <div class="mb-3">
@@ -269,7 +249,7 @@ async function loadStudentProgress() {
         
         if (response.ok) {
             const data = await response.json();
-            console.log('Progress data received:', data); // Debug log
+            console.log('Progress data received:', data); 
             progressData = data.data || data;
             updateProgressDisplay(progressData);
         } else {
@@ -284,9 +264,8 @@ async function loadStudentProgress() {
 }
 
 function updateProgressDisplay(data) {
-    console.log('Updating display with data:', data); // Debug log
+    console.log('Updating display with data:', data); 
     
-    // Handle different data structures
     const student = data.student;
     const course = data.course;
     const progress = data.progress;
@@ -297,51 +276,41 @@ function updateProgressDisplay(data) {
         return;
     }
     
-    // Update student info
     document.getElementById('studentName').textContent = student.full_name || 'Unknown Student';
     document.getElementById('studentEmail').textContent = student.email || '';
     document.getElementById('courseInfo').textContent = `Course: ${course.title || 'Unknown Course'}`;
     document.getElementById('pageTitle').textContent = `${student.full_name} - ${course.title}`;
     
-    // Update overall progress
     const overallProgress = progress.overall_percentage || 0;
     document.getElementById('overallProgress').textContent = `${overallProgress.toFixed(1)}%`;
     
-    // Update last activity
-    if (progress.last_activity) {
-        const lastActivity = new Date(progress.last_activity);
-        document.getElementById('lastActivity').textContent = formatRelativeTime(lastActivity);
-    } else {
-        document.getElementById('lastActivity').textContent = 'No activity';
-    }
     
-    // Update lessons progress
-    const lessons = progress.lessons || { completed: 0, total: 0, percentage: 0 };
+    const lessons = progress.lessons || { completed: 0, total: 0, viewed: 0, percentage: 0 };
     document.getElementById('completedLessons').textContent = lessons.completed || 0;
     document.getElementById('totalLessons').textContent = lessons.total || 0;
-    document.getElementById('timeSpent').textContent = `${progress.time_spent_minutes || 0} min`;
+    document.getElementById('viewedLessons').textContent = lessons.viewed || 0;
+    document.getElementById('timeSpent').textContent = `${progress.total_time_spent || 0} min`;
     updateCircularProgress('lessonsCircle', 'lessonsPercentage', lessons.percentage || 0);
     
-    // Update quizzes progress
-    const quizzes = progress.quizzes || { total: 0, passed: 0, average_score: 0 };
+    const quizzes = progress.quizzes || { total: 0, attempted: 0, passed: 0, average_score: 0 };
     document.getElementById('passedQuizzes').textContent = quizzes.passed || 0;
     document.getElementById('totalQuizzes').textContent = quizzes.total || 0;
+    document.getElementById('attemptedQuizzes').textContent = quizzes.attempted || 0;
     document.getElementById('quizAverage').textContent = `${(quizzes.average_score || 0).toFixed(1)}%`;
     const quizPercentage = quizzes.total > 0 ? (quizzes.passed / quizzes.total * 100) : 0;
     updateCircularProgress('quizzesCircle', 'quizzesPercentage', quizPercentage);
     
-    // Update assignments progress
-    const assignments = progress.assignments || { total: 0, submitted: 0, average_score: 0 };
+    const assignments = progress.assignments || { total: 0, submitted: 0, graded: 0, average_score: 0 };
     document.getElementById('submittedAssignments').textContent = assignments.submitted || 0;
     document.getElementById('totalAssignments').textContent = assignments.total || 0;
+    document.getElementById('gradedAssignments').textContent = assignments.graded || 0;
     document.getElementById('assignmentAverage').textContent = `${(assignments.average_score || 0).toFixed(1)}%`;
     const assignmentPercentage = assignments.total > 0 ? (assignments.submitted / assignments.total * 100) : 0;
     updateCircularProgress('assignmentsCircle', 'assignmentsPercentage', assignmentPercentage);
     
-    // Load detailed data for tabs
     displayDetailedLessons(progress.detailed_lessons || []);
-    displayDetailedQuizzes(progress.quizzes?.details || []);
-    displayDetailedAssignments(progress.assignments?.details || []);
+    displayDetailedQuizzes(progress.detailed_quizzes || []);
+    displayDetailedAssignments(progress.detailed_assignments || []);
 }
 
 function updateCircularProgress(circleId, textId, percentage) {
@@ -376,6 +345,7 @@ function displayDetailedLessons(lessons) {
                 <th class="text-center">Status</th>
                 <th class="text-center">Time Spent</th>
                 <th class="text-center">Last Viewed</th>
+                <th class="text-center">Progress</th>
             </tr>
         </thead>
         <tbody>
@@ -384,14 +354,16 @@ function displayDetailedLessons(lessons) {
     lessons.forEach(lessonData => {
         const lesson = lessonData.lesson || lessonData;
         const statusBadge = lessonData.completed ? 
-            '<span class="badge bg-success">Completed</span>' : 
+            '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Completed</span>' : 
             lessonData.viewed ? 
-                '<span class="badge bg-warning">Viewed</span>' : 
-                '<span class="badge bg-secondary">Not Started</span>';
+                '<span class="badge bg-warning"><i class="fas fa-eye me-1"></i>Viewed</span>' : 
+                '<span class="badge bg-secondary"><i class="fas fa-minus me-1"></i>Not Started</span>';
         
         const lastViewed = lessonData.last_viewed ? 
             formatRelativeTime(new Date(lessonData.last_viewed)) : 
             'Never';
+            
+        const progressBar = lessonData.completed ? 100 : (lessonData.viewed ? 50 : 0);
         
         content += `
             <tr>
@@ -400,9 +372,17 @@ function displayDetailedLessons(lessons) {
                     <small class="text-muted">Lesson ${lesson.order_number || 'N/A'}</small>
                 </td>
                 <td class="text-center">${statusBadge}</td>
-                <td class="text-center">${lessonData.time_spent || 0} min</td>
+                <td class="text-center">
+                    <span class="fw-semibold">${lessonData.time_spent || 0}</span> min
+                </td>
                 <td class="text-center">
                     <small class="text-muted">${lastViewed}</small>
+                </td>
+                <td class="text-center">
+                    <div class="progress" style="width: 60px; height: 8px;">
+                        <div class="progress-bar ${lessonData.completed ? 'bg-success' : 'bg-warning'}" 
+                             style="width: ${progressBar}%"></div>
+                    </div>
                 </td>
             </tr>
         `;
@@ -416,7 +396,7 @@ function displayDetailedQuizzes(quizzes) {
     const container = document.getElementById('quizzesContainer');
     
     if (!quizzes || quizzes.length === 0) {
-        container.innerHTML = '<div class="text-center py-4 text-muted">No quizzes attempted</div>';
+        container.innerHTML = '<div class="text-center py-4 text-muted">No quizzes available</div>';
         return;
     }
     
@@ -425,31 +405,49 @@ function displayDetailedQuizzes(quizzes) {
         <thead>
             <tr>
                 <th>Quiz</th>
-                <th class="text-center">Score</th>
+                <th class="text-center">Best Score</th>
                 <th class="text-center">Status</th>
                 <th class="text-center">Attempts</th>
+                <th class="text-center">Last Attempt</th>
             </tr>
         </thead>
         <tbody>
     `;
     
     quizzes.forEach(quiz => {
-        const score = quiz.best_score || quiz.score || 0;
-        const scoreClass = score >= 80 ? 'text-success' : score >= 60 ? 'text-warning' : 'text-danger';
+        const score = quiz.best_score || 0;
+        const scoreClass = score >= quiz.passing_score ? 'text-success' : score > 0 ? 'text-warning' : 'text-muted';
         const statusBadge = quiz.passed ? 
-            '<span class="badge bg-success">Passed</span>' : 
-            '<span class="badge bg-danger">Failed</span>';
+            '<span class="badge bg-success"><i class="fas fa-trophy me-1"></i>Passed</span>' : 
+            quiz.best_score > 0 ? 
+                '<span class="badge bg-warning"><i class="fas fa-exclamation-triangle me-1"></i>Not Passed</span>' :
+                '<span class="badge bg-secondary"><i class="fas fa-minus me-1"></i>Not Attempted</span>';
+        
+        const lastAttempt = quiz.last_attempt_date ? 
+            formatRelativeTime(new Date(quiz.last_attempt_date)) : 
+            'Never';
         
         content += `
             <tr>
                 <td>
                     <div class="fw-semibold">${quiz.quiz_title || 'Unknown Quiz'}</div>
+                    <small class="text-muted">Pass: ${quiz.passing_score}% • ${quiz.total_points} pts</small>
                 </td>
                 <td class="text-center">
                     <span class="fw-bold ${scoreClass}">${score.toFixed(1)}%</span>
                 </td>
                 <td class="text-center">${statusBadge}</td>
-                <td class="text-center">${quiz.attempts || 0}</td>
+                <td class="text-center">
+                    <span class="fw-semibold">${quiz.attempts}</span>/${quiz.max_attempts}
+                    ${quiz.attempts > 0 ? `
+                        <button class="btn btn-sm btn-outline-info ms-2" onclick="showQuizDetails(${quiz.quiz_id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    ` : ''}
+                </td>
+                <td class="text-center">
+                    <small class="text-muted">${lastAttempt}</small>
+                </td>
             </tr>
         `;
     });
@@ -462,7 +460,7 @@ function displayDetailedAssignments(assignments) {
     const container = document.getElementById('assignmentsContainer');
     
     if (!assignments || assignments.length === 0) {
-        container.innerHTML = '<div class="text-center py-4 text-muted">No assignments submitted</div>';
+        container.innerHTML = '<div class="text-center py-4 text-muted">No assignments available</div>';
         return;
     }
     
@@ -474,6 +472,7 @@ function displayDetailedAssignments(assignments) {
                 <th class="text-center">Grade</th>
                 <th class="text-center">Status</th>
                 <th class="text-center">Submitted</th>
+                <th class="text-center">Due Date</th>
             </tr>
         </thead>
         <tbody>
@@ -481,29 +480,48 @@ function displayDetailedAssignments(assignments) {
     
     assignments.forEach(assignment => {
         const gradeDisplay = assignment.grade !== null ? 
-            `${assignment.grade}/${assignment.total_points || 100} (${assignment.percentage?.toFixed(1) || 0}%)` : 
+            `${assignment.grade.toFixed(1)}/${assignment.total_points} (${assignment.percentage?.toFixed(1) || 0}%)` : 
             'Not graded';
         
-        const statusBadge = assignment.status === 'graded' ? 
-            '<span class="badge bg-success">Graded</span>' : 
-            assignment.status === 'submitted' ? 
-                '<span class="badge bg-warning">Pending</span>' : 
-                '<span class="badge bg-danger">Returned</span>';
+        const gradeClass = assignment.percentage >= 80 ? 'text-success' : 
+                          assignment.percentage >= 60 ? 'text-warning' : 
+                          assignment.percentage > 0 ? 'text-danger' : 'text-muted';
         
-        const submittedDate = assignment.submitted_at ? 
-            new Date(assignment.submitted_at).toLocaleDateString() : 
+        const statusBadge = assignment.status === 'graded' ? 
+            '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Graded</span>' : 
+            assignment.status === 'submitted' ? 
+                '<span class="badge bg-warning"><i class="fas fa-clock me-1"></i>Pending</span>' : 
+                assignment.status === 'returned' ?
+                '<span class="badge bg-danger"><i class="fas fa-undo me-1"></i>Returned</span>' :
+                '<span class="badge bg-secondary"><i class="fas fa-minus me-1"></i>Not Submitted</span>';
+        
+        const submittedDate = assignment.submission_date ? 
+            new Date(assignment.submission_date).toLocaleDateString() : 
             'Not submitted';
+            
+        const dueDate = assignment.due_date ? 
+            new Date(assignment.due_date).toLocaleDateString() : 
+            'No due date';
+        
+        const isOverdue = assignment.due_date && !assignment.submitted && 
+                         new Date(assignment.due_date) < new Date();
         
         content += `
-            <tr>
+            <tr ${isOverdue ? 'class="table-warning"' : ''}>
                 <td>
                     <div class="fw-semibold">${assignment.assignment_title || 'Unknown Assignment'}</div>
-                    ${assignment.feedback ? `<small class="text-muted">${assignment.feedback.substring(0, 50)}...</small>` : ''}
+                    <small class="text-muted">${assignment.total_points} points</small>
+                    ${isOverdue ? '<br><small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Overdue</small>' : ''}
                 </td>
-                <td class="text-center">${gradeDisplay}</td>
+                <td class="text-center">
+                    <span class="${gradeClass} fw-semibold">${gradeDisplay}</span>
+                </td>
                 <td class="text-center">${statusBadge}</td>
                 <td class="text-center">
                     <small class="text-muted">${submittedDate}</small>
+                </td>
+                <td class="text-center">
+                    <small class="text-muted">${dueDate}</small>
                 </td>
             </tr>
         `;
@@ -511,6 +529,67 @@ function displayDetailedAssignments(assignments) {
     
     content += '</tbody></table></div>';
     container.innerHTML = content;
+}
+
+function showQuizDetails(quizId) {
+    const quiz = progressData.progress.detailed_quizzes.find(q => q.quiz_id === quizId);
+    if (!quiz || !quiz.details) return;
+    
+    let modalContent = `
+        <div class="modal fade" id="quizDetailsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Quiz Attempts: ${quiz.quiz_title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Attempt</th>
+                                        <th>Score</th>
+                                        <th>Status</th>
+                                        <th>Time Spent</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+    `;
+    
+    quiz.details.forEach(attempt => {
+        const scoreClass = attempt.score >= quiz.passing_score ? 'text-success' : 'text-danger';
+        const date = attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleString() : 'In Progress';
+        
+        modalContent += `
+            <tr>
+                <td>#${attempt.attempt_number}</td>
+                <td><span class="${scoreClass} fw-semibold">${attempt.score?.toFixed(1) || 0}%</span></td>
+                <td><span class="badge bg-${attempt.status === 'completed' ? 'success' : 'warning'}">${attempt.status}</span></td>
+                <td>${attempt.time_spent || 0} min</td>
+                <td><small>${date}</small></td>
+            </tr>
+        `;
+    });
+    
+    modalContent += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const existingModal = document.getElementById('quizDetailsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+    new bootstrap.Modal(document.getElementById('quizDetailsModal')).show();
 }
 
 function sendMessage() {
@@ -526,7 +605,6 @@ function sendMessage() {
         <small class="text-muted">${student.email}</small>
     `;
     
-    // Pre-fill subject if viewing single course
     if (progressData.course) {
         document.getElementById('messageSubject').value = `Regarding ${progressData.course.title}`;
     }
@@ -585,7 +663,6 @@ async function exportProgress() {
     }
     
     try {
-        // Option 1: Generate CSV client-side (current implementation - keep this)
         let csvContent = '';
         
         const student = progressData.student;
@@ -599,26 +676,30 @@ async function exportProgress() {
         csvContent += `Generated: ${new Date().toLocaleDateString()}\n\n`;
         
         csvContent += `Overall Progress: ${progress.overall_percentage.toFixed(1)}%\n`;
-        csvContent += `Time Spent: ${progress.time_spent_minutes || 0} minutes\n\n`;
+        csvContent += `Total Time Spent: ${progress.total_time_spent || 0} minutes\n`;
         
         csvContent += `Lessons Progress:\n`;
         csvContent += `Completed: ${progress.lessons.completed}/${progress.lessons.total}\n`;
+        csvContent += `Viewed: ${progress.lessons.viewed}\n`;
         csvContent += `Percentage: ${progress.lessons.percentage.toFixed(1)}%\n\n`;
         
         csvContent += `Quiz Performance:\n`;
-        csvContent += `Passed: ${progress.quizzes.passed || 0}/${progress.quizzes.total || 0}\n`;
-        csvContent += `Average Score: ${progress.quizzes.average_score || 0}%\n\n`;
+        csvContent += `Total Quizzes: ${progress.quizzes.total}\n`;
+        csvContent += `Attempted: ${progress.quizzes.attempted}\n`;
+        csvContent += `Passed: ${progress.quizzes.passed}\n`;
+        csvContent += `Average Score: ${progress.quizzes.average_score.toFixed(1)}%\n\n`;
         
         csvContent += `Assignment Performance:\n`;
-        csvContent += `Submitted: ${progress.assignments.submitted || 0}/${progress.assignments.total || 0}\n`;
-        csvContent += `Average Score: ${progress.assignments.average_score || 0}%\n`;
+        csvContent += `Total Assignments: ${progress.assignments.total}\n`;
+        csvContent += `Submitted: ${progress.assignments.submitted}\n`;
+        csvContent += `Graded: ${progress.assignments.graded}\n`;
+        csvContent += `Average Score: ${progress.assignments.average_score.toFixed(1)}%\n`;
         
-        // Download CSV
         const blob = new Blob([csvContent], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `student_progress_${progressData.student.full_name.replace(/\s+/g, '_')}.csv`;
+        a.download = `student_progress_${progressData.student.full_name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

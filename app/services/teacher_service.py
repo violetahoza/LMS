@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from sqlalchemy import desc, func
-from app.models import Question, db, User, Course, Enrollment, Lesson, Quiz, Assignment, QuizAttempt, AssignmentSubmission, LessonProgress
+from app.models import AnswerOption, Question, StudentAnswer, db, User, Course, Enrollment, Lesson, Quiz, Assignment, QuizAttempt, AssignmentSubmission, LessonProgress
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from app.utils.helpers import calculate_course_statistics, calculate_quiz_statistics
 from collections import defaultdict
@@ -188,7 +188,7 @@ class TeacherService:
     
     @staticmethod
     def get_quiz_analytics(teacher_id: int, quiz_id: int) -> Dict[str, Any]:
-        """Get detailed quiz analytics"""
+        """Get detailed quiz analytics with REAL student performance data"""
         user = User.query.get(teacher_id)
         if not user or not user.is_teacher():
             raise PermissionException("Only teachers can access quiz analytics")
@@ -200,39 +200,64 @@ class TeacherService:
         if quiz.course.teacher_id != teacher_id:
             raise PermissionException("Access denied to this quiz")
         
-        attempts = quiz.attempts.filter_by(status='completed').all()
+        attempts = db.session.query(QuizAttempt).filter(
+            QuizAttempt.quiz_id == quiz_id,
+            QuizAttempt.status == 'completed'
+        ).join(User, QuizAttempt.student_id == User.id).all()
         
-        stats = calculate_quiz_statistics(attempts)
+        if attempts:
+            scores = [attempt.score for attempt in attempts if attempt.score is not None]
+            stats = {
+                'total_attempts': len(attempts),
+                'average_score': sum(scores) / len(scores) if scores else 0,
+                'highest_score': max(scores) if scores else 0,
+                'lowest_score': min(scores) if scores else 0,
+                'pass_rate': len([s for s in scores if s >= quiz.passing_score]) / len(scores) * 100 if scores else 0
+            }
+        else:
+            stats = {
+                'total_attempts': 0,
+                'average_score': 0,
+                'highest_score': 0,
+                'lowest_score': 0,
+                'pass_rate': 0
+            }
         
         question_analytics = []
-        for question in quiz.questions.order_by(Question.order_number):
-            correct_count = 0
-            total_answers = 0
-            answer_distribution = {}
+        questions = quiz.questions.order_by(Question.order_number).all()
+        
+        for question in questions:
+            student_answers = db.session.query(StudentAnswer).filter(
+                StudentAnswer.question_id == question.id
+            ).join(QuizAttempt).filter(
+                QuizAttempt.status == 'completed'
+            ).all()
             
-            for attempt in attempts:
-                student_answer = next(
-                    (sa for sa in attempt.student_answers if sa.question_id == question.id),
-                    None
-                )
-                
-                if student_answer:
-                    total_answers += 1
-                    if student_answer.is_correct:
-                        correct_count += 1
-                    
-                    if question.question_type in ['multiple_choice', 'true_false']:
-                        option_id = student_answer.selected_option_id
-                        if option_id:
-                            option_text = student_answer.selected_option.option_text
-                            answer_distribution[option_text] = answer_distribution.get(option_text, 0) + 1
-                    elif question.question_type == 'short_answer':
-                        if student_answer.answer_text:
-                            answer_text = student_answer.answer_text[:50] + "..." if len(student_answer.answer_text) > 50 else student_answer.answer_text
-                            answer_distribution[answer_text] = answer_distribution.get(answer_text, 0) + 1
+            correct_count = len([ans for ans in student_answers if ans.is_correct == True])
+            total_answers = len(student_answers)
+            
+            answer_distribution = {}
+            if question.question_type in ['multiple_choice', 'true_false']:
+                for answer in student_answers:
+                    if answer.selected_option_id:
+                        option = AnswerOption.query.get(answer.selected_option_id)
+                        if option:
+                            key = option.option_text
+                            answer_distribution[key] = answer_distribution.get(key, 0) + 1
+            elif question.question_type == 'short_answer':
+                for answer in student_answers:
+                    if answer.answer_text:
+                        key = (answer.answer_text[:50] + "...") if len(answer.answer_text) > 50 else answer.answer_text
+                        answer_distribution[key] = answer_distribution.get(key, 0) + 1
             
             question_analytics.append({
-                'question': question.to_dict(),
+                'question': {
+                    'id': question.id,
+                    'question_text': question.question_text,
+                    'question_type': question.question_type,
+                    'points': question.points,
+                    'order_number': question.order_number
+                },
                 'total_answers': total_answers,
                 'correct_answers': correct_count,
                 'accuracy_rate': (correct_count / total_answers * 100) if total_answers > 0 else 0,
@@ -241,7 +266,33 @@ class TeacherService:
         
         student_performance = []
         for attempt in attempts:
-            student_data = {
+            answers = db.session.query(StudentAnswer).filter(
+                StudentAnswer.attempt_id == attempt.id
+            ).join(Question).order_by(Question.order_number).all()
+            
+            question_breakdown = []
+            for answer in answers:
+                question = answer.question
+                breakdown_item = {
+                    'question_id': question.id,
+                    'question_text': question.question_text[:100] + "..." if len(question.question_text) > 100 else question.question_text,
+                    'question_type': question.question_type,
+                    'points': question.points,
+                    'points_earned': answer.points_earned or 0,
+                    'is_correct': answer.is_correct,
+                    'student_answer': None
+                }
+                
+                if question.question_type == 'short_answer':
+                    breakdown_item['student_answer'] = answer.answer_text
+                elif answer.selected_option_id:
+                    option = AnswerOption.query.get(answer.selected_option_id)
+                    if option:
+                        breakdown_item['student_answer'] = option.option_text
+                
+                question_breakdown.append(breakdown_item)
+            
+            student_performance.append({
                 'student': {
                     'id': attempt.student.id,
                     'full_name': attempt.student.full_name,
@@ -257,42 +308,205 @@ class TeacherService:
                     'status': attempt.status,
                     'graded_at': attempt.graded_at.isoformat() if attempt.graded_at else None
                 },
-                'question_breakdown': []
-            }
-            
-            for answer in attempt.student_answers:
-                question = answer.question
-                student_data['question_breakdown'].append({
-                    'question_id': question.id,
-                    'question_text': question.question_text[:100] + "..." if len(question.question_text) > 100 else question.question_text,
-                    'question_type': question.question_type,
-                    'points': question.points,
-                    'points_earned': answer.points_earned,
-                    'is_correct': answer.is_correct,
-                    'student_answer': answer.answer_text if question.question_type == 'short_answer' else (
-                        answer.selected_option.option_text if answer.selected_option else None
-                    )
-                })
-            
-            student_performance.append(student_data)
+                'question_breakdown': question_breakdown
+            })
         
         student_performance.sort(key=lambda x: x['attempt']['score'] or 0, reverse=True)
         
         return {
             'quiz': quiz.to_dict(),
             'statistics': stats,
-            'question_analytics': question_analytics,
+            'question_statistics': question_analytics,
             'student_performance': student_performance,
-            'total_students': len(student_performance),
-            'grading_summary': {
-                'pending_grading': len([a for a in attempts if not a.graded_at and any(q.question_type == 'short_answer' for q in quiz.questions)]),
-                'fully_graded': len([a for a in attempts if a.graded_at or not any(q.question_type == 'short_answer' for q in quiz.questions)])
+            'total_students': len(student_performance)
+        }
+    
+    @staticmethod
+    def get_individual_student_progress(teacher_id: int, student_id: int, course_id: int) -> Dict[str, Any]:
+        """Get REAL detailed progress for individual student"""
+        user = User.query.get(teacher_id)
+        if not user or not user.is_teacher():
+            raise PermissionException("Only teachers can access this data")
+
+        course = Course.query.get(course_id)
+        if not course or course.teacher_id != teacher_id:
+            raise PermissionException("Access denied to this course")
+
+        student = User.query.get(student_id)
+        if not student:
+            raise NotFoundException("Student not found")
+
+        enrollment = Enrollment.query.filter_by(
+            student_id=student_id,
+            course_id=course_id
+        ).first()
+        
+        if not enrollment:
+            raise NotFoundException("Student not enrolled in this course")
+
+        progress = TeacherService._calculate_detailed_student_progress(student_id, course_id)
+        
+        last_activity = TeacherService._get_last_activity(student_id, course_id)
+        
+        return {
+            'student': student.to_dict(),
+            'course': course.to_dict(),
+            'progress': {
+                **progress,
+                'overall_percentage': enrollment.calculate_progress(),  # Use the fixed calculation
+                'last_activity': last_activity.isoformat() if last_activity else None,
+                'time_spent_minutes': progress.get('total_time_spent', 0)
             }
         }
     
     @staticmethod
+    def _calculate_detailed_student_progress(student_id: int, course_id: int) -> Dict[str, Any]:
+        """Calculate REAL comprehensive student progress with actual database data"""
+        course = Course.query.get(course_id)
+        
+        total_lessons = course.lessons.count()
+        lesson_progress_records = db.session.query(LessonProgress).filter(
+            LessonProgress.student_id == student_id
+        ).join(Lesson).filter(
+            Lesson.course_id == course_id
+        ).all()
+        
+        completed_lessons = len([lp for lp in lesson_progress_records if lp.completed_at is not None])
+        viewed_lessons = len(lesson_progress_records)
+        total_lesson_time = sum([lp.time_spent_minutes or 0 for lp in lesson_progress_records])
+        
+        detailed_lessons = []
+        for lesson in course.lessons.order_by(Lesson.order_number).all():
+            progress_record = next((lp for lp in lesson_progress_records if lp.lesson_id == lesson.id), None)
+            detailed_lessons.append({
+                'lesson': lesson.to_dict(),
+                'viewed': progress_record is not None,
+                'completed': progress_record.completed_at is not None if progress_record else False,
+                'time_spent': progress_record.time_spent_minutes or 0 if progress_record else 0,
+                'last_viewed': progress_record.viewed_at.isoformat() if progress_record and progress_record.viewed_at else None
+            })
+        
+        quiz_progress = []
+        quiz_summary = {'total': 0, 'attempted': 0, 'passed': 0, 'average_score': 0}
+        
+        for quiz in course.quizzes.all():
+            attempts = QuizAttempt.query.filter_by(
+                student_id=student_id,
+                quiz_id=quiz.id
+            ).order_by(QuizAttempt.attempt_number).all()
+            
+            best_attempt = None
+            if attempts:
+                completed_attempts = [a for a in attempts if a.status == 'completed' and a.score is not None]
+                if completed_attempts:
+                    best_attempt = max(completed_attempts, key=lambda a: a.score)
+            
+            quiz_data = {
+                'quiz_id': quiz.id,
+                'quiz_title': quiz.title,
+                'total_points': quiz.total_points,
+                'passing_score': quiz.passing_score,
+                'attempts': len(attempts),
+                'max_attempts': quiz.max_attempts,
+                'best_score': best_attempt.score if best_attempt else None,
+                'passed': best_attempt.score >= quiz.passing_score if best_attempt else False,
+                'last_attempt_date': best_attempt.submitted_at.isoformat() if best_attempt and best_attempt.submitted_at else None,
+                'details': [{
+                    'attempt_number': a.attempt_number,
+                    'score': a.score,
+                    'status': a.status,
+                    'submitted_at': a.submitted_at.isoformat() if a.submitted_at else None,
+                    'time_spent': a.time_spent_minutes
+                } for a in attempts]
+            }
+            
+            quiz_progress.append(quiz_data)
+            quiz_summary['total'] += 1
+            if attempts:
+                quiz_summary['attempted'] += 1
+                if quiz_data['passed']:
+                    quiz_summary['passed'] += 1
+        
+        all_scores = [qp['best_score'] for qp in quiz_progress if qp['best_score'] is not None]
+        quiz_summary['average_score'] = sum(all_scores) / len(all_scores) if all_scores else 0
+        
+        assignment_progress = []
+        assignment_summary = {'total': 0, 'submitted': 0, 'graded': 0, 'average_score': 0}
+        
+        for assignment in course.assignments.all():
+            submission = AssignmentSubmission.query.filter_by(
+                student_id=student_id,
+                assignment_id=assignment.id
+            ).first()
+            
+            assignment_data = {
+                'assignment_id': assignment.id,
+                'assignment_title': assignment.title,
+                'total_points': assignment.total_points,
+                'due_date': assignment.due_date.isoformat() if assignment.due_date else None,
+                'submitted': submission is not None,
+                'submission_date': submission.submitted_at.isoformat() if submission and submission.submitted_at else None,
+                'grade': submission.grade if submission else None,
+                'status': submission.status if submission else 'not_submitted',
+                'feedback': submission.feedback if submission else None,
+                'graded_at': submission.graded_at.isoformat() if submission and submission.graded_at else None,
+                'percentage': (submission.grade / assignment.total_points * 100) if submission and submission.grade is not None else None
+            }
+            
+            assignment_progress.append(assignment_data)
+            assignment_summary['total'] += 1
+            if submission:
+                assignment_summary['submitted'] += 1
+                if submission.status == 'graded' and submission.grade is not None:
+                    assignment_summary['graded'] += 1
+        
+        graded_assignments = [ap for ap in assignment_progress if ap['grade'] is not None]
+        if graded_assignments:
+            assignment_summary['average_score'] = sum([ap['percentage'] for ap in graded_assignments]) / len(graded_assignments)
+        
+        return {
+            'lessons': {
+                'completed': completed_lessons,
+                'total': total_lessons,
+                'viewed': viewed_lessons,
+                'percentage': (completed_lessons / total_lessons * 100) if total_lessons > 0 else 0
+            },
+            'quizzes': quiz_summary,
+            'assignments': assignment_summary,
+            'detailed_lessons': detailed_lessons,
+            'detailed_quizzes': quiz_progress,
+            'detailed_assignments': assignment_progress,
+            'total_time_spent': total_lesson_time
+        }
+    
+    @staticmethod
+    def _get_last_activity(student_id: int, course_id: int) -> datetime:
+        """Get the most recent activity timestamp for a student in a course"""
+        activities = []
+        
+        latest_lesson = db.session.query(func.max(LessonProgress.viewed_at)).filter(
+            LessonProgress.student_id == student_id
+        ).join(Lesson).filter(Lesson.course_id == course_id).scalar()
+        if latest_lesson:
+            activities.append(latest_lesson)
+        
+        latest_quiz = db.session.query(func.max(QuizAttempt.submitted_at)).filter(
+            QuizAttempt.student_id == student_id
+        ).join(Quiz).filter(Quiz.course_id == course_id).scalar()
+        if latest_quiz:
+            activities.append(latest_quiz)
+        
+        latest_assignment = db.session.query(func.max(AssignmentSubmission.submitted_at)).filter(
+            AssignmentSubmission.student_id == student_id
+        ).join(Assignment).filter(Assignment.course_id == course_id).scalar()
+        if latest_assignment:
+            activities.append(latest_assignment)
+        
+        return max(activities) if activities else None
+    
+    @staticmethod
     def get_student_progress_report(teacher_id: int, course_id: int) -> Dict[str, Any]:
-        """Get detailed student progress report for a course"""
+        """Get REAL detailed student progress report for a course"""
         user = User.query.get(teacher_id)
         if not user or not user.is_teacher():
             raise PermissionException("Only teachers can access student progress")
@@ -304,43 +518,49 @@ class TeacherService:
         if course.teacher_id != teacher_id:
             raise PermissionException("Access denied to this course")
         
-        enrollments = course.enrollments.filter_by(status='active').all()
+        enrollments = course.enrollments.filter(
+            Enrollment.status.in_(['active', 'completed'])
+        ).all()
         
         student_reports = []
         for enrollment in enrollments:
             student = enrollment.student
-            progress = TeacherService._calculate_student_progress(student.id, course_id)
             
-            recent_lessons = LessonProgress.query.filter_by(
-                student_id=student.id
-            ).join(Lesson).filter(
-                Lesson.course_id == course_id,
-                LessonProgress.viewed_at >= datetime.utcnow() - timedelta(days=7)
-            ).count()
+            progress = TeacherService._calculate_detailed_student_progress(student.id, course_id)
             
-            recent_quiz_attempts = QuizAttempt.query.filter_by(
-                student_id=student.id
-            ).join(Quiz).filter(
-                Quiz.course_id == course_id,
-                QuizAttempt.started_at >= datetime.utcnow() - timedelta(days=7)
-            ).count()
+            current_progress = enrollment.calculate_progress()
+            if abs(enrollment.progress_percentage - current_progress) > 0.1:
+                enrollment.progress_percentage = current_progress
+                if current_progress >= 100 and enrollment.status == 'active':
+                    enrollment.status = 'completed'
+                    enrollment.completed_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        for enrollment in enrollments:
+            student = enrollment.student
+            progress = TeacherService._calculate_detailed_student_progress(student.id, course_id)
+            last_activity = TeacherService._get_last_activity(student.id, course_id)
             
             student_reports.append({
                 'student': student.to_dict(),
                 'enrollment': enrollment.to_dict(),
                 'progress': progress,
-                'recent_activity': {
-                    'lessons_viewed': recent_lessons,
-                    'quiz_attempts': recent_quiz_attempts
-                }
+                'last_activity': last_activity.isoformat() if last_activity else None,
+                'overall_progress': enrollment.progress_percentage
             })
         
-        student_reports.sort(key=lambda x: x['progress']['overall_percentage'], reverse=True)
+        student_reports.sort(key=lambda x: x['overall_progress'], reverse=True)
         
         return {
             'course': course.to_dict(),
             'student_reports': student_reports,
-            'total_students': len(student_reports)
+            'total_students': len(student_reports),
+            'summary': {
+                'average_progress': sum([sr['overall_progress'] for sr in student_reports]) / len(student_reports) if student_reports else 0,
+                'completed_students': len([sr for sr in student_reports if sr['enrollment']['status'] == 'completed']),
+                'active_students': len([sr for sr in student_reports if sr['enrollment']['status'] == 'active'])
+            }
         }
     
     @staticmethod
@@ -523,28 +743,6 @@ class TeacherService:
             "enrollment_trends": enrollment_trends,
             "lesson_engagement": lesson_engagement,
             "quiz_performance": quiz_performance
-        }
-
-    @staticmethod
-    def get_individual_student_progress(teacher_id: int, student_id: int, course_id: int) -> Dict[str, Any]:
-        user = User.query.get(teacher_id)
-        if not user or not user.is_teacher():
-            raise PermissionException("Only teachers can access this data")
-
-        course = Course.query.get(course_id)
-        if not course or course.teacher_id != teacher_id:
-            raise PermissionException("Access denied to this course")
-
-        student = User.query.get(student_id)
-        if not student:
-            raise NotFoundException("Student not found")
-
-        progress = TeacherService._calculate_student_progress(student_id, course_id)
-
-        return {
-            'student': student.to_dict(),
-            'course': course.to_dict(),
-            'progress': progress
         }
 
     @staticmethod

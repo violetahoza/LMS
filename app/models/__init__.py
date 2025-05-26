@@ -166,7 +166,7 @@ class Enrollment(db.Model):
     __table_args__ = (db.UniqueConstraint('student_id', 'course_id'),)
     
     def calculate_progress(self):
-        """Calculate overall course progress percentage - FIXED VERSION"""
+        """Calculate overall course progress percentage - ENHANCED VERSION"""
         course = self.course
         total_components = 0
         completed_components = 0
@@ -188,18 +188,20 @@ class Enrollment(db.Model):
         course_quizzes = course.quizzes.all()
         for quiz in course_quizzes:
             total_components += 1
+            
             best_attempt = QuizAttempt.query.filter_by(
                 student_id=self.student_id,
                 quiz_id=quiz.id,
                 status='completed'
             ).order_by(QuizAttempt.score.desc()).first()
             
-            if best_attempt and best_attempt.score >= quiz.passing_score:
+            if best_attempt and best_attempt.score is not None and best_attempt.score >= quiz.passing_score:
                 completed_components += 1
         
         course_assignments = course.assignments.all()
         for assignment in course_assignments:
             total_components += 1
+            
             submission = AssignmentSubmission.query.filter_by(
                 student_id=self.student_id,
                 assignment_id=assignment.id
@@ -209,10 +211,9 @@ class Enrollment(db.Model):
                 completed_components += 1
         
         if total_components == 0:
-            return 100.0
+            return 100.0  
         
         progress = (completed_components / total_components) * 100
-        
         return min(round(progress, 2), 100.0)
 
     def to_dict(self):

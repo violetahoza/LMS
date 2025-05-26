@@ -26,7 +26,6 @@
         </div>
     </div>
 
-    <!-- Quiz Overview Cards -->
     <div class="row g-4 mb-5" id="overviewCards">
         <div class="col-xl-3 col-md-6">
             <div class="card stats-card h-100">
@@ -77,7 +76,6 @@
         </div>
     </div>
 
-    <!-- Question Analytics -->
     <div class="row g-4 mb-5">
         <div class="col-12">
             <div class="card">
@@ -99,7 +97,6 @@
         </div>
     </div>
 
-    <!-- Student Performance -->
     <div class="row g-4">
         <div class="col-12">
             <div class="card">
@@ -122,7 +119,6 @@
     </div>
 </div>
 
-<!-- Edit Quiz Modal -->
 <div class="modal fade" id="editQuizModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -171,7 +167,6 @@
     </div>
 </div>
 
-<!-- Loading overlay -->
 <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
     <div class="d-flex align-items-center justify-content-center h-100">
         <div class="text-center text-white">
@@ -226,23 +221,36 @@ function updateDashboard(data) {
     const quiz = data.quiz || {};
     const stats = data.statistics || {};
     
-    // Update quiz title
     document.getElementById('quizTitle').textContent = `${quiz.title} - Analytics`;
     
-    // Update stats
     document.getElementById('totalAttempts').textContent = stats.total_attempts || 0;
     document.getElementById('averageScore').textContent = `${(stats.average_score || 0).toFixed(1)}%`;
     document.getElementById('passRate').textContent = `${(stats.pass_rate || 0).toFixed(1)}%`;
     document.getElementById('highestScore').textContent = `${(stats.highest_score || 0).toFixed(1)}%`;
+    
+    updateScoreIndicators(stats);
+}
+
+function updateScoreIndicators(stats) {
+    const avgScore = stats.average_score || 0;
+    const avgScoreElement = document.getElementById('averageScore');
+    
+    if (avgScore >= 80) {
+        avgScoreElement.parentElement.parentElement.className = 'card stats-card h-100 border-success';
+    } else if (avgScore >= 60) {
+        avgScoreElement.parentElement.parentElement.className = 'card stats-card h-100 border-warning';
+    } else {
+        avgScoreElement.parentElement.parentElement.className = 'card stats-card h-100 border-danger';
+    }
 }
 
 function formatQuestionType(type) {
-    switch (type) {
-        case 'multiple_choice': return 'Multiple Choice';
-        case 'true_false': return 'True/False';
-        case 'short_answer': return 'Short Answer';
-        default: return 'Unspecified';
-    }
+    const types = {
+        'multiple_choice': 'Multiple Choice',
+        'true_false': 'True/False',
+        'short_answer': 'Short Answer'
+    };
+    return types[type] || 'Unknown';
 }
 
 function updateQuestionAnalytics(questions) {
@@ -271,6 +279,8 @@ function updateQuestionAnalytics(questions) {
                 <th class="text-center">Answers</th>
                 <th class="text-center">Correct</th>
                 <th class="text-center">Accuracy</th>
+                <th class="text-center">Difficulty</th>
+                <th class="text-center">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -282,29 +292,89 @@ function updateQuestionAnalytics(questions) {
         const accuracy = questionData.accuracy_rate || 0;
         const totalAnswers = questionData.total_answers || 0;
         const correctAnswers = questionData.correct_answers || 0;
-       const qType = question.question_type || questionData.question_type || 'unknown';
-
         const accuracyClass = accuracy >= 80 ? 'text-success' : accuracy >= 60 ? 'text-warning' : 'text-danger';
         
+        let difficulty = 'Easy';
+        let difficultyClass = 'bg-success';
+        if (accuracy < 60) {
+            difficulty = 'Hard';
+            difficultyClass = 'bg-danger';
+        } else if (accuracy < 80) {
+            difficulty = 'Medium';
+            difficultyClass = 'bg-warning';
+        }
+
         content += `
-            <tr>
+            <tr data-question-id="${question.id}">
                 <td>
-                    <div class="fw-semibold">Q${index + 1}: ${question.question_text?.substring(0, 60) || 'Question'}${question.question_text?.length > 60 ? '...' : ''}</div>
+                    <div class="fw-semibold">Q${question.order_number || (index + 1)}: ${question.question_text?.substring(0, 60) || 'Question'}${question.question_text?.length > 60 ? '...' : ''}</div>
                     <small class="text-muted">${question.points || 10} points</small>
+                    ${questionData.answer_distribution ? `
+                        <br><button class="btn btn-sm btn-outline-info mt-1" onclick="showAnswerDistribution(${question.id}, '${question.question_text}', ${JSON.stringify(questionData.answer_distribution).replace(/"/g, '&quot;')})">
+                            <i class="fas fa-chart-pie me-1"></i>View Distribution
+                        </button>
+                    ` : ''}
                 </td>
                 <td class="text-center">
-                    <span class="badge bg-light text-dark">${formatQuestionType(qType)}</span>
+                    <span class="badge bg-light text-dark">${formatQuestionType(question.question_type)}</span>
                 </td>
-                <td class="text-center">${totalAnswers}</td>
-                <td class="text-center">${correctAnswers}</td>
+                <td class="text-center">
+                    <span class="fw-semibold">${totalAnswers}</span>
+                </td>
+                <td class="text-center">
+                    <span class="fw-semibold text-success">${correctAnswers}</span>
+                </td>
                 <td class="text-center">
                     <span class="fw-bold ${accuracyClass}">${accuracy.toFixed(1)}%</span>
+                    <div class="progress mt-1" style="height: 4px;">
+                        <div class="progress-bar ${accuracyClass.replace('text-', 'bg-')}" style="width: ${accuracy}%"></div>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <span class="badge ${difficultyClass}">${difficulty}</span>
+                </td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="editQuestion(${question.id})" title="Edit Question">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-info" onclick="viewQuestionDetails(${question.id})" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
     });
     
     content += '</tbody></table></div>';
+    
+    const avgAccuracy = questions.reduce((sum, q) => sum + (q.accuracy_rate || 0), 0) / questions.length;
+    const hardQuestions = questions.filter(q => (q.accuracy_rate || 0) < 60).length;
+    
+    content += `
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="text-center p-3 bg-light rounded">
+                    <div class="h5 mb-1">${avgAccuracy.toFixed(1)}%</div>
+                    <small class="text-muted">Average Accuracy</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center p-3 bg-light rounded">
+                    <div class="h5 mb-1">${hardQuestions}</div>
+                    <small class="text-muted">Difficult Questions</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center p-3 bg-light rounded">
+                    <div class="h5 mb-1">${questions.length}</div>
+                    <small class="text-muted">Total Questions</small>
+                </div>
+            </div>
+        </div>
+    `;
+    
     container.innerHTML = content;
 }
 
@@ -332,44 +402,176 @@ function updateStudentPerformance(students) {
                 <th class="text-center">Status</th>
                 <th class="text-center">Time Spent</th>
                 <th class="text-center">Completed</th>
+                <th class="text-center">Actions</th>
             </tr>
         </thead>
         <tbody>
     `;
     
-    students.forEach(studentData => {
+     students.forEach((studentData, index) => {
         const student = studentData.student || {};
         const attempt = studentData.attempt || {};
+        const breakdown = studentData.question_breakdown || [];
         
         const score = attempt.score || 0;
         const scoreClass = score >= 80 ? 'text-success' : score >= 60 ? 'text-warning' : 'text-danger';
         const passed = score >= (quizData?.quiz?.passing_score || 60);
-        const statusBadge = passed ? '<span class="badge bg-success">Passed</span>' : '<span class="badge bg-danger">Failed</span>';
+        const statusBadge = passed ? 
+            '<span class="badge bg-success"><i class="fas fa-trophy me-1"></i>Passed</span>' : 
+            '<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Failed</span>';
         
         const timeSpent = attempt.time_spent_minutes ? `${attempt.time_spent_minutes} min` : 'N/A';
-        const completedDate = attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleDateString() : 'N/A';
+        const completedDate = attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleString() : 'N/A';
+        
+        const correctAnswers = breakdown.filter(q => q.is_correct === true).length;
+        const totalQuestions = breakdown.length;
+        const accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions * 100) : 0;
         
         content += `
-            <tr>
+            <tr data-student-id="${student.id}">
                 <td>
-                    <div class="fw-semibold">${student.full_name || 'Unknown'}</div>
-                    <small class="text-muted">${student.email || ''}</small>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            ${student.full_name ? student.full_name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <div>
+                            <div class="fw-semibold">${student.full_name || 'Unknown'}</div>
+                            <small class="text-muted">${student.email || ''}</small>
+                        </div>
+                    </div>
                 </td>
                 <td class="text-center">
-                    <span class="fw-bold ${scoreClass}">${score.toFixed(1)}%</span>
+                    <div class="fw-bold ${scoreClass}">${score.toFixed(1)}%</div>
+                    <small class="text-muted">${correctAnswers}/${totalQuestions} correct</small>
+                    <div class="progress mt-1" style="height: 4px;">
+                        <div class="progress-bar ${scoreClass.replace('text-', 'bg-')}" style="width: ${score}%"></div>
+                    </div>
                 </td>
-                <td class="text-center">${attempt.attempt_number || 1}</td>
+                <td class="text-center">
+                    <span class="badge bg-info">#${attempt.attempt_number || 1}</span>
+                </td>
                 <td class="text-center">${statusBadge}</td>
-                <td class="text-center">${timeSpent}</td>
+                <td class="text-center">
+                    <span class="fw-semibold">${timeSpent}</span>
+                </td>
                 <td class="text-center">
                     <small class="text-muted">${completedDate}</small>
+                </td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="viewStudentDetails(${attempt.id})" title="View Detailed Results">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-info" onclick="viewStudentProgress(${student.id})" title="View Student Progress">
+                            <i class="fas fa-chart-line"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="sendMessageToStudent(${student.id}, '${student.full_name}', '${student.email}')" title="Send Message">
+                            <i class="fas fa-envelope"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
     });
     
     content += '</tbody></table></div>';
+    
+    const avgScore = students.reduce((sum, s) => sum + (s.attempt?.score || 0), 0) / students.length;
+    const passedStudents = students.filter(s => (s.attempt?.score || 0) >= (quizData?.quiz?.passing_score || 60)).length;
+    const passRate = (passedStudents / students.length * 100);
+    
+    content += `
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="text-center p-3 bg-light rounded">
+                    <div class="h5 mb-1">${students.length}</div>
+                    <small class="text-muted">Total Students</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center p-3 bg-light rounded">
+                    <div class="h5 mb-1">${avgScore.toFixed(1)}%</div>
+                    <small class="text-muted">Class Average</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center p-3 bg-light rounded">
+                    <div class="h5 mb-1">${passedStudents}</div>
+                    <small class="text-muted">Students Passed</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center p-3 bg-light rounded">
+                    <div class="h5 mb-1">${passRate.toFixed(1)}%</div>
+                    <small class="text-muted">Pass Rate</small>
+                </div>
+            </div>
+        </div>
+    `;
+    
     container.innerHTML = content;
+}
+
+function showAnswerDistribution(questionId, questionText, distribution) {
+    const modalHTML = `
+        <div class="modal fade" id="distributionModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Answer Distribution</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6 class="mb-3">${questionText}</h6>
+                        <div class="answer-distribution">
+                            ${Object.entries(distribution).map(([answer, count]) => `
+                                <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                    <span class="flex-grow-1">${answer}</span>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress me-2" style="width: 100px; height: 20px;">
+                                            <div class="progress-bar" style="width: ${(count / Object.values(distribution).reduce((a, b) => a + b, 0)) * 100}%"></div>
+                                        </div>
+                                        <span class="badge bg-primary">${count}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const existingModal = document.getElementById('distributionModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    new bootstrap.Modal(document.getElementById('distributionModal')).show();
+}
+
+function viewStudentDetails(attemptId) {
+    window.location.href = `/teacher/quiz/${attemptId}/results`;
+}
+
+function viewStudentProgress(studentId) {
+    const courseId = quizData?.quiz?.course_id;
+    if (courseId) {
+        window.location.href = `/teacher/student/${studentId}/progress?course=${courseId}`;
+    }
+}
+
+function sendMessageToStudent(studentId, studentName, studentEmail) {
+    console.log(`Send message to ${studentName} (${studentEmail})`);
+}
+
+function editQuestion(questionId) {
+    window.location.href = `/teacher/quiz/${quizId}/questions`;
+}
+
+function viewQuestionDetails(questionId) {
+    console.log(`View details for question ${questionId}`);
 }
 
 
@@ -381,7 +583,6 @@ function editQuiz() {
     
     const quiz = quizData.quiz;
     
-    // Populate the edit form
     document.getElementById('editQuizTitle').value = quiz.title || '';
     document.getElementById('editQuizDescription').value = quiz.description || '';
     document.getElementById('editQuizTotalPoints').value = quiz.total_points || 100;
@@ -389,7 +590,6 @@ function editQuiz() {
     document.getElementById('editQuizMaxAttempts').value = quiz.max_attempts || 3;
     document.getElementById('editQuizTimeLimit').value = quiz.time_limit_minutes || '';
     
-    // Show the modal
     new bootstrap.Modal(document.getElementById('editQuizModal')).show();
 }
 
@@ -417,7 +617,7 @@ async function saveQuizChanges() {
         if (response.ok) {
             showSuccess('Quiz updated successfully');
             bootstrap.Modal.getInstance(document.getElementById('editQuizModal')).hide();
-            loadQuizAnalytics(); // Reload data
+            loadQuizAnalytics(); 
         } else {
             const error = await response.json();
             showError(error.error || 'Failed to update quiz');
@@ -429,7 +629,6 @@ async function saveQuizChanges() {
 }
 
 function manageQuestions() {
-    // Redirect to the questions management page
     window.location.href = `/teacher/quiz/${quizId}/questions`;
 }
 
