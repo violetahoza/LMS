@@ -893,3 +893,12 @@ def verify_certificate_public(certificate_code):
                              certificate=None,
                              verified=False,
                              error='Error verifying certificate')
+    
+@bp.route('/teacher/grading')
+def teacher_quiz_grading():
+    """View pending quiz grading"""
+    if not session.get('access_token') or session.get('user_role') != 'teacher':
+        flash('Access denied. Teacher privileges required.', 'error')
+        return redirect(url_for('frontend.index'))
+
+    return render_template('teacher/quiz_grading.html')
