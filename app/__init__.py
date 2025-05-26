@@ -39,7 +39,7 @@ def create_app(config_name=None):
 def register_blueprints(app):
     """Register all blueprints"""
     try:
-        from app.routes import auth, courses, lessons, quizzes, assignments, admin, student, teacher, messages, notifications, quiz_grading, certificates
+        from app.routes import auth, courses, lessons, quizzes, assignments, admin, student, teacher, messages, notifications, certificates
         
         app.register_blueprint(auth.bp)
         app.register_blueprint(courses.bp)
@@ -51,7 +51,6 @@ def register_blueprints(app):
         app.register_blueprint(teacher.bp)
         app.register_blueprint(messages.bp)
         app.register_blueprint(notifications.bp)
-        app.register_blueprint(quiz_grading.bp)
         app.register_blueprint(certificates.bp)
 
         print("✅ All blueprints registered successfully")

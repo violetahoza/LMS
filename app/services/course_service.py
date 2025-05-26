@@ -201,9 +201,12 @@ class CourseService:
         if existing_enrollment:
             if existing_enrollment.status == 'active':
                 raise ValidationException("Already enrolled in this course")
+            elif existing_enrollment.status == 'completed':
+                raise ValidationException("You have already completed this course")
             elif existing_enrollment.status == 'dropped':
                 existing_enrollment.status = 'active'
                 existing_enrollment.enrolled_at = datetime.utcnow()
+                existing_enrollment.progress_percentage = 0.0  # Reset progress
                 db.session.commit()
                 
                 # Notify teacher about re-enrollment
@@ -260,13 +263,28 @@ class CourseService:
     @staticmethod
     def get_enrolled_courses(student_id: int, page: int = 1, per_page: int = 20, 
                         status: str = 'active') -> Dict[str, Any]:
-        """Get courses the student is enrolled in"""
+        """Get courses the student is enrolled in - FIXED"""
         user = User.query.get(student_id)
         if not user or not user.is_student():
             raise ValidationException("Only students can access enrolled courses")
         
         query = Enrollment.query.filter_by(student_id=student_id)
         
+        # Update enrollment progress before filtering
+        all_enrollments = query.all()
+        for enrollment in all_enrollments:
+            current_progress = enrollment.calculate_progress()
+            if enrollment.progress_percentage != current_progress:
+                enrollment.progress_percentage = current_progress
+                
+                # Auto-complete course if progress is 100%
+                if current_progress >= 100 and enrollment.status == 'active':
+                    enrollment.status = 'completed'
+                    enrollment.completed_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        # Now apply filters
         if status == 'active':
             query = query.filter_by(status='active')
         elif status == 'completed':

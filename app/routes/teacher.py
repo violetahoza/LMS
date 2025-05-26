@@ -85,6 +85,15 @@ def get_pending_submissions():
         teacher_id
     )
 
+@bp.route('/submissions/all', methods=['GET'])
+@teacher_required()
+def get_all_submissions():
+    teacher_id = int(get_jwt_identity())
+    return BaseController.handle_request(
+        TeacherService.get_all_submissions,
+        teacher_id
+    )
+
 @bp.route('/quiz/<int:quiz_id>/analytics', methods=['GET'])
 @teacher_required()
 def get_quiz_analytics(quiz_id):

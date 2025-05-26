@@ -1,6 +1,6 @@
 from typing import Dict, Any, List, Optional
 from datetime import datetime
-from app.models import db, User, Notification, NotificationType, NotificationPriority
+from app.models import Quiz, db, User, Notification, NotificationType, NotificationPriority
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from sqlalchemy import desc, or_
 
@@ -319,3 +319,41 @@ class NotificationService:
             action_url="/student/achievements",
             priority=NotificationPriority.HIGH
         )
+    
+    @staticmethod
+    def notify_assignment_returned(student_id, teacher_id, assignment_id, feedback):
+        from app.models import Notification, NotificationType, NotificationPriority
+
+        assignment = Assignment.query.get(assignment_id)
+        if not assignment:
+            return
+
+        message = f"Your submission for '{assignment.title}' was returned for revision."
+        NotificationService._send_notification(
+            recipient_id=student_id,
+            sender_id=teacher_id,
+            type=NotificationType.ASSIGNMENT_GRADED,
+            priority=NotificationPriority.NORMAL,
+            title="Assignment Returned",
+            message=message,
+            related_id=assignment_id
+        )
+
+    @staticmethod
+    def notify_quiz_graded(student_id, teacher_id, quiz_id, score):
+        from app.models import Notification, NotificationType, NotificationPriority
+        quiz = Quiz.query.get(quiz_id)
+        if not quiz:
+            return
+
+        message = f"Your quiz '{quiz.title}' has been graded. Score: {score:.1f}."
+        NotificationService._send_notification(
+            recipient_id=student_id,
+            sender_id=teacher_id,
+            type=NotificationType.QUIZ_GRADED,
+            priority=NotificationPriority.NORMAL,
+            title="Quiz Graded",
+            message=message,
+            related_id=quiz_id
+        )
+

@@ -571,3 +571,30 @@ class TeacherService:
         output.close()
         
         return csv_content
+    
+    @staticmethod
+    def get_all_submissions(teacher_id: int) -> Dict[str, Any]:
+        """Get all submissions (not just pending)"""
+        user = User.query.get(teacher_id)
+        if not user or not user.is_teacher():
+            raise PermissionException("Only teachers can access submissions")
+
+        courses = user.taught_courses.all()
+        all_submissions = []
+
+        for course in courses:
+            for assignment in course.assignments:
+                submissions = assignment.submissions.all() 
+                for submission in submissions:
+                    submission_data = submission.to_dict()
+                    submission_data['student'] = submission.student.to_dict()
+                    submission_data['assignment'] = assignment.to_dict()
+                    submission_data['course'] = course.to_dict()
+                    all_submissions.append(submission_data)
+
+        all_submissions.sort(key=lambda x: x['submitted_at'], reverse=True)
+
+        return {
+            'submissions': all_submissions,
+            'total': len(all_submissions)
+        }

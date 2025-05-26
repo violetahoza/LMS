@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function loadPendingSubmissions() {
     try {
-        const response = await fetch('/api/teacher/submissions/pending', {
+        const response = await fetch('/api/teacher/submissions/all', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer {{ session.access_token }}`,

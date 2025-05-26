@@ -364,6 +364,13 @@ class AssignmentService:
         submission.graded_by = teacher_id
         
         db.session.commit()
+
+        NotificationService.notify_assignment_returned(
+            submission.student_id,
+            teacher_id,
+            submission.assignment_id,
+            feedback
+        )
         
         return {
             'message': 'Assignment returned to student',

@@ -199,7 +199,7 @@ async function loadCourses() {
     try {
         showLoading();
         
-        const response = await fetch('/api/courses/enrolled', {
+        const response = await fetch('/api/courses/enrolled?status=all', {
             headers: {
                 'Authorization': `Bearer {{ session.access_token }}`,
                 'Content-Type': 'application/json'
@@ -546,25 +546,32 @@ async function confirmDropCourse() {
 
 async function requestCertificate(courseId) {
     try {
-        const response = await fetch(`/api/student/certificates/request/${courseId}`, {
+        const response = await fetch(`/api/certificates/request/${courseId}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer {{ session.access_token }}`,
                 'Content-Type': 'application/json'
             }
         });
-        
+
+        const contentType = response.headers.get("content-type");
+        const data = contentType?.includes("application/json") ? await response.json() : {};
+
         if (response.ok) {
-            showSuccess('Certificate generated successfully!');
+            if (data.message?.toLowerCase().includes('already exists')) {
+                showSuccess('You already have a certificate for this course!');
+            } else {
+                showSuccess(data.message || 'Certificate request submitted successfully!');
+            }
         } else {
-            const error = await response.json();
-            showError(error.error || 'Failed to generate certificate');
+            showError(data.error || 'Failed to request certificate');
         }
     } catch (error) {
         console.error('Error requesting certificate:', error);
         showError('Error requesting certificate');
     }
 }
+
 
 function showLoading() {
     document.getElementById('loadingOverlay').classList.remove('d-none');

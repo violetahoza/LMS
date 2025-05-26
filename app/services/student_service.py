@@ -28,7 +28,29 @@ class StudentService:
         
         total_progress = 0
         if active_enrollments:
-            total_progress = sum(e.progress_percentage for e in active_enrollments) / len(active_enrollments)
+            for enrollment in active_enrollments:
+                current_progress = enrollment.calculate_progress()
+                if enrollment.progress_percentage != current_progress:
+                    enrollment.progress_percentage = current_progress
+                    
+                    if current_progress >= 100:
+                        enrollment.status = 'completed'
+                        enrollment.completed_at = datetime.utcnow()
+            
+            db.session.commit()
+            
+            active_enrollments = Enrollment.query.filter_by(
+                student_id=student_id,
+                status='active'
+            ).all()
+            
+            completed_enrollments = Enrollment.query.filter_by(
+                student_id=student_id,
+                status='completed'
+            ).all()
+            
+            if active_enrollments:
+                total_progress = sum(e.progress_percentage for e in active_enrollments) / len(active_enrollments)
         
         recent_lessons = LessonProgress.query.filter_by(
             student_id=student_id
@@ -86,10 +108,16 @@ class StudentService:
         for enrollment in enrollments:
             course = enrollment.course
             
+            current_progress = enrollment.calculate_progress()
+            if enrollment.progress_percentage != current_progress:
+                enrollment.progress_percentage = current_progress
+                
+                if current_progress >= 100 and enrollment.status != 'completed':
+                    enrollment.status = 'completed'
+                    enrollment.completed_at = datetime.utcnow()
+            
             lesson_progress = StudentService._get_lesson_progress(student_id, course.id)
-            
             quiz_progress = StudentService._get_quiz_progress(student_id, course)
-            
             assignment_progress = StudentService._get_assignment_progress(student_id, course)
             
             progress_data.append({
@@ -99,6 +127,8 @@ class StudentService:
                 'quiz_progress': quiz_progress,
                 'assignment_progress': assignment_progress
             })
+        
+        db.session.commit()
         
         return {
             'courses': progress_data,
@@ -136,10 +166,29 @@ class StudentService:
     
     @staticmethod
     def request_certificate(student_id: int, course_id: int) -> Dict[str, Any]:
-        """Request certificate for completed course"""
+        """Request certificate for completed course - FIXED LOGIC"""
         user = User.query.get(student_id)
         if not user or not user.is_student():
             raise PermissionException("Only students can request certificates")
+        
+        enrollment = Enrollment.query.filter_by(
+            student_id=student_id,
+            course_id=course_id
+        ).first()
+        
+        if not enrollment:
+            raise NotFoundException("You are not enrolled in this course")
+        
+        current_progress = enrollment.calculate_progress()
+        enrollment.progress_percentage = current_progress
+        
+        if current_progress >= 100 and enrollment.status != 'completed':
+            enrollment.status = 'completed'
+            enrollment.completed_at = datetime.utcnow()
+            db.session.commit()
+        
+        if enrollment.status != 'completed':
+            raise ValidationException(f"Course must be completed to request certificate. Current progress: {current_progress:.1f}%")
         
         existing_cert = Certificate.query.filter_by(
             student_id=student_id,
@@ -186,7 +235,6 @@ class StudentService:
         sorted_dates = sorted(dates_with_activity, reverse=True)
         
         current_streak = StudentService._calculate_current_streak(sorted_dates)
-        
         longest_streak = StudentService._calculate_longest_streak(sorted_dates)
         
         return {
@@ -261,7 +309,7 @@ class StudentService:
             Enrollment, Assignment.course_id == Enrollment.course_id
         ).filter(
             Enrollment.student_id == student_id,
-            Enrollment.status == 'active',
+            Enrollment.status.in_(['active', 'completed']),  
             Assignment.due_date <= week_from_now,
             Assignment.due_date >= datetime.utcnow()
         ).order_by(Assignment.due_date).all()
@@ -332,7 +380,7 @@ class StudentService:
                 student_id=student_id,
                 quiz_id=quiz.id,
                 status='completed'
-            ).order_by(desc(QuizAttempt.score)).first()
+            ).order_by(QuizAttempt.score.desc()).first()
             
             quiz_progress.append({
                 'quiz_id': quiz.id,

@@ -769,4 +769,56 @@ class QuizService:
 
         return result
 
+    @staticmethod
+    def grade_attempt(teacher_id: int, attempt_id: int, short_answer_grades: dict) -> dict:
+        attempt = QuizAttempt.query.get(attempt_id)
+        if not attempt:
+            raise NotFoundException("Quiz attempt not found")
+
+        quiz = Quiz.query.get(attempt.quiz_id)
+        if not quiz:
+            raise NotFoundException("Quiz not found")
+
+        course = quiz.course
+        if not course or course.teacher_id != teacher_id:
+            raise PermissionException("Access denied")
+
+        score = 0.0
+        for answer in attempt.student_answers:
+            question = Question.query.get(answer.question_id)
+            if not question:
+                continue
+
+            if question.question_type in ['multiple_choice', 'true_false']:
+                if answer.is_correct:
+                    score += answer.points_earned or 0
+            elif question.question_type == 'short_answer':
+                if str(answer.id) in short_answer_grades:
+                    is_correct = bool(short_answer_grades[str(answer.id)])
+                    if is_correct:
+                        awarded_points = question.points  
+                        answer.is_correct = True
+                    else:
+                        awarded_points = 0.0
+                        answer.is_correct = False
+
+                    answer.points_earned = awarded_points
+                    score += awarded_points
+
+        attempt.score = round(score, 2)
+        attempt.status = 'completed'
+        attempt.submitted_at = datetime.utcnow()
+        db.session.commit()
+
+        NotificationService.notify_quiz_graded(
+            student_id=attempt.student_id,
+            teacher_id=teacher_id,
+            quiz_id=quiz.id,
+            score=attempt.score
+        )
+
+        return {
+            'message': 'Quiz graded successfully',
+            'attempt': attempt.to_dict()
+        }
 

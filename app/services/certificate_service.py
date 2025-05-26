@@ -24,13 +24,62 @@ class CertificateService:
         return certificates_data
     
     @staticmethod
+    def generate_certificate(student_id: int, course_id: int) -> Certificate:
+        """Generate a certificate directly for a student (used by student service)"""
+        student = User.query.get(student_id)
+        if not student or not student.is_student():
+            raise ValidationException("Invalid student")
+        
+        course = Course.query.get(course_id)
+        if not course:
+            raise NotFoundException("Course not found")
+        
+        enrollment = Enrollment.query.filter_by(
+            student_id=student_id,
+            course_id=course_id
+        ).first()
+        
+        if not enrollment:
+            raise ValidationException("Student is not enrolled in this course")
+        
+        current_progress = enrollment.calculate_progress()
+        enrollment.progress_percentage = current_progress
+        
+        if current_progress >= 100 and enrollment.status != 'completed':
+            enrollment.status = 'completed'
+            enrollment.completed_at = datetime.utcnow()
+        
+        if enrollment.status != 'completed':
+            raise ValidationException("Student has not completed this course")
+        
+        existing_cert = Certificate.query.filter_by(
+            student_id=student_id,
+            course_id=course_id
+        ).first()
+        
+        if existing_cert:
+            return existing_cert
+        
+        certificate_code = generate_certificate_code()
+        
+        certificate = Certificate(
+            student_id=student_id,
+            course_id=course_id,
+            certificate_code=certificate_code
+        )
+        
+        db.session.add(certificate)
+        db.session.commit()
+        
+        return certificate
+    
+    @staticmethod
     def get_pending_certificates(admin_id: int) -> Dict[str, Any]:
         """Get students eligible for certificates (admin only)"""
         user = User.query.get(admin_id)
         if not user or not user.is_admin():
             raise PermissionException("Only admins can access pending certificates")
         
-        # Get completed enrollments without certificates
         completed_enrollments = db.session.query(Enrollment).filter(
             Enrollment.status == 'completed',
             ~Enrollment.student_id.in_(
@@ -42,7 +91,6 @@ class CertificateService:
         
         pending_certs = []
         for enrollment in completed_enrollments:
-            # Check if there's already a pending request
             existing_request = CertificateRequest.query.filter_by(
                 student_id=enrollment.student_id,
                 course_id=enrollment.course_id,
@@ -81,7 +129,6 @@ class CertificateService:
         if not course:
             raise NotFoundException("Course not found")
         
-        # Check if student completed the course
         enrollment = Enrollment.query.filter_by(
             student_id=student_id,
             course_id=course_id,
@@ -91,7 +138,6 @@ class CertificateService:
         if not enrollment:
             raise ValidationException("Student has not completed this course")
         
-        # Check if certificate already exists
         existing_cert = Certificate.query.filter_by(
             student_id=student_id,
             course_id=course_id
@@ -100,7 +146,6 @@ class CertificateService:
         if existing_cert:
             raise ValidationException("Certificate already exists for this student and course")
         
-        # Generate certificate
         certificate_code = generate_certificate_code()
         
         certificate = Certificate(
@@ -111,7 +156,6 @@ class CertificateService:
         
         db.session.add(certificate)
         
-        # Update any pending request to approved
         pending_request = CertificateRequest.query.filter_by(
             student_id=student_id,
             course_id=course_id,
@@ -211,7 +255,6 @@ class CertificateService:
         if not course:
             raise NotFoundException("Course not found")
         
-        # Check if student completed the course
         enrollment = Enrollment.query.filter_by(
             student_id=student_id,
             course_id=course_id,
@@ -221,7 +264,6 @@ class CertificateService:
         if not enrollment:
             raise ValidationException("Course must be completed to request certificate")
         
-        # Check if certificate already exists
         existing_cert = Certificate.query.filter_by(
             student_id=student_id,
             course_id=course_id
@@ -233,7 +275,6 @@ class CertificateService:
                 'certificate': existing_cert.to_dict()
             }
         
-        # Check if request already exists
         existing_request = CertificateRequest.query.filter_by(
             student_id=student_id,
             course_id=course_id
@@ -246,7 +287,6 @@ class CertificateService:
                     'request': existing_request.to_dict()
                 }
             elif existing_request.status == 'rejected':
-                # Allow resubmission if previously rejected
                 existing_request.status = 'pending'
                 existing_request.requested_at = datetime.utcnow()
                 existing_request.reviewed_by = None
@@ -259,7 +299,6 @@ class CertificateService:
                     'request': existing_request.to_dict()
                 }
         
-        # Create new request
         cert_request = CertificateRequest(
             student_id=student_id,
             course_id=course_id
@@ -280,10 +319,8 @@ class CertificateService:
         if not user or not user.is_admin():
             raise PermissionException("Only admins can access certificate requests")
         
-        # Get pending requests
         pending_requests = CertificateRequest.query.filter_by(status='pending').all()
         
-        # Get recent reviewed requests (last 30 days)
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
         recent_reviewed = CertificateRequest.query.filter(
             CertificateRequest.status.in_(['approved', 'rejected']),
@@ -311,7 +348,6 @@ class CertificateService:
         if cert_request.status != 'pending':
             raise ValidationException("Only pending requests can be approved")
         
-        # Issue the certificate
         certificate = CertificateService.issue_certificate(
             admin_id=admin_id,
             student_id=cert_request.student_id,
