@@ -312,7 +312,8 @@ class QuizAttempt(db.Model):
     submitted_at = db.Column(db.DateTime)
     time_spent_minutes = db.Column(db.Integer)
     status = db.Column(db.Enum('in_progress', 'completed', 'abandoned'), default='in_progress')
-    
+    graded_at = db.Column(db.DateTime, nullable=True)
+
     student_answers = db.relationship('StudentAnswer', backref='attempt', lazy='dynamic', cascade='all, delete-orphan')
     
     def to_dict(self):

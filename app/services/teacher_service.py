@@ -598,3 +598,4 @@ class TeacherService:
             'submissions': all_submissions,
             'total': len(all_submissions)
         }
+
