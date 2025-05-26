@@ -121,3 +121,4 @@ def reject_certificate_request(request_id):
         reason,
         success_message="Certificate request rejected"
     )
+

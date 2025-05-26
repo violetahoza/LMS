@@ -451,3 +451,4 @@ class CertificateService:
             'message': 'Certificate request rejected',
             'request': cert_request.to_dict()
         }
+    

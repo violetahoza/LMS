@@ -196,3 +196,4 @@ def get_course_students(course_id):
         user_id,
         course_id
     )
+

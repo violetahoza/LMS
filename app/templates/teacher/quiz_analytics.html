@@ -96,27 +96,6 @@
             </div>
         </div>
     </div>
-
-    <div class="row g-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-users me-2 text-info"></i>Student Performance
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div id="studentPerformanceContainer">
-                        <div class="text-center py-4">
-                            <div class="spinner-border text-info" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <div class="modal fade" id="editQuizModal" tabindex="-1">
@@ -205,7 +184,6 @@ async function loadQuizAnalytics() {
             quizData = data.data || data;
             updateDashboard(quizData);
             updateQuestionAnalytics(quizData.question_statistics || []);
-            updateStudentPerformance(quizData.student_performance || []);
         } else {
             showError('Failed to load quiz analytics');
         }
@@ -378,140 +356,6 @@ function updateQuestionAnalytics(questions) {
     container.innerHTML = content;
 }
 
-function updateStudentPerformance(students) {
-    const container = document.getElementById('studentPerformanceContainer');
-    
-    if (students.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-4">
-                <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                <h6 class="text-muted">No attempts yet</h6>
-                <p class="text-muted">Students haven't taken this quiz yet</p>
-            </div>
-        `;
-        return;
-    }
-    
-    let content = '<div class="table-responsive"><table class="table table-hover">';
-    content += `
-        <thead>
-            <tr>
-                <th>Student</th>
-                <th class="text-center">Score</th>
-                <th class="text-center">Attempts</th>
-                <th class="text-center">Status</th>
-                <th class="text-center">Time Spent</th>
-                <th class="text-center">Completed</th>
-                <th class="text-center">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-    `;
-    
-     students.forEach((studentData, index) => {
-        const student = studentData.student || {};
-        const attempt = studentData.attempt || {};
-        const breakdown = studentData.question_breakdown || [];
-        
-        const score = attempt.score || 0;
-        const scoreClass = score >= 80 ? 'text-success' : score >= 60 ? 'text-warning' : 'text-danger';
-        const passed = score >= (quizData?.quiz?.passing_score || 60);
-        const statusBadge = passed ? 
-            '<span class="badge bg-success"><i class="fas fa-trophy me-1"></i>Passed</span>' : 
-            '<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Failed</span>';
-        
-        const timeSpent = attempt.time_spent_minutes ? `${attempt.time_spent_minutes} min` : 'N/A';
-        const completedDate = attempt.submitted_at ? new Date(attempt.submitted_at).toLocaleString() : 'N/A';
-        
-        const correctAnswers = breakdown.filter(q => q.is_correct === true).length;
-        const totalQuestions = breakdown.length;
-        const accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions * 100) : 0;
-        
-        content += `
-            <tr data-student-id="${student.id}">
-                <td>
-                    <div class="d-flex align-items-center">
-                        <div class="avatar bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                            ${student.full_name ? student.full_name.charAt(0).toUpperCase() : 'U'}
-                        </div>
-                        <div>
-                            <div class="fw-semibold">${student.full_name || 'Unknown'}</div>
-                            <small class="text-muted">${student.email || ''}</small>
-                        </div>
-                    </div>
-                </td>
-                <td class="text-center">
-                    <div class="fw-bold ${scoreClass}">${score.toFixed(1)}%</div>
-                    <small class="text-muted">${correctAnswers}/${totalQuestions} correct</small>
-                    <div class="progress mt-1" style="height: 4px;">
-                        <div class="progress-bar ${scoreClass.replace('text-', 'bg-')}" style="width: ${score}%"></div>
-                    </div>
-                </td>
-                <td class="text-center">
-                    <span class="badge bg-info">#${attempt.attempt_number || 1}</span>
-                </td>
-                <td class="text-center">${statusBadge}</td>
-                <td class="text-center">
-                    <span class="fw-semibold">${timeSpent}</span>
-                </td>
-                <td class="text-center">
-                    <small class="text-muted">${completedDate}</small>
-                </td>
-                <td class="text-center">
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" onclick="viewStudentDetails(${attempt.id})" title="View Detailed Results">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-outline-info" onclick="viewStudentProgress(${student.id})" title="View Student Progress">
-                            <i class="fas fa-chart-line"></i>
-                        </button>
-                        <button class="btn btn-outline-secondary" onclick="sendMessageToStudent(${student.id}, '${student.full_name}', '${student.email}')" title="Send Message">
-                            <i class="fas fa-envelope"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    });
-    
-    content += '</tbody></table></div>';
-    
-    const avgScore = students.reduce((sum, s) => sum + (s.attempt?.score || 0), 0) / students.length;
-    const passedStudents = students.filter(s => (s.attempt?.score || 0) >= (quizData?.quiz?.passing_score || 60)).length;
-    const passRate = (passedStudents / students.length * 100);
-    
-    content += `
-        <div class="row mt-4">
-            <div class="col-md-3">
-                <div class="text-center p-3 bg-light rounded">
-                    <div class="h5 mb-1">${students.length}</div>
-                    <small class="text-muted">Total Students</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="text-center p-3 bg-light rounded">
-                    <div class="h5 mb-1">${avgScore.toFixed(1)}%</div>
-                    <small class="text-muted">Class Average</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="text-center p-3 bg-light rounded">
-                    <div class="h5 mb-1">${passedStudents}</div>
-                    <small class="text-muted">Students Passed</small>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="text-center p-3 bg-light rounded">
-                    <div class="h5 mb-1">${passRate.toFixed(1)}%</div>
-                    <small class="text-muted">Pass Rate</small>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    container.innerHTML = content;
-}
-
 function showAnswerDistribution(questionId, questionText, distribution) {
     const modalHTML = `
         <div class="modal fade" id="distributionModal" tabindex="-1">
@@ -549,21 +393,6 @@ function showAnswerDistribution(questionId, questionText, distribution) {
     
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     new bootstrap.Modal(document.getElementById('distributionModal')).show();
-}
-
-function viewStudentDetails(attemptId) {
-    window.location.href = `/teacher/quiz/${attemptId}/results`;
-}
-
-function viewStudentProgress(studentId) {
-    const courseId = quizData?.quiz?.course_id;
-    if (courseId) {
-        window.location.href = `/teacher/student/${studentId}/progress?course=${courseId}`;
-    }
-}
-
-function sendMessageToStudent(studentId, studentName, studentEmail) {
-    console.log(`Send message to ${studentName} (${studentEmail})`);
 }
 
 function editQuestion(questionId) {
