@@ -1,12 +1,10 @@
 import os
 import random
 import string
-from datetime import datetime, timedelta
+from datetime import datetime
 import hashlib
 from flask import current_app
 import logging
-from typing import Dict, Any, List
-from sqlalchemy import func
 
 logger = logging.getLogger(__name__)
 
@@ -17,14 +15,14 @@ def generate_random_string(length=10):
 
 def generate_certificate_code():
     """Generate a unique certificate code"""
-    timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     random_part = generate_random_string(6)
     return f"CERT-{timestamp}-{random_part}"
 
 def calculate_time_spent(start_time, end_time=None):
     """Calculate time spent in minutes"""
     if end_time is None:
-        end_time = datetime.utcnow()
+        end_time = datetime.now()
     
     if isinstance(start_time, str):
         start_time = datetime.fromisoformat(start_time)
@@ -231,6 +229,6 @@ def hash_file(filepath):
 
 def generate_certificate_code() -> str:
     """Generate a unique certificate code"""
-    year = datetime.utcnow().year
+    year = datetime.now().year
     random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
     return f"CERT-{year}-{random_part}"

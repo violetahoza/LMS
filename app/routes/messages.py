@@ -28,7 +28,7 @@ def send_message():
 def get_messages():
     """Get messages for current user"""
     user_id = int(get_jwt_identity())
-    message_type = request.args.get('type', 'received')  # received, sent, all
+    message_type = request.args.get('type', 'received')  
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     
@@ -139,9 +139,9 @@ def search_users():
                 User.username.ilike(f'%{query}%')
             ),
             or_(
-                User.id.in_(enrolled_student_ids),  # Students in their courses
-                User.role == UserRole.TEACHER,      # Other teachers
-                User.role == UserRole.ADMIN         # Admins
+                User.id.in_(enrolled_student_ids), 
+                User.role == UserRole.TEACHER,     
+                User.role == UserRole.ADMIN      
             )
         ).limit(limit)
     
@@ -167,8 +167,8 @@ def search_users():
                 User.username.ilike(f'%{query}%')
             ),
             or_(
-                User.id.in_(teacher_ids),           # Teachers of their courses
-                User.role == UserRole.ADMIN         # Admins
+                User.id.in_(teacher_ids),           
+                User.role == UserRole.ADMIN       
             )
         ).limit(limit)
     

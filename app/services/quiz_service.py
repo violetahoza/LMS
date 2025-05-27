@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from datetime import datetime
+from typing import Dict, Any
 from app.models import db, Quiz, QuizAttempt, Question, AnswerOption, StudentAnswer, User, Course, Enrollment
 from app.services.achievement_service import AchievementService
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any
 from sqlalchemy import or_, desc
 from app.models import db, User, Message, Course, Enrollment
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException

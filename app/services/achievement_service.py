@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Dict, Any, List
 from app.models import db, User, Achievement, StudentAchievement, QuizAttempt, Enrollment, LessonProgress
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
@@ -149,18 +148,15 @@ class AchievementService:
         """Check and award participation achievements"""
         achievements_earned = []
         
-        # Participation achievements (based on lesson views)
         participation_achievements = Achievement.query.filter_by(
             criteria_type='participation'
         ).all()
         
-        # Get lesson participation count
         lesson_count = LessonProgress.query.filter_by(
             student_id=student_id
         ).count()
         
         for achievement in participation_achievements:
-            # Check if already earned
             existing = StudentAchievement.query.filter_by(
                 student_id=student_id,
                 achievement_id=achievement.id
@@ -273,7 +269,6 @@ class AchievementService:
         if not achievement:
             raise NotFoundException("Achievement not found")
         
-        # Check if already awarded
         existing = StudentAchievement.query.filter_by(
             student_id=student_id,
             achievement_id=achievement_id

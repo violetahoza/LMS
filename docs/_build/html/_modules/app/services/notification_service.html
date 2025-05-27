@@ -1,0 +1,642 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.services.notification_service &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.services.notification_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.services.notification_service</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Assignment</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">Notification</span><span class="p">,</span> <span class="n">NotificationType</span><span class="p">,</span> <span class="n">NotificationPriority</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.base_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">PermissionException</span><span class="p">,</span> <span class="n">NotFoundException</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">desc</span>
+
+<div class="viewcode-block" id="NotificationService">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NotificationService</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Service for managing notifications&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="NotificationService.create_notification">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.create_notification">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_notification</span><span class="p">(</span>
+        <span class="n">recipient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">notification_type</span><span class="p">:</span> <span class="n">NotificationType</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">sender_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">priority</span><span class="p">:</span> <span class="n">NotificationPriority</span> <span class="o">=</span> <span class="n">NotificationPriority</span><span class="o">.</span><span class="n">NORMAL</span><span class="p">,</span>
+        <span class="n">action_url</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">related_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Notification</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new notification&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">priority</span><span class="p">,</span> <span class="n">NotificationPriority</span><span class="p">):</span>
+            <span class="n">priority_value</span> <span class="o">=</span> <span class="n">priority</span><span class="o">.</span><span class="n">value</span>  
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">priority_value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">priority</span><span class="p">)</span>
+
+        <span class="n">notification</span> <span class="o">=</span> <span class="n">Notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">recipient_id</span><span class="p">,</span>
+            <span class="n">sender_id</span><span class="o">=</span><span class="n">sender_id</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="n">notification_type</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="n">priority</span><span class="o">=</span><span class="n">priority_value</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="n">action_url</span><span class="p">,</span>
+            <span class="n">related_id</span><span class="o">=</span><span class="n">related_id</span>
+        <span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">notification</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">notification</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.get_user_notifications">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.get_user_notifications">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_user_notifications</span><span class="p">(</span>
+        <span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> 
+        <span class="n">page</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> 
+        <span class="n">per_page</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+        <span class="n">unread_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get notifications for a user&quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">Notification</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">recipient_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">unread_only</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">is_read</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">Notification</span><span class="o">.</span><span class="n">created_at</span><span class="p">))</span>
+        
+        <span class="n">pagination</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span>
+            <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+            <span class="n">per_page</span><span class="o">=</span><span class="n">per_page</span><span class="p">,</span>
+            <span class="n">error_out</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        
+        <span class="n">notifications</span> <span class="o">=</span> <span class="p">[</span><span class="n">notification</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">notification</span> <span class="ow">in</span> <span class="n">pagination</span><span class="o">.</span><span class="n">items</span><span class="p">]</span>
+        <span class="n">unread_count</span> <span class="o">=</span> <span class="n">Notification</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span>
+            <span class="n">is_read</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;notifications&#39;</span><span class="p">:</span> <span class="n">notifications</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="n">pagination</span><span class="o">.</span><span class="n">total</span><span class="p">,</span>
+            <span class="s1">&#39;page&#39;</span><span class="p">:</span> <span class="n">page</span><span class="p">,</span>
+            <span class="s1">&#39;per_page&#39;</span><span class="p">:</span> <span class="n">per_page</span><span class="p">,</span>
+            <span class="s1">&#39;pages&#39;</span><span class="p">:</span> <span class="n">pagination</span><span class="o">.</span><span class="n">pages</span><span class="p">,</span>
+            <span class="s1">&#39;unread_count&#39;</span><span class="p">:</span> <span class="n">unread_count</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.mark_as_read">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.mark_as_read">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mark_as_read</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">notification_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mark a notification as read&quot;&quot;&quot;</span>
+        <span class="n">notification</span> <span class="o">=</span> <span class="n">Notification</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">notification_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">notification</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Notification not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">notification</span><span class="o">.</span><span class="n">recipient_id</span> <span class="o">!=</span> <span class="n">user_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">notification</span><span class="o">.</span><span class="n">mark_as_read</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Notification marked as read&#39;</span><span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.mark_all_as_read">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.mark_all_as_read">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mark_all_as_read</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mark all notifications as read for a user&quot;&quot;&quot;</span>
+        <span class="n">notifications</span> <span class="o">=</span> <span class="n">Notification</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span>
+            <span class="n">is_read</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">notification</span> <span class="ow">in</span> <span class="n">notifications</span><span class="p">:</span>
+            <span class="n">notification</span><span class="o">.</span><span class="n">mark_as_read</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">notifications</span><span class="p">)</span><span class="si">}</span><span class="s1"> notifications marked as read&#39;</span><span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.delete_notification">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.delete_notification">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_notification</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">notification_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete a notification&quot;&quot;&quot;</span>
+        <span class="n">notification</span> <span class="o">=</span> <span class="n">Notification</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">notification_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">notification</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Notification not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">notification</span><span class="o">.</span><span class="n">recipient_id</span> <span class="o">!=</span> <span class="n">user_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">notification</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Notification deleted&#39;</span><span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.bulk_delete_notifications">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.bulk_delete_notifications">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bulk_delete_notifications</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">notification_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete multiple notifications&quot;&quot;&quot;</span>
+        <span class="n">notifications</span> <span class="o">=</span> <span class="n">Notification</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Notification</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">notification_ids</span><span class="p">),</span>
+            <span class="n">Notification</span><span class="o">.</span><span class="n">recipient_id</span> <span class="o">==</span> <span class="n">user_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">notifications</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;No notifications found&quot;</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">notification</span> <span class="ow">in</span> <span class="n">notifications</span><span class="p">:</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">notification</span><span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">notifications</span><span class="p">)</span><span class="si">}</span><span class="s1"> notifications deleted&#39;</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="NotificationService.notify_new_message">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_new_message">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_new_message</span><span class="p">(</span><span class="n">sender_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">recipient_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify user about new message&quot;&quot;&quot;</span>
+        <span class="n">sender</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sender_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">recipient_id</span><span class="p">,</span>
+            <span class="n">sender_id</span><span class="o">=</span><span class="n">sender_id</span><span class="p">,</span>
+            <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">MESSAGE</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;New Message&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;You have a new message from </span><span class="si">{</span><span class="n">sender</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">subject</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="s2">&quot;/messages&quot;</span><span class="p">,</span>
+            <span class="n">priority</span><span class="o">=</span><span class="n">NotificationPriority</span><span class="o">.</span><span class="n">NORMAL</span>
+        <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.notify_student_enrollment">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_student_enrollment">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_student_enrollment</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify teacher about student enrollment&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Course</span>
+        <span class="n">student</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+            <span class="n">sender_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">ENROLLMENT</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;New Student Enrollment&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> has enrolled in your course &#39;</span><span class="si">{</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/teacher/courses/</span><span class="si">{</span><span class="n">course_id</span><span class="si">}</span><span class="s2">/students&quot;</span><span class="p">,</span>
+            <span class="n">related_id</span><span class="o">=</span><span class="n">course_id</span>
+        <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.notify_assignment_submission">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_assignment_submission">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_assignment_submission</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">assignment_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify teacher about assignment submission&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Assignment</span>
+        <span class="n">student</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">Assignment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">assignment_id</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+            <span class="n">sender_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">ASSIGNMENT_SUBMISSION</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;New Assignment Submission&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> has submitted &#39;</span><span class="si">{</span><span class="n">assignment</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/teacher/assignment/</span><span class="si">{</span><span class="n">assignment_id</span><span class="si">}</span><span class="s2">/submissions&quot;</span><span class="p">,</span>
+            <span class="n">related_id</span><span class="o">=</span><span class="n">assignment_id</span><span class="p">,</span>
+            <span class="n">priority</span><span class="o">=</span><span class="n">NotificationPriority</span><span class="o">.</span><span class="n">HIGH</span>
+        <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.notify_assignment_graded">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_assignment_graded">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_assignment_graded</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">assignment_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">grade</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify student about graded assignment&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Assignment</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">teacher</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+            <span class="n">assignment</span> <span class="o">=</span> <span class="n">Assignment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">assignment_id</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">teacher</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">assignment</span><span class="p">:</span>
+                <span class="k">return</span>
+            
+            <span class="k">return</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+                <span class="n">recipient_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">sender_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+                <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">ASSIGNMENT_GRADED</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Assignment Graded&quot;</span><span class="p">,</span>
+                <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Your assignment &#39;</span><span class="si">{</span><span class="n">assignment</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; has been graded by </span><span class="si">{</span><span class="n">teacher</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2">. Grade: </span><span class="si">{</span><span class="n">grade</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">,</span>
+                <span class="n">action_url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/student/courses/</span><span class="si">{</span><span class="n">assignment</span><span class="o">.</span><span class="n">course_id</span><span class="si">}</span><span class="s2">/assignment/</span><span class="si">{</span><span class="n">assignment_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">related_id</span><span class="o">=</span><span class="n">assignment_id</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error sending assignment graded notification: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.notify_quiz_submission">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_quiz_submission">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_quiz_submission</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">score</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify teacher about quiz submission&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quiz</span>
+        <span class="n">student</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+            <span class="n">sender_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">QUIZ_SUBMISSION</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;New Quiz Submission&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> completed &#39;</span><span class="si">{</span><span class="n">quiz</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; with score: </span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/teacher/quiz/</span><span class="si">{</span><span class="n">quiz_id</span><span class="si">}</span><span class="s2">/analytics&quot;</span><span class="p">,</span>
+            <span class="n">related_id</span><span class="o">=</span><span class="n">quiz_id</span>
+        <span class="p">)</span></div>
+
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_quiz_graded</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">score</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify student about graded quiz (for manual grading)&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quiz</span>
+        <span class="n">teacher</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">sender_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+            <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">QUIZ_GRADED</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Quiz Graded&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Your quiz &#39;</span><span class="si">{</span><span class="n">quiz</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; has been reviewed by </span><span class="si">{</span><span class="n">teacher</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2">. Final Score: </span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/student/courses/</span><span class="si">{</span><span class="n">quiz</span><span class="o">.</span><span class="n">course_id</span><span class="si">}</span><span class="s2">/quiz/</span><span class="si">{</span><span class="n">quiz_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">related_id</span><span class="o">=</span><span class="n">quiz_id</span>
+        <span class="p">)</span>
+    
+<div class="viewcode-block" id="NotificationService.notify_course_completion">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_course_completion">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_course_completion</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify teacher about student course completion&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Course</span>
+        <span class="n">student</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+            <span class="n">sender_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">COURSE_COMPLETION</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Student Completed Course&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> has completed the course &#39;</span><span class="si">{</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/teacher/courses/</span><span class="si">{</span><span class="n">course_id</span><span class="si">}</span><span class="s2">/students&quot;</span><span class="p">,</span>
+            <span class="n">related_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="n">priority</span><span class="o">=</span><span class="n">NotificationPriority</span><span class="o">.</span><span class="n">HIGH</span>
+        <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.notify_new_content">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_new_content">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_new_content</span><span class="p">(</span><span class="n">student_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">content_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">content_title</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify students about new course content&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Course</span>
+        <span class="n">teacher</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="n">notifications</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">student_id</span> <span class="ow">in</span> <span class="n">student_ids</span><span class="p">:</span>
+            <span class="n">notification</span> <span class="o">=</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+                <span class="n">recipient_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">sender_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+                <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">NEW_CONTENT</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;New </span><span class="si">{</span><span class="n">content_type</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="si">}</span><span class="s2"> Added&quot;</span><span class="p">,</span>
+                <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">teacher</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> added a new </span><span class="si">{</span><span class="n">content_type</span><span class="si">}</span><span class="s2"> &#39;</span><span class="si">{</span><span class="n">content_title</span><span class="si">}</span><span class="s2">&#39; to &#39;</span><span class="si">{</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+                <span class="n">action_url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/student/courses/</span><span class="si">{</span><span class="n">course_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">related_id</span><span class="o">=</span><span class="n">course_id</span>
+            <span class="p">)</span>
+            <span class="n">notifications</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">notification</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">notifications</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.notify_achievement_earned">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_achievement_earned">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_achievement_earned</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">achievement_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify student about achievement earned&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">ACHIEVEMENT_EARNED</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Achievement Unlocked!&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Congratulations! You&#39;ve earned the &#39;</span><span class="si">{</span><span class="n">achievement_name</span><span class="si">}</span><span class="s2">&#39; achievement (+</span><span class="si">{</span><span class="n">points</span><span class="si">}</span><span class="s2"> points)&quot;</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="s2">&quot;/student/achievements&quot;</span><span class="p">,</span>
+            <span class="n">priority</span><span class="o">=</span><span class="n">NotificationPriority</span><span class="o">.</span><span class="n">HIGH</span>
+        <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="NotificationService.notify_assignment_returned">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_assignment_returned">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_assignment_returned</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">teacher_id</span><span class="p">,</span> <span class="n">assignment_id</span><span class="p">,</span> <span class="n">feedback</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Notification</span><span class="p">,</span> <span class="n">NotificationType</span><span class="p">,</span> <span class="n">NotificationPriority</span>
+
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">Assignment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">assignment_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">assignment</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Your submission for &#39;</span><span class="si">{</span><span class="n">assignment</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; was returned for revision.&quot;</span>
+        <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">ASSIGNMENT_GRADED</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Assignment Returned&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span>
+            <span class="n">sender_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+            <span class="n">priority</span><span class="o">=</span><span class="n">NotificationPriority</span><span class="o">.</span><span class="n">NORMAL</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/student/courses/</span><span class="si">{</span><span class="n">assignment</span><span class="o">.</span><span class="n">course_id</span><span class="si">}</span><span class="s2">/assignment/</span><span class="si">{</span><span class="n">assignment_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">related_id</span><span class="o">=</span><span class="n">assignment_id</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NotificationService.notify_quiz_graded">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_quiz_graded">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_quiz_graded</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">score</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> 
+                        <span class="n">attempt_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">attempt_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify student when their quiz has been graded&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quiz</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">QuizAttempt</span>
+            
+            <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+            <span class="n">teacher</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">teacher</span><span class="p">:</span>
+                <span class="k">return</span>
+            
+            <span class="k">if</span> <span class="n">attempt_id</span><span class="p">:</span>
+                <span class="n">attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">attempt</span><span class="p">:</span>
+                    <span class="n">attempt_number</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">attempt_number</span>
+                    <span class="n">actual_score</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span>  
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">actual_score</span> <span class="o">=</span> <span class="n">score</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">actual_score</span> <span class="o">=</span> <span class="n">score</span>
+            
+            <span class="n">passed</span> <span class="o">=</span> <span class="n">actual_score</span> <span class="o">&gt;=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span>
+            <span class="n">status_text</span> <span class="o">=</span> <span class="s2">&quot;passed&quot;</span> <span class="k">if</span> <span class="n">passed</span> <span class="k">else</span> <span class="s2">&quot;needs improvement&quot;</span>
+            
+            <span class="n">attempt_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; (Attempt #</span><span class="si">{</span><span class="n">attempt_number</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">if</span> <span class="n">attempt_number</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            
+            <span class="n">notification</span> <span class="o">=</span> <span class="n">Notification</span><span class="p">(</span>
+                <span class="n">recipient_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">sender_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+                <span class="nb">type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">QUIZ_GRADED</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                <span class="n">priority</span><span class="o">=</span><span class="n">NotificationPriority</span><span class="o">.</span><span class="n">HIGH</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="n">passed</span> <span class="k">else</span> <span class="n">NotificationPriority</span><span class="o">.</span><span class="n">NORMAL</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Quiz Graded: </span><span class="si">{</span><span class="n">quiz</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Your quiz &#39;</span><span class="si">{</span><span class="n">quiz</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;</span><span class="si">{</span><span class="n">attempt_text</span><span class="si">}</span><span class="s2"> has been graded by </span><span class="si">{</span><span class="n">teacher</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2">. Score: </span><span class="si">{</span><span class="n">actual_score</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">% (</span><span class="si">{</span><span class="n">status_text</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="n">action_url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/student/quiz/</span><span class="si">{</span><span class="n">attempt_id</span><span class="si">}</span><span class="s2">/results&quot;</span> <span class="k">if</span> <span class="n">attempt_id</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;/student/courses/</span><span class="si">{</span><span class="n">quiz</span><span class="o">.</span><span class="n">course_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">related_id</span><span class="o">=</span><span class="n">attempt_id</span> <span class="ow">or</span> <span class="n">quiz_id</span>  
+            <span class="p">)</span>
+            
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">notification</span><span class="p">)</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Notification sent: attempt_id=</span><span class="si">{</span><span class="n">attempt_id</span><span class="si">}</span><span class="s2">, attempt_number=</span><span class="si">{</span><span class="n">attempt_number</span><span class="si">}</span><span class="s2">, score=</span><span class="si">{</span><span class="n">actual_score</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error sending quiz graded notification: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NotificationService.notify_certificate_request_submitted">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_certificate_request_submitted">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_certificate_request_submitted</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify admins about new certificate request&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Course</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">UserRole</span>
+        
+        <span class="n">student</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">student</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">return</span>
+        
+        <span class="n">admins</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">UserRole</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">is_active</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">notifications</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">admin</span> <span class="ow">in</span> <span class="n">admins</span><span class="p">:</span>
+            <span class="n">notification</span> <span class="o">=</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+                <span class="n">recipient_id</span><span class="o">=</span><span class="n">admin</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">sender_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">CERTIFICATE_REQUEST</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="s2">&quot;New Certificate Request&quot;</span><span class="p">,</span>
+                <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> has requested a certificate for &#39;</span><span class="si">{</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+                <span class="n">action_url</span><span class="o">=</span><span class="s2">&quot;/admin/certificates&quot;</span><span class="p">,</span>
+                <span class="n">related_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">,</span>
+                <span class="n">priority</span><span class="o">=</span><span class="n">NotificationPriority</span><span class="o">.</span><span class="n">HIGH</span>
+            <span class="p">)</span>
+            <span class="n">notifications</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">notification</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">notifications</span></div>
+
+
+<div class="viewcode-block" id="NotificationService.notify_certificate_request_resubmitted">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_certificate_request_resubmitted">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_certificate_request_resubmitted</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify admins about resubmitted certificate request&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Course</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">UserRole</span>
+        
+        <span class="n">student</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">student</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">return</span>
+        
+        <span class="n">admins</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">UserRole</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">is_active</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">notifications</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">admin</span> <span class="ow">in</span> <span class="n">admins</span><span class="p">:</span>
+            <span class="n">notification</span> <span class="o">=</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+                <span class="n">recipient_id</span><span class="o">=</span><span class="n">admin</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">sender_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">CERTIFICATE_REQUEST</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Certificate Request Resubmitted&quot;</span><span class="p">,</span>
+                <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> has resubmitted their certificate request for &#39;</span><span class="si">{</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+                <span class="n">action_url</span><span class="o">=</span><span class="s2">&quot;/admin/certificates&quot;</span><span class="p">,</span>
+                <span class="n">related_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">,</span>
+                <span class="n">priority</span><span class="o">=</span><span class="n">NotificationPriority</span><span class="o">.</span><span class="n">HIGH</span>
+            <span class="p">)</span>
+            <span class="n">notifications</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">notification</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">notifications</span></div>
+
+
+<div class="viewcode-block" id="NotificationService.notify_certificate_request_approved">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_certificate_request_approved">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_certificate_request_approved</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">certificate_code</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify student about approved certificate request&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Course</span>
+        
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">return</span>
+        
+        <span class="k">return</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">CERTIFICATE_APPROVED</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Certificate Request Approved&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Your certificate request for &#39;</span><span class="si">{</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; has been approved and issued! Certificate ID: </span><span class="si">{</span><span class="n">certificate_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="s2">&quot;/student/certificates&quot;</span><span class="p">,</span>
+            <span class="n">related_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="n">priority</span><span class="o">=</span><span class="n">NotificationPriority</span><span class="o">.</span><span class="n">HIGH</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NotificationService.notify_certificate_request_rejected">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_certificate_request_rejected">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_certificate_request_rejected</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify student about rejected certificate request&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Course</span>
+        
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">return</span>
+        
+        <span class="k">return</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">CERTIFICATE_REJECTED</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Certificate Request Rejected&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Your certificate request for &#39;</span><span class="si">{</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; has been rejected. Reason: </span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="s2">&quot;/student/certificates&quot;</span><span class="p">,</span>
+            <span class="n">related_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="n">priority</span><span class="o">=</span><span class="n">NotificationPriority</span><span class="o">.</span><span class="n">NORMAL</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NotificationService.notify_certificate_issued">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.notification_service.NotificationService.notify_certificate_issued">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notify_certificate_issued</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">certificate_code</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notify student about certificate issuance&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Course</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">NotificationService</span><span class="o">.</span><span class="n">create_notification</span><span class="p">(</span>
+            <span class="n">recipient_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">notification_type</span><span class="o">=</span><span class="n">NotificationType</span><span class="o">.</span><span class="n">CERTIFICATE_ISSUED</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Certificate Issued&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Your certificate for &#39;</span><span class="si">{</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&#39; has been issued! Certificate ID: </span><span class="si">{</span><span class="n">certificate_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">action_url</span><span class="o">=</span><span class="s2">&quot;/student/certificates&quot;</span><span class="p">,</span>
+            <span class="n">related_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="n">priority</span><span class="o">=</span><span class="n">NotificationPriority</span><span class="o">.</span><span class="n">HIGH</span>
+        <span class="p">)</span></div>
+</div>
+
+    
+    
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

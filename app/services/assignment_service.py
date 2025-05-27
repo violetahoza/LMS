@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from werkzeug.datastructures import FileStorage
 from app.models import db, User, Course, Assignment, AssignmentSubmission, Enrollment
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException

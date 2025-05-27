@@ -1,0 +1,412 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.services.auth_service &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.services.auth_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.services.auth_service</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask_jwt_extended</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_access_token</span><span class="p">,</span> <span class="n">create_refresh_token</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">db</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">UserRole</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.base_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationException</span><span class="p">,</span> <span class="n">NotFoundException</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.validators</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_email</span><span class="p">,</span> <span class="n">validate_password</span><span class="p">,</span> <span class="n">validate_phone</span><span class="p">,</span> <span class="n">validate_username</span>
+
+<div class="viewcode-block" id="AuthService">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.auth_service.AuthService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AuthService</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Service for authentication-related operations&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="AuthService.register_user">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.auth_service.AuthService.register_user">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_user</span><span class="p">(</span><span class="n">user_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a new user&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">required_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;email&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="s1">&#39;full_name&#39;</span><span class="p">,</span> <span class="s1">&#39;role&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">required_fields</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">user_data</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user_data</span><span class="p">[</span><span class="n">field</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s1"> is required&#39;</span><span class="p">)</span>
+            
+            <span class="n">username</span> <span class="o">=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">is_valid</span><span class="p">,</span> <span class="n">message</span> <span class="o">=</span> <span class="n">validate_username</span><span class="p">(</span><span class="n">username</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_valid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Username already exists&#39;</span><span class="p">)</span>
+            
+            <span class="n">email</span> <span class="o">=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;email&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">validate_email</span><span class="p">(</span><span class="n">email</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Invalid email format&#39;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Email already exists&#39;</span><span class="p">)</span>
+            
+            <span class="n">password</span> <span class="o">=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
+            <span class="n">is_valid</span><span class="p">,</span> <span class="n">message</span> <span class="o">=</span> <span class="n">validate_password</span><span class="p">(</span><span class="n">password</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_valid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            
+            <span class="n">role_str</span> <span class="o">=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">role_str</span> <span class="o">==</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+                    <span class="n">role</span> <span class="o">=</span> <span class="n">UserRole</span><span class="o">.</span><span class="n">STUDENT</span>
+                <span class="k">elif</span> <span class="n">role_str</span> <span class="o">==</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+                    <span class="n">role</span> <span class="o">=</span> <span class="n">UserRole</span><span class="o">.</span><span class="n">TEACHER</span>
+                <span class="k">elif</span> <span class="n">role_str</span> <span class="o">==</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+                    <span class="n">role</span> <span class="o">=</span> <span class="n">UserRole</span><span class="o">.</span><span class="n">ADMIN</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Invalid role&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Invalid role&#39;</span><span class="p">)</span>
+            
+            <span class="n">phone</span> <span class="o">=</span> <span class="n">user_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;phone&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">phone</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">validate_phone</span><span class="p">(</span><span class="n">phone</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Invalid phone number format&#39;</span><span class="p">)</span>
+            
+            <span class="n">age</span> <span class="o">=</span> <span class="n">user_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;age&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">age</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">age</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">age</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">age</span> <span class="o">&lt;</span> <span class="mi">13</span> <span class="ow">or</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">90</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Age must be between 13 and 90&#39;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Age must be a number&#39;</span><span class="p">)</span>
+            
+            <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
+                <span class="n">username</span><span class="o">=</span><span class="n">username</span><span class="p">,</span>
+                <span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">,</span>
+                <span class="n">full_name</span><span class="o">=</span><span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;full_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+                <span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span>
+                <span class="n">phone</span><span class="o">=</span><span class="n">phone</span> <span class="k">if</span> <span class="n">phone</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">age</span><span class="o">=</span><span class="n">age</span><span class="p">,</span>
+                <span class="n">is_active</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            
+            <span class="n">user</span><span class="o">.</span><span class="n">set_password</span><span class="p">(</span><span class="n">password</span><span class="p">)</span>
+            
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;User registered successfully&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="p">}</span>
+            
+        <span class="k">except</span> <span class="n">ValidationException</span><span class="p">:</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Registration failed: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="AuthService.login_user">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.auth_service.AuthService.login_user">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">login_user</span><span class="p">(</span><span class="n">login_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Authenticate user and return tokens&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">username</span> <span class="o">=</span> <span class="n">login_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">password</span> <span class="o">=</span> <span class="n">login_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">remember</span> <span class="o">=</span> <span class="n">login_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;remember&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">username</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">password</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Username and password are required&#39;</span><span class="p">)</span>
+            
+            <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">username</span> <span class="o">==</span> <span class="n">username</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="n">username</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Invalid username or password&#39;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_active</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Account is deactivated&#39;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">check_password</span><span class="p">(</span><span class="n">password</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Invalid username or password&#39;</span><span class="p">)</span>
+            
+            <span class="n">expires_delta</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span> <span class="k">if</span> <span class="n">remember</span> <span class="k">else</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+            <span class="n">access_token</span> <span class="o">=</span> <span class="n">create_access_token</span><span class="p">(</span>
+                <span class="n">identity</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+                <span class="n">expires_delta</span><span class="o">=</span><span class="n">expires_delta</span>
+            <span class="p">)</span>
+            <span class="n">refresh_token</span> <span class="o">=</span> <span class="n">create_refresh_token</span><span class="p">(</span>
+                <span class="n">identity</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+                <span class="n">expires_delta</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+            <span class="p">)</span>
+            
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Login successful&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="s1">&#39;access_token&#39;</span><span class="p">:</span> <span class="n">access_token</span><span class="p">,</span>
+                <span class="s1">&#39;refresh_token&#39;</span><span class="p">:</span> <span class="n">refresh_token</span>
+            <span class="p">}</span>
+            
+        <span class="k">except</span> <span class="n">ValidationException</span><span class="p">:</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Login failed: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="AuthService.get_user_profile">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.auth_service.AuthService.get_user_profile">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_user_profile</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get user profile information&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
+            
+            <span class="n">stats</span> <span class="o">=</span> <span class="n">AuthService</span><span class="o">.</span><span class="n">_get_user_stats</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+            
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;stats&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stats</span>
+            
+            <span class="k">return</span> <span class="n">user_data</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to get profile: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="AuthService.update_user_profile">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.auth_service.AuthService.update_user_profile">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_user_profile</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">update_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update user profile&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
+            
+            <span class="n">allowed_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;full_name&#39;</span><span class="p">,</span> <span class="s1">&#39;phone&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">]</span>
+            
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">allowed_fields</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">update_data</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">update_data</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+                    
+                    <span class="k">if</span> <span class="n">field</span> <span class="o">==</span> <span class="s1">&#39;full_name&#39;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Full name cannot be empty&#39;</span><span class="p">)</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                    
+                    <span class="k">elif</span> <span class="n">field</span> <span class="o">==</span> <span class="s1">&#39;phone&#39;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">value</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">validate_phone</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Invalid phone number format&#39;</span><span class="p">)</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+                    
+                    <span class="k">elif</span> <span class="n">field</span> <span class="o">==</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">age</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">age</span> <span class="o">&lt;</span> <span class="mi">13</span> <span class="ow">or</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">120</span><span class="p">:</span>
+                                    <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Age must be between 13 and 120&#39;</span><span class="p">)</span>
+                                <span class="nb">setattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">age</span><span class="p">)</span>
+                            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Age must be a number&#39;</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="nb">setattr</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            
+            <span class="n">user</span><span class="o">.</span><span class="n">updated_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Profile updated successfully&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="p">}</span>
+            
+        <span class="k">except</span> <span class="n">ValidationException</span><span class="p">:</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to update profile: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="AuthService.change_password">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.auth_service.AuthService.change_password">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">change_password</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">password_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Change user password&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
+            
+            <span class="n">current_password</span> <span class="o">=</span> <span class="n">password_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;current_password&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">new_password</span> <span class="o">=</span> <span class="n">password_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_password&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">current_password</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">new_password</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Current password and new password are required&#39;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">check_password</span><span class="p">(</span><span class="n">current_password</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Current password is incorrect&#39;</span><span class="p">)</span>
+            
+            <span class="n">is_valid</span><span class="p">,</span> <span class="n">message</span> <span class="o">=</span> <span class="n">validate_password</span><span class="p">(</span><span class="n">new_password</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_valid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            
+            <span class="n">user</span><span class="o">.</span><span class="n">set_password</span><span class="p">(</span><span class="n">new_password</span><span class="p">)</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">updated_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Password changed successfully&#39;</span><span class="p">}</span>
+            
+        <span class="k">except</span> <span class="n">ValidationException</span><span class="p">:</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to change password: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_user_stats</span><span class="p">(</span><span class="n">user</span><span class="p">:</span> <span class="n">User</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get role-specific user statistics&quot;&quot;&quot;</span>
+        <span class="n">stats</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enrollment</span><span class="p">,</span> <span class="n">QuizAttempt</span><span class="p">,</span> <span class="n">AssignmentSubmission</span><span class="p">,</span> <span class="n">StudentAchievement</span>
+                
+                <span class="n">enrolled_courses</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">student_id</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                <span class="n">completed_courses</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                    <span class="n">student_id</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> 
+                    <span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                
+                <span class="n">quiz_attempts</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">student_id</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                <span class="n">assignment_submissions</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">student_id</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                <span class="n">total_achievements</span> <span class="o">=</span> <span class="n">StudentAchievement</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">student_id</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                
+                <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;enrolled_courses&#39;</span><span class="p">:</span> <span class="n">enrolled_courses</span><span class="p">,</span>
+                    <span class="s1">&#39;completed_courses&#39;</span><span class="p">:</span> <span class="n">completed_courses</span><span class="p">,</span>
+                    <span class="s1">&#39;quiz_attempts&#39;</span><span class="p">:</span> <span class="n">quiz_attempts</span><span class="p">,</span>
+                    <span class="s1">&#39;assignment_submissions&#39;</span><span class="p">:</span> <span class="n">assignment_submissions</span><span class="p">,</span>
+                    <span class="s1">&#39;total_achievements&#39;</span><span class="p">:</span> <span class="n">total_achievements</span>
+                <span class="p">}</span>
+                
+            <span class="k">elif</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+                <span class="n">total_courses</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">taught_courses</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                <span class="n">total_students</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">course</span><span class="o">.</span><span class="n">get_enrollment_count</span><span class="p">()</span> <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">user</span><span class="o">.</span><span class="n">taught_courses</span><span class="p">)</span>
+                
+                <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;total_courses&#39;</span><span class="p">:</span> <span class="n">total_courses</span><span class="p">,</span>
+                    <span class="s1">&#39;total_students&#39;</span><span class="p">:</span> <span class="n">total_students</span>
+                <span class="p">}</span>
+                
+            <span class="k">elif</span> <span class="n">user</span><span class="o">.</span><span class="n">is_admin</span><span class="p">():</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Course</span><span class="p">,</span> <span class="n">Enrollment</span>
+                
+                <span class="n">total_users</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                <span class="n">total_courses</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                <span class="n">total_enrollments</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                
+                <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;total_users&#39;</span><span class="p">:</span> <span class="n">total_users</span><span class="p">,</span>
+                    <span class="s1">&#39;total_courses&#39;</span><span class="p">:</span> <span class="n">total_courses</span><span class="p">,</span>
+                    <span class="s1">&#39;total_enrollments&#39;</span><span class="p">:</span> <span class="n">total_enrollments</span>
+                <span class="p">}</span>
+                
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error calculating user stats: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">stats</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">return</span> <span class="n">stats</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

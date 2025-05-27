@@ -1,3 +1,13 @@
+"""
+Learning Management System Models
+
+This module contains all the database models for the LMS application,
+including User, Course, Lesson, Quiz, Assignment, and related models.
+Each model represents a database table and includes methods for
+data manipulation and serialization.
+
+"""
+
 from app import db 
 from flask_login import UserMixin
 from datetime import datetime
@@ -5,11 +15,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import enum
 
 class UserRole(enum.Enum):
+    """Enumeration for user roles in the system."""
     ADMIN = 'admin'
     TEACHER = 'teacher'
     STUDENT = 'student'
 
 class User(UserMixin, db.Model):
+    """User model representing all system users."""
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -30,23 +42,34 @@ class User(UserMixin, db.Model):
     assignment_submissions = db.relationship('AssignmentSubmission', backref='student', lazy='dynamic', foreign_keys='AssignmentSubmission.student_id')
     achievements = db.relationship('StudentAchievement', backref='student', lazy='dynamic')
     
+    
     def set_password(self, password):
+        """Hash and set the user's password."""
         self.password_hash = generate_password_hash(password)
     
     def check_password(self, password):
+        """Verify a password against the stored hash."""
         return check_password_hash(self.password_hash, password)
     
     def is_admin(self):
+        """Check if the user has admin privileges."""
         return self.role == UserRole.ADMIN
     
     def is_teacher(self):
+        """Check if the user is a teacher."""
         return self.role == UserRole.TEACHER
     
     def is_student(self):
+        """Check if the user is a student."""
         return self.role == UserRole.STUDENT
     
     def can_access_course(self, course):
-        """Check if user can access a course"""
+        """Check if user can access a specific course.
+        Permission logic:
+        - Admins: Can access all courses
+        - Teachers: Can access courses they teach
+        - Students: Can access courses they're enrolled in (active or completed)
+        """
         if self.is_admin():
             return True
         
@@ -54,7 +77,6 @@ class User(UserMixin, db.Model):
             return course.teacher_id == self.id
         
         if self.is_student():
-            # Students can access if enrolled (active OR completed)
             enrollment = Enrollment.query.filter_by(
                 student_id=self.id,
                 course_id=course.id
@@ -77,6 +99,9 @@ class User(UserMixin, db.Model):
         }
 
 class Course(db.Model):
+    """Courses are created by teachers and can be enrolled in by students.
+    Each course contains lessons, quizzes, assignments, and tracks student progress.
+    """
     __tablename__ = 'courses'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -98,9 +123,11 @@ class Course(db.Model):
     certificates = db.relationship('Certificate', backref='course', lazy='dynamic', cascade='all, delete-orphan')
     
     def get_enrollment_count(self):
+        """Get the number of currently enrolled students."""
         return self.enrollments.filter_by(status='active').count()
     
     def is_full(self):
+        """Check if course has reached maximum enrollment capacity."""
         return self.get_enrollment_count() >= self.max_students
     
     def to_dict(self):
@@ -120,6 +147,7 @@ class Course(db.Model):
         }
 
 class Lesson(db.Model):
+    """Lessons are part of a course and can contain various types of content (video, text or mixed content)."""
     __tablename__ = 'lessons'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -151,6 +179,9 @@ class Lesson(db.Model):
         }
 
 class Enrollment(db.Model):
+    """Student enrollment in a course. Tracks a student's participation in a course, including progress,
+    completion status, and enrollment timeline.
+    """
     __tablename__ = 'enrollments'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -164,7 +195,12 @@ class Enrollment(db.Model):
     __table_args__ = (db.UniqueConstraint('student_id', 'course_id'),)
     
     def calculate_progress(self):
-        """Calculate overall course progress percentage - ENHANCED VERSION"""
+        """Calculate overall course progress percentage.
+        Progress is calculated based on:
+        - Completed lessons
+        - Passed quizzes (meeting passing score)
+        - Submitted assignments
+        """
         course = self.course
         total_components = 0
         completed_components = 0
@@ -227,6 +263,9 @@ class Enrollment(db.Model):
         }
 
 class Quiz(db.Model):
+    """Quizzes are assessments within a course that test student knowledge.
+    Each quiz can have multiple questions and tracks student attempts and scores.
+    """
     __tablename__ = 'quizzes'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -260,6 +299,7 @@ class Quiz(db.Model):
         }
 
 class Question(db.Model):
+    """Questions are part of a quiz and can be of various types (multiple choice, true/false, short answer)."""
     __tablename__ = 'questions'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -285,6 +325,7 @@ class Question(db.Model):
         }
 
 class AnswerOption(db.Model):
+    """Answer options for multiple choice questions in quizzes."""
     __tablename__ = 'answer_options'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -300,6 +341,7 @@ class AnswerOption(db.Model):
         }
 
 class QuizAttempt(db.Model):
+    """Quiz attempts by students. Tracks each attempt, including score, time spent, and status."""
     __tablename__ = 'quiz_attempts'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -329,6 +371,7 @@ class QuizAttempt(db.Model):
         }
 
 class StudentAnswer(db.Model):
+    """Student answers to quiz questions. Tracks the answer text, selected options, correctness, and points earned."""
     __tablename__ = 'student_answers'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -342,6 +385,10 @@ class StudentAnswer(db.Model):
     selected_option = db.relationship('AnswerOption', foreign_keys=[selected_option_id])
 
 class Assignment(db.Model):
+    """Assignments are tasks given to students within a course.
+    Each assignment can have a title, description, due date, and total points.
+    Students can submit assignments, and teachers can grade them.
+    """
     __tablename__ = 'assignments'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -369,6 +416,7 @@ class Assignment(db.Model):
         }
 
 class AssignmentSubmission(db.Model):
+    """Assignment submissions by students. Tracks submission text, file uploads, grading status, and feedback."""
     __tablename__ = 'assignment_submissions'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -403,6 +451,7 @@ class AssignmentSubmission(db.Model):
         }
 
 class LessonProgress(db.Model):
+    """Tracks student progress on lessons, including viewing status, completion time, and time spent."""
     __tablename__ = 'lesson_progress'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -417,6 +466,8 @@ class LessonProgress(db.Model):
     student = db.relationship('User', backref='lesson_progress')
 
 class Achievement(db.Model):
+    """Achievements are rewards given to students for completing certain criteria in courses.
+    Each achievement has a name, description, badge icon, points value, and criteria type."""
     __tablename__ = 'achievements'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -430,6 +481,7 @@ class Achievement(db.Model):
     student_achievements = db.relationship('StudentAchievement', backref='achievement', lazy='dynamic')
 
 class StudentAchievement(db.Model):
+    """Tracks achievements earned by students."""
     __tablename__ = 'student_achievements'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -440,6 +492,8 @@ class StudentAchievement(db.Model):
     __table_args__ = (db.UniqueConstraint('student_id', 'achievement_id'),)
 
 class Certificate(db.Model):
+    """Certificates are issued to students upon successful completion of a course.
+    Each certificate has a unique code, student ID, course ID, and issue date."""
     __tablename__ = 'certificates'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -497,6 +551,7 @@ class Message(db.Model):
         }
     
 class NotificationType(enum.Enum):
+    """Enumeration for different types of notifications in the LMS."""
     MESSAGE = 'message'
     ENROLLMENT = 'enrollment'
     ASSIGNMENT_SUBMISSION = 'assignment_submission'
@@ -514,6 +569,7 @@ class NotificationType(enum.Enum):
     ACHIEVEMENT_EARNED = 'achievement_earned'
 
 class NotificationPriority(enum.Enum):
+    """Enumeration for notification priority levels."""
     LOW = 'low'
     NORMAL = 'normal'
     HIGH = 'high'
@@ -565,7 +621,8 @@ class Notification(db.Model):
             'recipient_name': self.recipient.full_name if self.recipient else None
         }
 class CertificateRequest(db.Model):
-    """Certificate request model"""
+    """Certificate request model for students to request course completion certificates.
+    Admins can review and approve or reject requests."""
     __tablename__ = 'certificate_requests'
     
     id = db.Column(db.Integer, primary_key=True)

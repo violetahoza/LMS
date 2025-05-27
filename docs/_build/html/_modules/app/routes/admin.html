@@ -1,0 +1,446 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.routes.admin &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.routes.admin</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.routes.admin</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Blueprint</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">jsonify</span><span class="p">,</span> <span class="n">make_response</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask_jwt_extended</span><span class="w"> </span><span class="kn">import</span> <span class="n">jwt_required</span><span class="p">,</span> <span class="n">get_jwt_identity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.services.admin_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">AdminService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.base_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseController</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">admin_required</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span> 
+
+<span class="n">bp</span> <span class="o">=</span> <span class="n">Blueprint</span><span class="p">(</span><span class="s1">&#39;admin&#39;</span><span class="p">,</span> <span class="vm">__name__</span><span class="p">,</span> <span class="n">url_prefix</span><span class="o">=</span><span class="s1">&#39;/api/admin&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_dashboard">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.get_dashboard">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/dashboard&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@jwt_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dashboard</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get admin dashboard statistics&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">user_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user_id_str</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Authentication required&#39;</span><span class="p">}),</span> <span class="mi">401</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">user_id_str</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Invalid user ID&#39;</span><span class="p">}),</span> <span class="mi">400</span>
+        
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;User not found&#39;</span><span class="p">}),</span> <span class="mi">404</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_admin</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied. Admin role required&#39;</span><span class="p">}),</span> <span class="mi">403</span>
+        
+        <span class="n">dashboard_data</span> <span class="o">=</span> <span class="n">AdminService</span><span class="o">.</span><span class="n">get_dashboard</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Dashboard data retrieved successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">dashboard_data</span>
+        <span class="p">}),</span> <span class="mi">200</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dashboard error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Dashboard error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;users&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;students&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;teachers&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;recent&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+                <span class="s1">&#39;courses&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;published&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;recent&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+                <span class="s1">&#39;enrollments&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;recent&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+                <span class="s1">&#39;quizzes&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;attempts&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}),</span> <span class="mi">500</span></div>
+
+
+<div class="viewcode-block" id="get_users">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.get_users">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/users&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_users</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get all users with filtering and pagination&quot;&quot;&quot;</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;page&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">per_page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;per_page&#39;</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">role</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span>
+    <span class="n">search</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;search&#39;</span><span class="p">)</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AdminService</span><span class="o">.</span><span class="n">get_users</span><span class="p">(</span>
+            <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+            <span class="n">per_page</span><span class="o">=</span><span class="n">per_page</span><span class="p">,</span>
+            <span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span>
+            <span class="n">search</span><span class="o">=</span><span class="n">search</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">200</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Get users error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s1">&#39;users&#39;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;page&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;per_page&#39;</span><span class="p">:</span> <span class="n">per_page</span><span class="p">,</span>
+            <span class="s1">&#39;pages&#39;</span><span class="p">:</span> <span class="mi">1</span>
+        <span class="p">}),</span> <span class="mi">200</span></div>
+
+
+<div class="viewcode-block" id="get_user">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.get_user">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/users/&lt;int:user_id&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_user</span><span class="p">(</span><span class="n">user_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get detailed user information&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">AdminService</span><span class="o">.</span><span class="n">get_user</span><span class="p">,</span>
+        <span class="n">user_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="update_user">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.update_user">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/users/&lt;int:user_id&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;PUT&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_user</span><span class="p">(</span><span class="n">user_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update user information&quot;&quot;&quot;</span>
+    <span class="n">admin_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">admin_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">admin_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Invalid admin ID&#39;</span><span class="p">}),</span> <span class="mi">400</span>
+        
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">AdminService</span><span class="o">.</span><span class="n">update_user</span><span class="p">,</span>
+        <span class="n">admin_id</span><span class="p">,</span>
+        <span class="n">user_id</span><span class="p">,</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">(),</span>
+        <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;User updated successfully&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="export_users">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.export_users">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/users/export&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">export_users</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Export users to CSV&quot;&quot;&quot;</span>
+    <span class="n">role</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span>
+    <span class="n">search</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;search&#39;</span><span class="p">)</span>
+    
+    <span class="k">try</span><span class="p">:</span>        
+        <span class="n">result</span> <span class="o">=</span> <span class="n">AdminService</span><span class="o">.</span><span class="n">export_users</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">make_response</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;csv_content&#39;</span><span class="p">])</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;text/csv&#39;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Content-Disposition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;attachment; filename=</span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">return</span> <span class="n">response</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Export users error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Export failed: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}),</span> <span class="mi">500</span></div>
+
+
+<div class="viewcode-block" id="toggle_user_active">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.toggle_user_active">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/users/&lt;int:user_id&gt;/toggle-active&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">toggle_user_active</span><span class="p">(</span><span class="n">user_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Toggle user active status&quot;&quot;&quot;</span>
+    <span class="n">admin_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">admin_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">admin_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Invalid admin ID&#39;</span><span class="p">}),</span> <span class="mi">400</span>
+        
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">AdminService</span><span class="o">.</span><span class="n">toggle_user_active</span><span class="p">,</span>
+        <span class="n">admin_id</span><span class="p">,</span>
+        <span class="n">user_id</span><span class="p">,</span>
+        <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;User status toggled successfully&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_all_courses">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.get_all_courses">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/courses&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_all_courses</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get all courses with detailed information&quot;&quot;&quot;</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;page&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">per_page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;per_page&#39;</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">category</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span>
+    <span class="n">search</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;search&#39;</span><span class="p">)</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AdminService</span><span class="o">.</span><span class="n">get_all_courses</span><span class="p">(</span>
+            <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+            <span class="n">per_page</span><span class="o">=</span><span class="n">per_page</span><span class="p">,</span>
+            <span class="n">category</span><span class="o">=</span><span class="n">category</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span>
+            <span class="n">search</span><span class="o">=</span><span class="n">search</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">200</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Get courses error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s1">&#39;courses&#39;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">&#39;page&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;per_page&#39;</span><span class="p">:</span> <span class="n">per_page</span><span class="p">,</span>
+            <span class="s1">&#39;pages&#39;</span><span class="p">:</span> <span class="mi">1</span>
+        <span class="p">}),</span> <span class="mi">200</span></div>
+
+
+<div class="viewcode-block" id="delete_course">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.delete_course">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/courses/&lt;int:course_id&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;DELETE&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">delete_course</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete a course&quot;&quot;&quot;</span>
+    <span class="n">admin_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">admin_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">admin_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Invalid admin ID&#39;</span><span class="p">}),</span> <span class="mi">400</span>
+        
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">AdminService</span><span class="o">.</span><span class="n">delete_course</span><span class="p">,</span>
+        <span class="n">admin_id</span><span class="p">,</span>
+        <span class="n">course_id</span><span class="p">,</span>
+        <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Course deleted successfully&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="export_courses">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.export_courses">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/courses/export&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">export_courses</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Export courses to CSV&quot;&quot;&quot;</span>
+    <span class="n">category</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span>
+    <span class="n">search</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;search&#39;</span><span class="p">)</span>
+    
+    <span class="k">try</span><span class="p">:</span>        
+        <span class="n">result</span> <span class="o">=</span> <span class="n">AdminService</span><span class="o">.</span><span class="n">export_courses</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="n">category</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span> <span class="n">search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">make_response</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;csv_content&#39;</span><span class="p">])</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;text/csv&#39;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Content-Disposition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;attachment; filename=</span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;filename&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">return</span> <span class="n">response</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Export courses error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Export failed: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}),</span> <span class="mi">500</span></div>
+
+
+<div class="viewcode-block" id="toggle_course_published">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.toggle_course_published">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/courses/&lt;int:course_id&gt;/toggle-published&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">toggle_course_published</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Toggle course published status&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">AdminService</span><span class="o">.</span><span class="n">toggle_course_published</span><span class="p">,</span>
+        <span class="n">course_id</span><span class="p">,</span>
+        <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Course status toggled successfully&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_user_activity_report">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.get_user_activity_report">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/reports/user-activity&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_user_activity_report</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get user activity report&quot;&quot;&quot;</span>
+    <span class="n">days</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;days&#39;</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AdminService</span><span class="o">.</span><span class="n">get_user_activity_report</span><span class="p">(</span><span class="n">days</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">200</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;User activity report error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s1">&#39;period_days&#39;</span><span class="p">:</span> <span class="n">days</span><span class="p">,</span>
+            <span class="s1">&#39;user_registrations&#39;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s1">&#39;course_enrollments&#39;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s1">&#39;quiz_attempts&#39;</span><span class="p">:</span> <span class="p">[]</span>
+        <span class="p">}),</span> <span class="mi">200</span></div>
+
+
+<div class="viewcode-block" id="get_course_performance_report">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.get_course_performance_report">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/reports/course-performance&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_course_performance_report</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get course performance report&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AdminService</span><span class="o">.</span><span class="n">get_course_performance_report</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">200</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Course performance report error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s1">&#39;courses&#39;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s1">&#39;total_courses&#39;</span><span class="p">:</span> <span class="mi">0</span>
+        <span class="p">}),</span> <span class="mi">200</span></div>
+
+
+<div class="viewcode-block" id="get_achievements">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.get_achievements">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/achievements&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_achievements</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get all achievements&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AdminService</span><span class="o">.</span><span class="n">get_achievements</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">200</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Get achievements error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s1">&#39;achievements&#39;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span>
+        <span class="p">}),</span> <span class="mi">200</span></div>
+
+
+<div class="viewcode-block" id="create_achievement">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.create_achievement">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/achievements&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_achievement</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new achievement&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">AdminService</span><span class="o">.</span><span class="n">create_achievement</span><span class="p">,</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">(),</span>
+        <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Achievement created successfully&quot;</span><span class="p">,</span>
+        <span class="n">success_code</span><span class="o">=</span><span class="mi">201</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_user_activity_overview">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.get_user_activity_overview">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/reports/user-activity-overview&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_user_activity_overview</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get user overview chart data for dashboard&quot;&quot;&quot;</span>
+    <span class="n">days</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;days&#39;</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AdminService</span><span class="o">.</span><span class="n">get_user_overview_chart</span><span class="p">(</span><span class="n">days</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">200</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;User activity report error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s2">&quot;labels&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;new_users&quot;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">&quot;active_users&quot;</span><span class="p">:</span> <span class="p">[]</span>
+        <span class="p">}),</span> <span class="mi">200</span></div>
+
+
+<div class="viewcode-block" id="get_course_categories">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.admin.get_course_categories">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/reports/course-categories&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@admin_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_course_categories</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return course category distribution&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">AdminService</span><span class="o">.</span><span class="n">get_course_categories_distribution</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">200</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Course category distribution error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({}),</span> <span class="mi">500</span></div>
+
+    
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

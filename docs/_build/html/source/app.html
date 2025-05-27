@@ -1,0 +1,892 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app package &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">app package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#module-app">Module contents</a><ul>
+<li><a class="reference internal" href="#app.create_app"><code class="docutils literal notranslate"><span class="pre">create_app()</span></code></a></li>
+<li><a class="reference internal" href="#app.register_blueprints"><code class="docutils literal notranslate"><span class="pre">register_blueprints()</span></code></a></li>
+<li><a class="reference internal" href="#app.setup_logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
+<li><a class="reference internal" href="#app.create_directories"><code class="docutils literal notranslate"><span class="pre">create_directories()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">app package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/source/app.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="app-package">
+<h1>app package<a class="headerlink" href="#app-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="app.models.html">app.models package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.models.html#module-app.models">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.UserRole"><code class="docutils literal notranslate"><span class="pre">UserRole</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.UserRole.ADMIN"><code class="docutils literal notranslate"><span class="pre">UserRole.ADMIN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.UserRole.TEACHER"><code class="docutils literal notranslate"><span class="pre">UserRole.TEACHER</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.UserRole.STUDENT"><code class="docutils literal notranslate"><span class="pre">UserRole.STUDENT</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.User"><code class="docutils literal notranslate"><span class="pre">User</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.id"><code class="docutils literal notranslate"><span class="pre">User.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.username"><code class="docutils literal notranslate"><span class="pre">User.username</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.email"><code class="docutils literal notranslate"><span class="pre">User.email</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.password_hash"><code class="docutils literal notranslate"><span class="pre">User.password_hash</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.full_name"><code class="docutils literal notranslate"><span class="pre">User.full_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.role"><code class="docutils literal notranslate"><span class="pre">User.role</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.phone"><code class="docutils literal notranslate"><span class="pre">User.phone</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.age"><code class="docutils literal notranslate"><span class="pre">User.age</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.created_at"><code class="docutils literal notranslate"><span class="pre">User.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.updated_at"><code class="docutils literal notranslate"><span class="pre">User.updated_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.is_active"><code class="docutils literal notranslate"><span class="pre">User.is_active</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.taught_courses"><code class="docutils literal notranslate"><span class="pre">User.taught_courses</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.enrollments"><code class="docutils literal notranslate"><span class="pre">User.enrollments</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.quiz_attempts"><code class="docutils literal notranslate"><span class="pre">User.quiz_attempts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.assignment_submissions"><code class="docutils literal notranslate"><span class="pre">User.assignment_submissions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.achievements"><code class="docutils literal notranslate"><span class="pre">User.achievements</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.set_password"><code class="docutils literal notranslate"><span class="pre">User.set_password()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.check_password"><code class="docutils literal notranslate"><span class="pre">User.check_password()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.is_admin"><code class="docutils literal notranslate"><span class="pre">User.is_admin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.is_teacher"><code class="docutils literal notranslate"><span class="pre">User.is_teacher()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.is_student"><code class="docutils literal notranslate"><span class="pre">User.is_student()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.can_access_course"><code class="docutils literal notranslate"><span class="pre">User.can_access_course()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.to_dict"><code class="docutils literal notranslate"><span class="pre">User.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.__init__"><code class="docutils literal notranslate"><span class="pre">User.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.User.query"><code class="docutils literal notranslate"><span class="pre">User.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.Course"><code class="docutils literal notranslate"><span class="pre">Course</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.id"><code class="docutils literal notranslate"><span class="pre">Course.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.title"><code class="docutils literal notranslate"><span class="pre">Course.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.description"><code class="docutils literal notranslate"><span class="pre">Course.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.category"><code class="docutils literal notranslate"><span class="pre">Course.category</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.teacher_id"><code class="docutils literal notranslate"><span class="pre">Course.teacher_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.start_date"><code class="docutils literal notranslate"><span class="pre">Course.start_date</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.end_date"><code class="docutils literal notranslate"><span class="pre">Course.end_date</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.max_students"><code class="docutils literal notranslate"><span class="pre">Course.max_students</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.created_at"><code class="docutils literal notranslate"><span class="pre">Course.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.updated_at"><code class="docutils literal notranslate"><span class="pre">Course.updated_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.is_published"><code class="docutils literal notranslate"><span class="pre">Course.is_published</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.lessons"><code class="docutils literal notranslate"><span class="pre">Course.lessons</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.enrollments"><code class="docutils literal notranslate"><span class="pre">Course.enrollments</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.quizzes"><code class="docutils literal notranslate"><span class="pre">Course.quizzes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.assignments"><code class="docutils literal notranslate"><span class="pre">Course.assignments</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.certificates"><code class="docutils literal notranslate"><span class="pre">Course.certificates</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.get_enrollment_count"><code class="docutils literal notranslate"><span class="pre">Course.get_enrollment_count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.is_full"><code class="docutils literal notranslate"><span class="pre">Course.is_full()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.to_dict"><code class="docutils literal notranslate"><span class="pre">Course.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.__init__"><code class="docutils literal notranslate"><span class="pre">Course.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Course.query"><code class="docutils literal notranslate"><span class="pre">Course.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.Lesson"><code class="docutils literal notranslate"><span class="pre">Lesson</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.id"><code class="docutils literal notranslate"><span class="pre">Lesson.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.course_id"><code class="docutils literal notranslate"><span class="pre">Lesson.course_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.title"><code class="docutils literal notranslate"><span class="pre">Lesson.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.content"><code class="docutils literal notranslate"><span class="pre">Lesson.content</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.order_number"><code class="docutils literal notranslate"><span class="pre">Lesson.order_number</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.lesson_type"><code class="docutils literal notranslate"><span class="pre">Lesson.lesson_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.video_url"><code class="docutils literal notranslate"><span class="pre">Lesson.video_url</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.duration_minutes"><code class="docutils literal notranslate"><span class="pre">Lesson.duration_minutes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.created_at"><code class="docutils literal notranslate"><span class="pre">Lesson.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.updated_at"><code class="docutils literal notranslate"><span class="pre">Lesson.updated_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.progress_records"><code class="docutils literal notranslate"><span class="pre">Lesson.progress_records</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.quizzes"><code class="docutils literal notranslate"><span class="pre">Lesson.quizzes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.assignments"><code class="docutils literal notranslate"><span class="pre">Lesson.assignments</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.to_dict"><code class="docutils literal notranslate"><span class="pre">Lesson.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.__init__"><code class="docutils literal notranslate"><span class="pre">Lesson.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Lesson.query"><code class="docutils literal notranslate"><span class="pre">Lesson.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.Enrollment"><code class="docutils literal notranslate"><span class="pre">Enrollment</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Enrollment.id"><code class="docutils literal notranslate"><span class="pre">Enrollment.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Enrollment.student_id"><code class="docutils literal notranslate"><span class="pre">Enrollment.student_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Enrollment.course_id"><code class="docutils literal notranslate"><span class="pre">Enrollment.course_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Enrollment.enrolled_at"><code class="docutils literal notranslate"><span class="pre">Enrollment.enrolled_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Enrollment.completed_at"><code class="docutils literal notranslate"><span class="pre">Enrollment.completed_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Enrollment.status"><code class="docutils literal notranslate"><span class="pre">Enrollment.status</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Enrollment.progress_percentage"><code class="docutils literal notranslate"><span class="pre">Enrollment.progress_percentage</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Enrollment.calculate_progress"><code class="docutils literal notranslate"><span class="pre">Enrollment.calculate_progress()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Enrollment.to_dict"><code class="docutils literal notranslate"><span class="pre">Enrollment.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Enrollment.__init__"><code class="docutils literal notranslate"><span class="pre">Enrollment.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Enrollment.query"><code class="docutils literal notranslate"><span class="pre">Enrollment.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.Quiz"><code class="docutils literal notranslate"><span class="pre">Quiz</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.id"><code class="docutils literal notranslate"><span class="pre">Quiz.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.course_id"><code class="docutils literal notranslate"><span class="pre">Quiz.course_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.lesson_id"><code class="docutils literal notranslate"><span class="pre">Quiz.lesson_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.title"><code class="docutils literal notranslate"><span class="pre">Quiz.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.description"><code class="docutils literal notranslate"><span class="pre">Quiz.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.total_points"><code class="docutils literal notranslate"><span class="pre">Quiz.total_points</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.passing_score"><code class="docutils literal notranslate"><span class="pre">Quiz.passing_score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.time_limit_minutes"><code class="docutils literal notranslate"><span class="pre">Quiz.time_limit_minutes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.max_attempts"><code class="docutils literal notranslate"><span class="pre">Quiz.max_attempts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.created_at"><code class="docutils literal notranslate"><span class="pre">Quiz.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.updated_at"><code class="docutils literal notranslate"><span class="pre">Quiz.updated_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.questions"><code class="docutils literal notranslate"><span class="pre">Quiz.questions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.attempts"><code class="docutils literal notranslate"><span class="pre">Quiz.attempts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.to_dict"><code class="docutils literal notranslate"><span class="pre">Quiz.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.__init__"><code class="docutils literal notranslate"><span class="pre">Quiz.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Quiz.query"><code class="docutils literal notranslate"><span class="pre">Quiz.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.Question"><code class="docutils literal notranslate"><span class="pre">Question</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.id"><code class="docutils literal notranslate"><span class="pre">Question.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.quiz_id"><code class="docutils literal notranslate"><span class="pre">Question.quiz_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.question_text"><code class="docutils literal notranslate"><span class="pre">Question.question_text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.question_type"><code class="docutils literal notranslate"><span class="pre">Question.question_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.points"><code class="docutils literal notranslate"><span class="pre">Question.points</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.order_number"><code class="docutils literal notranslate"><span class="pre">Question.order_number</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.created_at"><code class="docutils literal notranslate"><span class="pre">Question.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.answer_options"><code class="docutils literal notranslate"><span class="pre">Question.answer_options</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.student_answers"><code class="docutils literal notranslate"><span class="pre">Question.student_answers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.to_dict"><code class="docutils literal notranslate"><span class="pre">Question.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.__init__"><code class="docutils literal notranslate"><span class="pre">Question.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Question.query"><code class="docutils literal notranslate"><span class="pre">Question.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.AnswerOption"><code class="docutils literal notranslate"><span class="pre">AnswerOption</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AnswerOption.id"><code class="docutils literal notranslate"><span class="pre">AnswerOption.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AnswerOption.question_id"><code class="docutils literal notranslate"><span class="pre">AnswerOption.question_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AnswerOption.option_text"><code class="docutils literal notranslate"><span class="pre">AnswerOption.option_text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AnswerOption.is_correct"><code class="docutils literal notranslate"><span class="pre">AnswerOption.is_correct</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AnswerOption.to_dict"><code class="docutils literal notranslate"><span class="pre">AnswerOption.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AnswerOption.__init__"><code class="docutils literal notranslate"><span class="pre">AnswerOption.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AnswerOption.query"><code class="docutils literal notranslate"><span class="pre">AnswerOption.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.QuizAttempt"><code class="docutils literal notranslate"><span class="pre">QuizAttempt</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.id"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.quiz_id"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.quiz_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.student_id"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.student_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.attempt_number"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.attempt_number</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.score"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.score</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.started_at"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.started_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.submitted_at"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.submitted_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.time_spent_minutes"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.time_spent_minutes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.status"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.status</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.graded_at"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.graded_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.student_answers"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.student_answers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.to_dict"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.__init__"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.QuizAttempt.query"><code class="docutils literal notranslate"><span class="pre">QuizAttempt.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.StudentAnswer"><code class="docutils literal notranslate"><span class="pre">StudentAnswer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAnswer.id"><code class="docutils literal notranslate"><span class="pre">StudentAnswer.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAnswer.attempt_id"><code class="docutils literal notranslate"><span class="pre">StudentAnswer.attempt_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAnswer.question_id"><code class="docutils literal notranslate"><span class="pre">StudentAnswer.question_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAnswer.answer_text"><code class="docutils literal notranslate"><span class="pre">StudentAnswer.answer_text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAnswer.selected_option_id"><code class="docutils literal notranslate"><span class="pre">StudentAnswer.selected_option_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAnswer.is_correct"><code class="docutils literal notranslate"><span class="pre">StudentAnswer.is_correct</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAnswer.points_earned"><code class="docutils literal notranslate"><span class="pre">StudentAnswer.points_earned</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAnswer.selected_option"><code class="docutils literal notranslate"><span class="pre">StudentAnswer.selected_option</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAnswer.__init__"><code class="docutils literal notranslate"><span class="pre">StudentAnswer.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAnswer.query"><code class="docutils literal notranslate"><span class="pre">StudentAnswer.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.Assignment"><code class="docutils literal notranslate"><span class="pre">Assignment</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.id"><code class="docutils literal notranslate"><span class="pre">Assignment.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.course_id"><code class="docutils literal notranslate"><span class="pre">Assignment.course_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.lesson_id"><code class="docutils literal notranslate"><span class="pre">Assignment.lesson_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.title"><code class="docutils literal notranslate"><span class="pre">Assignment.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.description"><code class="docutils literal notranslate"><span class="pre">Assignment.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.due_date"><code class="docutils literal notranslate"><span class="pre">Assignment.due_date</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.total_points"><code class="docutils literal notranslate"><span class="pre">Assignment.total_points</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.created_at"><code class="docutils literal notranslate"><span class="pre">Assignment.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.updated_at"><code class="docutils literal notranslate"><span class="pre">Assignment.updated_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.submissions"><code class="docutils literal notranslate"><span class="pre">Assignment.submissions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.to_dict"><code class="docutils literal notranslate"><span class="pre">Assignment.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.__init__"><code class="docutils literal notranslate"><span class="pre">Assignment.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Assignment.query"><code class="docutils literal notranslate"><span class="pre">Assignment.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.id"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.assignment_id"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.assignment_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.student_id"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.student_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.submission_text"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.submission_text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.file_path"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.file_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.submitted_at"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.submitted_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.grade"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.grade</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.feedback"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.feedback</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.graded_at"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.graded_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.graded_by"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.graded_by</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.status"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.status</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.grader"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.grader</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.to_dict"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.__init__"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.AssignmentSubmission.query"><code class="docutils literal notranslate"><span class="pre">AssignmentSubmission.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.LessonProgress"><code class="docutils literal notranslate"><span class="pre">LessonProgress</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.LessonProgress.id"><code class="docutils literal notranslate"><span class="pre">LessonProgress.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.LessonProgress.student_id"><code class="docutils literal notranslate"><span class="pre">LessonProgress.student_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.LessonProgress.lesson_id"><code class="docutils literal notranslate"><span class="pre">LessonProgress.lesson_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.LessonProgress.viewed_at"><code class="docutils literal notranslate"><span class="pre">LessonProgress.viewed_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.LessonProgress.completed_at"><code class="docutils literal notranslate"><span class="pre">LessonProgress.completed_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.LessonProgress.time_spent_minutes"><code class="docutils literal notranslate"><span class="pre">LessonProgress.time_spent_minutes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.LessonProgress.student"><code class="docutils literal notranslate"><span class="pre">LessonProgress.student</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.LessonProgress.__init__"><code class="docutils literal notranslate"><span class="pre">LessonProgress.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.LessonProgress.query"><code class="docutils literal notranslate"><span class="pre">LessonProgress.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.Achievement"><code class="docutils literal notranslate"><span class="pre">Achievement</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Achievement.id"><code class="docutils literal notranslate"><span class="pre">Achievement.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Achievement.name"><code class="docutils literal notranslate"><span class="pre">Achievement.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Achievement.description"><code class="docutils literal notranslate"><span class="pre">Achievement.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Achievement.badge_icon"><code class="docutils literal notranslate"><span class="pre">Achievement.badge_icon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Achievement.points_value"><code class="docutils literal notranslate"><span class="pre">Achievement.points_value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Achievement.criteria_type"><code class="docutils literal notranslate"><span class="pre">Achievement.criteria_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Achievement.criteria_value"><code class="docutils literal notranslate"><span class="pre">Achievement.criteria_value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Achievement.student_achievements"><code class="docutils literal notranslate"><span class="pre">Achievement.student_achievements</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Achievement.__init__"><code class="docutils literal notranslate"><span class="pre">Achievement.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Achievement.query"><code class="docutils literal notranslate"><span class="pre">Achievement.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.StudentAchievement"><code class="docutils literal notranslate"><span class="pre">StudentAchievement</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAchievement.id"><code class="docutils literal notranslate"><span class="pre">StudentAchievement.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAchievement.student_id"><code class="docutils literal notranslate"><span class="pre">StudentAchievement.student_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAchievement.achievement_id"><code class="docutils literal notranslate"><span class="pre">StudentAchievement.achievement_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAchievement.earned_at"><code class="docutils literal notranslate"><span class="pre">StudentAchievement.earned_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAchievement.__init__"><code class="docutils literal notranslate"><span class="pre">StudentAchievement.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.StudentAchievement.query"><code class="docutils literal notranslate"><span class="pre">StudentAchievement.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.Certificate"><code class="docutils literal notranslate"><span class="pre">Certificate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Certificate.id"><code class="docutils literal notranslate"><span class="pre">Certificate.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Certificate.student_id"><code class="docutils literal notranslate"><span class="pre">Certificate.student_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Certificate.course_id"><code class="docutils literal notranslate"><span class="pre">Certificate.course_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Certificate.certificate_code"><code class="docutils literal notranslate"><span class="pre">Certificate.certificate_code</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Certificate.issued_at"><code class="docutils literal notranslate"><span class="pre">Certificate.issued_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Certificate.student"><code class="docutils literal notranslate"><span class="pre">Certificate.student</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Certificate.to_dict"><code class="docutils literal notranslate"><span class="pre">Certificate.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Certificate.__init__"><code class="docutils literal notranslate"><span class="pre">Certificate.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Certificate.query"><code class="docutils literal notranslate"><span class="pre">Certificate.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.Message"><code class="docutils literal notranslate"><span class="pre">Message</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.id"><code class="docutils literal notranslate"><span class="pre">Message.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.sender_id"><code class="docutils literal notranslate"><span class="pre">Message.sender_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.recipient_id"><code class="docutils literal notranslate"><span class="pre">Message.recipient_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.course_id"><code class="docutils literal notranslate"><span class="pre">Message.course_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.subject"><code class="docutils literal notranslate"><span class="pre">Message.subject</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.content"><code class="docutils literal notranslate"><span class="pre">Message.content</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.sent_at"><code class="docutils literal notranslate"><span class="pre">Message.sent_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.read_at"><code class="docutils literal notranslate"><span class="pre">Message.read_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.is_announcement"><code class="docutils literal notranslate"><span class="pre">Message.is_announcement</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.sender"><code class="docutils literal notranslate"><span class="pre">Message.sender</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.recipient"><code class="docutils literal notranslate"><span class="pre">Message.recipient</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.course"><code class="docutils literal notranslate"><span class="pre">Message.course</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.to_dict"><code class="docutils literal notranslate"><span class="pre">Message.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.__init__"><code class="docutils literal notranslate"><span class="pre">Message.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Message.query"><code class="docutils literal notranslate"><span class="pre">Message.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.NotificationType"><code class="docutils literal notranslate"><span class="pre">NotificationType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.MESSAGE"><code class="docutils literal notranslate"><span class="pre">NotificationType.MESSAGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.ENROLLMENT"><code class="docutils literal notranslate"><span class="pre">NotificationType.ENROLLMENT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.ASSIGNMENT_SUBMISSION"><code class="docutils literal notranslate"><span class="pre">NotificationType.ASSIGNMENT_SUBMISSION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.ASSIGNMENT_GRADED"><code class="docutils literal notranslate"><span class="pre">NotificationType.ASSIGNMENT_GRADED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.QUIZ_SUBMISSION"><code class="docutils literal notranslate"><span class="pre">NotificationType.QUIZ_SUBMISSION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.QUIZ_GRADED"><code class="docutils literal notranslate"><span class="pre">NotificationType.QUIZ_GRADED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.COURSE_COMPLETION"><code class="docutils literal notranslate"><span class="pre">NotificationType.COURSE_COMPLETION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.NEW_CONTENT"><code class="docutils literal notranslate"><span class="pre">NotificationType.NEW_CONTENT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.CERTIFICATE_ISSUED"><code class="docutils literal notranslate"><span class="pre">NotificationType.CERTIFICATE_ISSUED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.CERTIFICATE_REQUEST"><code class="docutils literal notranslate"><span class="pre">NotificationType.CERTIFICATE_REQUEST</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.CERTIFICATE_APPROVED"><code class="docutils literal notranslate"><span class="pre">NotificationType.CERTIFICATE_APPROVED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.CERTIFICATE_REJECTED"><code class="docutils literal notranslate"><span class="pre">NotificationType.CERTIFICATE_REJECTED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.USER_REGISTRATION"><code class="docutils literal notranslate"><span class="pre">NotificationType.USER_REGISTRATION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.COURSE_PUBLISHED"><code class="docutils literal notranslate"><span class="pre">NotificationType.COURSE_PUBLISHED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationType.ACHIEVEMENT_EARNED"><code class="docutils literal notranslate"><span class="pre">NotificationType.ACHIEVEMENT_EARNED</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.NotificationPriority"><code class="docutils literal notranslate"><span class="pre">NotificationPriority</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationPriority.LOW"><code class="docutils literal notranslate"><span class="pre">NotificationPriority.LOW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationPriority.NORMAL"><code class="docutils literal notranslate"><span class="pre">NotificationPriority.NORMAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationPriority.HIGH"><code class="docutils literal notranslate"><span class="pre">NotificationPriority.HIGH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.NotificationPriority.URGENT"><code class="docutils literal notranslate"><span class="pre">NotificationPriority.URGENT</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.Notification"><code class="docutils literal notranslate"><span class="pre">Notification</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.id"><code class="docutils literal notranslate"><span class="pre">Notification.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.recipient_id"><code class="docutils literal notranslate"><span class="pre">Notification.recipient_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.sender_id"><code class="docutils literal notranslate"><span class="pre">Notification.sender_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.type"><code class="docutils literal notranslate"><span class="pre">Notification.type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.priority"><code class="docutils literal notranslate"><span class="pre">Notification.priority</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.title"><code class="docutils literal notranslate"><span class="pre">Notification.title</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.message"><code class="docutils literal notranslate"><span class="pre">Notification.message</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.action_url"><code class="docutils literal notranslate"><span class="pre">Notification.action_url</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.related_id"><code class="docutils literal notranslate"><span class="pre">Notification.related_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.is_read"><code class="docutils literal notranslate"><span class="pre">Notification.is_read</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.read_at"><code class="docutils literal notranslate"><span class="pre">Notification.read_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.created_at"><code class="docutils literal notranslate"><span class="pre">Notification.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.recipient"><code class="docutils literal notranslate"><span class="pre">Notification.recipient</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.sender"><code class="docutils literal notranslate"><span class="pre">Notification.sender</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.mark_as_read"><code class="docutils literal notranslate"><span class="pre">Notification.mark_as_read()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.to_dict"><code class="docutils literal notranslate"><span class="pre">Notification.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.__init__"><code class="docutils literal notranslate"><span class="pre">Notification.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.Notification.query"><code class="docutils literal notranslate"><span class="pre">Notification.query</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="app.models.html#app.models.CertificateRequest"><code class="docutils literal notranslate"><span class="pre">CertificateRequest</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.id"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.student_id"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.student_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.course_id"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.course_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.requested_at"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.requested_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.status"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.status</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.reviewed_by"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.reviewed_by</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.reviewed_at"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.reviewed_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.rejection_reason"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.rejection_reason</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.student"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.student</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.course"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.course</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.reviewer"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.reviewer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.to_dict"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.__init__"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.models.html#app.models.CertificateRequest.query"><code class="docutils literal notranslate"><span class="pre">CertificateRequest.query</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="app.routes.html">app.routes package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.admin">app.routes.admin module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.get_dashboard"><code class="docutils literal notranslate"><span class="pre">get_dashboard()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.get_users"><code class="docutils literal notranslate"><span class="pre">get_users()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.get_user"><code class="docutils literal notranslate"><span class="pre">get_user()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.update_user"><code class="docutils literal notranslate"><span class="pre">update_user()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.export_users"><code class="docutils literal notranslate"><span class="pre">export_users()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.toggle_user_active"><code class="docutils literal notranslate"><span class="pre">toggle_user_active()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.get_all_courses"><code class="docutils literal notranslate"><span class="pre">get_all_courses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.delete_course"><code class="docutils literal notranslate"><span class="pre">delete_course()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.export_courses"><code class="docutils literal notranslate"><span class="pre">export_courses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.toggle_course_published"><code class="docutils literal notranslate"><span class="pre">toggle_course_published()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.get_user_activity_report"><code class="docutils literal notranslate"><span class="pre">get_user_activity_report()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.get_course_performance_report"><code class="docutils literal notranslate"><span class="pre">get_course_performance_report()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.get_achievements"><code class="docutils literal notranslate"><span class="pre">get_achievements()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.create_achievement"><code class="docutils literal notranslate"><span class="pre">create_achievement()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.get_user_activity_overview"><code class="docutils literal notranslate"><span class="pre">get_user_activity_overview()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.admin.get_course_categories"><code class="docutils literal notranslate"><span class="pre">get_course_categories()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.assignments">app.routes.assignments module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.assignments.get_course_assignments"><code class="docutils literal notranslate"><span class="pre">get_course_assignments()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.assignments.get_assignment"><code class="docutils literal notranslate"><span class="pre">get_assignment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.assignments.create_assignment"><code class="docutils literal notranslate"><span class="pre">create_assignment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.assignments.update_assignment"><code class="docutils literal notranslate"><span class="pre">update_assignment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.assignments.delete_assignment"><code class="docutils literal notranslate"><span class="pre">delete_assignment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.assignments.submit_assignment"><code class="docutils literal notranslate"><span class="pre">submit_assignment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.assignments.get_assignment_submissions"><code class="docutils literal notranslate"><span class="pre">get_assignment_submissions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.assignments.grade_submission"><code class="docutils literal notranslate"><span class="pre">grade_submission()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.assignments.return_submission"><code class="docutils literal notranslate"><span class="pre">return_submission()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.auth">app.routes.auth module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.auth.register"><code class="docutils literal notranslate"><span class="pre">register()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.auth.login"><code class="docutils literal notranslate"><span class="pre">login()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.auth.get_profile"><code class="docutils literal notranslate"><span class="pre">get_profile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.auth.update_profile"><code class="docutils literal notranslate"><span class="pre">update_profile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.auth.change_password"><code class="docutils literal notranslate"><span class="pre">change_password()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.certificates">app.routes.certificates module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.certificates.get_pending_certificates"><code class="docutils literal notranslate"><span class="pre">get_pending_certificates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.certificates.issue_certificate"><code class="docutils literal notranslate"><span class="pre">issue_certificate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.certificates.bulk_issue_certificates"><code class="docutils literal notranslate"><span class="pre">bulk_issue_certificates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.certificates.revoke_certificate"><code class="docutils literal notranslate"><span class="pre">revoke_certificate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.certificates.verify_certificate"><code class="docutils literal notranslate"><span class="pre">verify_certificate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.certificates.request_certificate"><code class="docutils literal notranslate"><span class="pre">request_certificate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.certificates.get_certificate_requests"><code class="docutils literal notranslate"><span class="pre">get_certificate_requests()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.certificates.approve_certificate_request"><code class="docutils literal notranslate"><span class="pre">approve_certificate_request()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.certificates.reject_certificate_request"><code class="docutils literal notranslate"><span class="pre">reject_certificate_request()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.courses">app.routes.courses module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.courses.get_courses"><code class="docutils literal notranslate"><span class="pre">get_courses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.courses.get_course"><code class="docutils literal notranslate"><span class="pre">get_course()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.courses.create_course"><code class="docutils literal notranslate"><span class="pre">create_course()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.courses.update_course"><code class="docutils literal notranslate"><span class="pre">update_course()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.courses.delete_course"><code class="docutils literal notranslate"><span class="pre">delete_course()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.courses.enroll_in_course"><code class="docutils literal notranslate"><span class="pre">enroll_in_course()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.courses.drop_course"><code class="docutils literal notranslate"><span class="pre">drop_course()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.courses.get_enrolled_courses"><code class="docutils literal notranslate"><span class="pre">get_enrolled_courses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.courses.get_course_students"><code class="docutils literal notranslate"><span class="pre">get_course_students()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.frontend">app.routes.frontend module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.get_auth_headers"><code class="docutils literal notranslate"><span class="pre">get_auth_headers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.index"><code class="docutils literal notranslate"><span class="pre">index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.login"><code class="docutils literal notranslate"><span class="pre">login()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.register"><code class="docutils literal notranslate"><span class="pre">register()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.logout"><code class="docutils literal notranslate"><span class="pre">logout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.admin_dashboard"><code class="docutils literal notranslate"><span class="pre">admin_dashboard()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.admin_users"><code class="docutils literal notranslate"><span class="pre">admin_users()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.admin_courses"><code class="docutils literal notranslate"><span class="pre">admin_courses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.admin_reports"><code class="docutils literal notranslate"><span class="pre">admin_reports()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.toggle_user_active"><code class="docutils literal notranslate"><span class="pre">toggle_user_active()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.get_user_details"><code class="docutils literal notranslate"><span class="pre">get_user_details()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.edit_user"><code class="docutils literal notranslate"><span class="pre">edit_user()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.export_users"><code class="docutils literal notranslate"><span class="pre">export_users()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.toggle_course_published"><code class="docutils literal notranslate"><span class="pre">toggle_course_published()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.get_course_details"><code class="docutils literal notranslate"><span class="pre">get_course_details()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.export_courses"><code class="docutils literal notranslate"><span class="pre">export_courses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.profile"><code class="docutils literal notranslate"><span class="pre">profile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.update_profile"><code class="docutils literal notranslate"><span class="pre">update_profile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.change_password"><code class="docutils literal notranslate"><span class="pre">change_password()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_dashboard"><code class="docutils literal notranslate"><span class="pre">student_dashboard()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_browse_courses"><code class="docutils literal notranslate"><span class="pre">student_browse_courses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_courses"><code class="docutils literal notranslate"><span class="pre">student_courses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_course_view"><code class="docutils literal notranslate"><span class="pre">student_course_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_lesson_view"><code class="docutils literal notranslate"><span class="pre">student_lesson_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_quiz_take"><code class="docutils literal notranslate"><span class="pre">student_quiz_take()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_quiz_results"><code class="docutils literal notranslate"><span class="pre">student_quiz_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_assignment_view"><code class="docutils literal notranslate"><span class="pre">student_assignment_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_assignments"><code class="docutils literal notranslate"><span class="pre">student_assignments()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_progress"><code class="docutils literal notranslate"><span class="pre">student_progress()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_achievements"><code class="docutils literal notranslate"><span class="pre">student_achievements()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.student_certificates"><code class="docutils literal notranslate"><span class="pre">student_certificates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_dashboard"><code class="docutils literal notranslate"><span class="pre">teacher_dashboard()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_courses"><code class="docutils literal notranslate"><span class="pre">teacher_courses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_create_course"><code class="docutils literal notranslate"><span class="pre">teacher_create_course()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_course_view"><code class="docutils literal notranslate"><span class="pre">teacher_course_view()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_course_content"><code class="docutils literal notranslate"><span class="pre">teacher_course_content()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_course_analytics"><code class="docutils literal notranslate"><span class="pre">teacher_course_analytics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_course_students"><code class="docutils literal notranslate"><span class="pre">teacher_course_students()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_submissions"><code class="docutils literal notranslate"><span class="pre">teacher_submissions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_analytics"><code class="docutils literal notranslate"><span class="pre">teacher_analytics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_lesson_preview"><code class="docutils literal notranslate"><span class="pre">teacher_lesson_preview()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_quiz_analytics"><code class="docutils literal notranslate"><span class="pre">teacher_quiz_analytics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_quiz_questions"><code class="docutils literal notranslate"><span class="pre">teacher_quiz_questions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_assignment_submissions"><code class="docutils literal notranslate"><span class="pre">teacher_assignment_submissions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.messages"><code class="docutils literal notranslate"><span class="pre">messages()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.compose_message"><code class="docutils literal notranslate"><span class="pre">compose_message()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.message_conversation"><code class="docutils literal notranslate"><span class="pre">message_conversation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_student_progress"><code class="docutils literal notranslate"><span class="pre">teacher_student_progress()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.notifications"><code class="docutils literal notranslate"><span class="pre">notifications()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.admin_certificates"><code class="docutils literal notranslate"><span class="pre">admin_certificates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.verify_certificate_public"><code class="docutils literal notranslate"><span class="pre">verify_certificate_public()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_quiz_grading"><code class="docutils literal notranslate"><span class="pre">teacher_quiz_grading()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.frontend.teacher_quiz_results"><code class="docutils literal notranslate"><span class="pre">teacher_quiz_results()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.lessons">app.routes.lessons module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.lessons.get_course_lessons"><code class="docutils literal notranslate"><span class="pre">get_course_lessons()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.lessons.get_lesson"><code class="docutils literal notranslate"><span class="pre">get_lesson()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.lessons.create_lesson"><code class="docutils literal notranslate"><span class="pre">create_lesson()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.lessons.update_lesson"><code class="docutils literal notranslate"><span class="pre">update_lesson()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.lessons.delete_lesson"><code class="docutils literal notranslate"><span class="pre">delete_lesson()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.lessons.complete_lesson"><code class="docutils literal notranslate"><span class="pre">complete_lesson()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.messages">app.routes.messages module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.messages.send_message"><code class="docutils literal notranslate"><span class="pre">send_message()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.messages.get_messages"><code class="docutils literal notranslate"><span class="pre">get_messages()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.messages.get_message"><code class="docutils literal notranslate"><span class="pre">get_message()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.messages.mark_as_read"><code class="docutils literal notranslate"><span class="pre">mark_as_read()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.messages.get_conversations"><code class="docutils literal notranslate"><span class="pre">get_conversations()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.messages.get_conversation_messages"><code class="docutils literal notranslate"><span class="pre">get_conversation_messages()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.messages.search_users"><code class="docutils literal notranslate"><span class="pre">search_users()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.notifications">app.routes.notifications module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.notifications.get_notifications"><code class="docutils literal notranslate"><span class="pre">get_notifications()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.notifications.mark_as_read"><code class="docutils literal notranslate"><span class="pre">mark_as_read()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.notifications.mark_all_as_read"><code class="docutils literal notranslate"><span class="pre">mark_all_as_read()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.notifications.delete_notification"><code class="docutils literal notranslate"><span class="pre">delete_notification()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.notifications.get_unread_count"><code class="docutils literal notranslate"><span class="pre">get_unread_count()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.notifications.bulk_delete_notifications"><code class="docutils literal notranslate"><span class="pre">bulk_delete_notifications()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.notifications.update_notification_preferences"><code class="docutils literal notranslate"><span class="pre">update_notification_preferences()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.quizzes">app.routes.quizzes module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.get_course_quizzes"><code class="docutils literal notranslate"><span class="pre">get_course_quizzes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.get_quiz"><code class="docutils literal notranslate"><span class="pre">get_quiz()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.create_quiz"><code class="docutils literal notranslate"><span class="pre">create_quiz()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.update_quiz"><code class="docutils literal notranslate"><span class="pre">update_quiz()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.delete_quiz"><code class="docutils literal notranslate"><span class="pre">delete_quiz()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.add_question"><code class="docutils literal notranslate"><span class="pre">add_question()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.update_question"><code class="docutils literal notranslate"><span class="pre">update_question()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.delete_question"><code class="docutils literal notranslate"><span class="pre">delete_question()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.start_quiz"><code class="docutils literal notranslate"><span class="pre">start_quiz()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.submit_quiz"><code class="docutils literal notranslate"><span class="pre">submit_quiz()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.get_quiz_results"><code class="docutils literal notranslate"><span class="pre">get_quiz_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.get_quiz_statistics"><code class="docutils literal notranslate"><span class="pre">get_quiz_statistics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.quizzes.get_question"><code class="docutils literal notranslate"><span class="pre">get_question()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.student">app.routes.student module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.get_dashboard"><code class="docutils literal notranslate"><span class="pre">get_dashboard()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.get_student_progress"><code class="docutils literal notranslate"><span class="pre">get_student_progress()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.get_achievements"><code class="docutils literal notranslate"><span class="pre">get_achievements()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.get_certificates"><code class="docutils literal notranslate"><span class="pre">get_certificates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.request_certificate"><code class="docutils literal notranslate"><span class="pre">request_certificate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.get_study_streak"><code class="docutils literal notranslate"><span class="pre">get_study_streak()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.get_course_recommendations"><code class="docutils literal notranslate"><span class="pre">get_course_recommendations()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.send_message"><code class="docutils literal notranslate"><span class="pre">send_message()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.get_student_progress_by_teacher"><code class="docutils literal notranslate"><span class="pre">get_student_progress_by_teacher()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.get_student_quiz_attempts"><code class="docutils literal notranslate"><span class="pre">get_student_quiz_attempts()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.download_certificate"><code class="docutils literal notranslate"><span class="pre">download_certificate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.student.bulk_download_certificates"><code class="docutils literal notranslate"><span class="pre">bulk_download_certificates()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes.teacher">app.routes.teacher module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_dashboard"><code class="docutils literal notranslate"><span class="pre">get_dashboard()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_teacher_courses"><code class="docutils literal notranslate"><span class="pre">get_teacher_courses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_course_details"><code class="docutils literal notranslate"><span class="pre">get_course_details()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_pending_submissions"><code class="docutils literal notranslate"><span class="pre">get_pending_submissions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_all_submissions"><code class="docutils literal notranslate"><span class="pre">get_all_submissions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_quiz_analytics"><code class="docutils literal notranslate"><span class="pre">get_quiz_analytics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_student_progress_report"><code class="docutils literal notranslate"><span class="pre">get_student_progress_report()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_course_analytics"><code class="docutils literal notranslate"><span class="pre">get_course_analytics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_teacher_analytics_overview"><code class="docutils literal notranslate"><span class="pre">get_teacher_analytics_overview()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_individual_student_progress"><code class="docutils literal notranslate"><span class="pre">get_individual_student_progress()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.export_course_students"><code class="docutils literal notranslate"><span class="pre">export_course_students()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_all_quiz_attempts"><code class="docutils literal notranslate"><span class="pre">get_all_quiz_attempts()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_quiz_attempt_details"><code class="docutils literal notranslate"><span class="pre">get_quiz_attempt_details()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.grade_quiz_attempt"><code class="docutils literal notranslate"><span class="pre">grade_quiz_attempt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="app.routes.html#app.routes.teacher.get_quiz_grading_summary"><code class="docutils literal notranslate"><span class="pre">get_quiz_grading_summary()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.routes.html#module-app.routes">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="app.services.html">app.services package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.achievement_service">app.services.achievement_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.achievement_service.AchievementService"><code class="docutils literal notranslate"><span class="pre">AchievementService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.achievement_service.AchievementService.get_student_achievements"><code class="docutils literal notranslate"><span class="pre">AchievementService.get_student_achievements()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.achievement_service.AchievementService.get_available_achievements"><code class="docutils literal notranslate"><span class="pre">AchievementService.get_available_achievements()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.achievement_service.AchievementService.check_quiz_achievement"><code class="docutils literal notranslate"><span class="pre">AchievementService.check_quiz_achievement()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.achievement_service.AchievementService.check_course_completion_achievement"><code class="docutils literal notranslate"><span class="pre">AchievementService.check_course_completion_achievement()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.achievement_service.AchievementService.check_participation_achievement"><code class="docutils literal notranslate"><span class="pre">AchievementService.check_participation_achievement()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.achievement_service.AchievementService.create_default_achievements"><code class="docutils literal notranslate"><span class="pre">AchievementService.create_default_achievements()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.achievement_service.AchievementService.award_achievement"><code class="docutils literal notranslate"><span class="pre">AchievementService.award_achievement()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.admin_service">app.services.admin_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService"><code class="docutils literal notranslate"><span class="pre">AdminService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.get_dashboard"><code class="docutils literal notranslate"><span class="pre">AdminService.get_dashboard()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.get_users"><code class="docutils literal notranslate"><span class="pre">AdminService.get_users()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.get_user"><code class="docutils literal notranslate"><span class="pre">AdminService.get_user()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.update_user"><code class="docutils literal notranslate"><span class="pre">AdminService.update_user()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.toggle_user_active"><code class="docutils literal notranslate"><span class="pre">AdminService.toggle_user_active()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.export_users"><code class="docutils literal notranslate"><span class="pre">AdminService.export_users()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.get_all_courses"><code class="docutils literal notranslate"><span class="pre">AdminService.get_all_courses()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.export_courses"><code class="docutils literal notranslate"><span class="pre">AdminService.export_courses()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.toggle_course_published"><code class="docutils literal notranslate"><span class="pre">AdminService.toggle_course_published()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.get_user_activity_report"><code class="docutils literal notranslate"><span class="pre">AdminService.get_user_activity_report()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.get_course_performance_report"><code class="docutils literal notranslate"><span class="pre">AdminService.get_course_performance_report()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.get_achievements"><code class="docutils literal notranslate"><span class="pre">AdminService.get_achievements()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.create_achievement"><code class="docutils literal notranslate"><span class="pre">AdminService.create_achievement()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.get_user_overview_chart"><code class="docutils literal notranslate"><span class="pre">AdminService.get_user_overview_chart()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.admin_service.AdminService.get_course_categories_distribution"><code class="docutils literal notranslate"><span class="pre">AdminService.get_course_categories_distribution()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.assignment_service">app.services.assignment_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.assignment_service.AssignmentService"><code class="docutils literal notranslate"><span class="pre">AssignmentService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.assignment_service.AssignmentService.get_course_assignments"><code class="docutils literal notranslate"><span class="pre">AssignmentService.get_course_assignments()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.assignment_service.AssignmentService.get_assignment"><code class="docutils literal notranslate"><span class="pre">AssignmentService.get_assignment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.assignment_service.AssignmentService.create_assignment"><code class="docutils literal notranslate"><span class="pre">AssignmentService.create_assignment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.assignment_service.AssignmentService.update_assignment"><code class="docutils literal notranslate"><span class="pre">AssignmentService.update_assignment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.assignment_service.AssignmentService.delete_assignment"><code class="docutils literal notranslate"><span class="pre">AssignmentService.delete_assignment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.assignment_service.AssignmentService.submit_assignment"><code class="docutils literal notranslate"><span class="pre">AssignmentService.submit_assignment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.assignment_service.AssignmentService.get_assignment_submissions"><code class="docutils literal notranslate"><span class="pre">AssignmentService.get_assignment_submissions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.assignment_service.AssignmentService.grade_submission"><code class="docutils literal notranslate"><span class="pre">AssignmentService.grade_submission()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.assignment_service.AssignmentService.return_submission"><code class="docutils literal notranslate"><span class="pre">AssignmentService.return_submission()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.auth_service">app.services.auth_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.auth_service.AuthService"><code class="docutils literal notranslate"><span class="pre">AuthService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.auth_service.AuthService.register_user"><code class="docutils literal notranslate"><span class="pre">AuthService.register_user()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.auth_service.AuthService.login_user"><code class="docutils literal notranslate"><span class="pre">AuthService.login_user()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.auth_service.AuthService.get_user_profile"><code class="docutils literal notranslate"><span class="pre">AuthService.get_user_profile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.auth_service.AuthService.update_user_profile"><code class="docutils literal notranslate"><span class="pre">AuthService.update_user_profile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.auth_service.AuthService.change_password"><code class="docutils literal notranslate"><span class="pre">AuthService.change_password()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.certificate_service">app.services.certificate_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService"><code class="docutils literal notranslate"><span class="pre">CertificateService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.get_student_certificates"><code class="docutils literal notranslate"><span class="pre">CertificateService.get_student_certificates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.generate_certificate"><code class="docutils literal notranslate"><span class="pre">CertificateService.generate_certificate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.get_pending_certificates"><code class="docutils literal notranslate"><span class="pre">CertificateService.get_pending_certificates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.issue_certificate"><code class="docutils literal notranslate"><span class="pre">CertificateService.issue_certificate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.bulk_issue_certificates"><code class="docutils literal notranslate"><span class="pre">CertificateService.bulk_issue_certificates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.revoke_certificate"><code class="docutils literal notranslate"><span class="pre">CertificateService.revoke_certificate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.verify_certificate"><code class="docutils literal notranslate"><span class="pre">CertificateService.verify_certificate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.get_certificate_details"><code class="docutils literal notranslate"><span class="pre">CertificateService.get_certificate_details()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.request_certificate_approval"><code class="docutils literal notranslate"><span class="pre">CertificateService.request_certificate_approval()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.get_certificate_requests"><code class="docutils literal notranslate"><span class="pre">CertificateService.get_certificate_requests()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.approve_certificate_request"><code class="docutils literal notranslate"><span class="pre">CertificateService.approve_certificate_request()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.certificate_service.CertificateService.reject_certificate_request"><code class="docutils literal notranslate"><span class="pre">CertificateService.reject_certificate_request()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.course_service">app.services.course_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.course_service.CourseService"><code class="docutils literal notranslate"><span class="pre">CourseService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.course_service.CourseService.get_courses"><code class="docutils literal notranslate"><span class="pre">CourseService.get_courses()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.course_service.CourseService.get_course"><code class="docutils literal notranslate"><span class="pre">CourseService.get_course()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.course_service.CourseService.create_course"><code class="docutils literal notranslate"><span class="pre">CourseService.create_course()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.course_service.CourseService.update_course"><code class="docutils literal notranslate"><span class="pre">CourseService.update_course()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.course_service.CourseService.delete_course"><code class="docutils literal notranslate"><span class="pre">CourseService.delete_course()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.course_service.CourseService.enroll_student"><code class="docutils literal notranslate"><span class="pre">CourseService.enroll_student()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.course_service.CourseService.drop_course"><code class="docutils literal notranslate"><span class="pre">CourseService.drop_course()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.course_service.CourseService.get_enrolled_courses"><code class="docutils literal notranslate"><span class="pre">CourseService.get_enrolled_courses()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.course_service.CourseService.get_course_students"><code class="docutils literal notranslate"><span class="pre">CourseService.get_course_students()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.lesson_service">app.services.lesson_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.lesson_service.LessonService"><code class="docutils literal notranslate"><span class="pre">LessonService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.lesson_service.LessonService.get_course_lessons"><code class="docutils literal notranslate"><span class="pre">LessonService.get_course_lessons()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.lesson_service.LessonService.get_lesson"><code class="docutils literal notranslate"><span class="pre">LessonService.get_lesson()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.lesson_service.LessonService.create_lesson"><code class="docutils literal notranslate"><span class="pre">LessonService.create_lesson()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.lesson_service.LessonService.update_lesson"><code class="docutils literal notranslate"><span class="pre">LessonService.update_lesson()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.lesson_service.LessonService.delete_lesson"><code class="docutils literal notranslate"><span class="pre">LessonService.delete_lesson()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.lesson_service.LessonService.complete_lesson"><code class="docutils literal notranslate"><span class="pre">LessonService.complete_lesson()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.lesson_service.LessonService.get_lesson_analytics"><code class="docutils literal notranslate"><span class="pre">LessonService.get_lesson_analytics()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.lesson_service.LessonService.duplicate_lesson"><code class="docutils literal notranslate"><span class="pre">LessonService.duplicate_lesson()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.messaging_service">app.services.messaging_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.messaging_service.MessagingService"><code class="docutils literal notranslate"><span class="pre">MessagingService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.messaging_service.MessagingService.send_message"><code class="docutils literal notranslate"><span class="pre">MessagingService.send_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.messaging_service.MessagingService.get_messages"><code class="docutils literal notranslate"><span class="pre">MessagingService.get_messages()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.messaging_service.MessagingService.get_message"><code class="docutils literal notranslate"><span class="pre">MessagingService.get_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.messaging_service.MessagingService.mark_as_read"><code class="docutils literal notranslate"><span class="pre">MessagingService.mark_as_read()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.messaging_service.MessagingService.get_conversations"><code class="docutils literal notranslate"><span class="pre">MessagingService.get_conversations()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.messaging_service.MessagingService.get_conversation_messages"><code class="docutils literal notranslate"><span class="pre">MessagingService.get_conversation_messages()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.notification_service">app.services.notification_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService"><code class="docutils literal notranslate"><span class="pre">NotificationService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.create_notification"><code class="docutils literal notranslate"><span class="pre">NotificationService.create_notification()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.get_user_notifications"><code class="docutils literal notranslate"><span class="pre">NotificationService.get_user_notifications()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.mark_as_read"><code class="docutils literal notranslate"><span class="pre">NotificationService.mark_as_read()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.mark_all_as_read"><code class="docutils literal notranslate"><span class="pre">NotificationService.mark_all_as_read()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.delete_notification"><code class="docutils literal notranslate"><span class="pre">NotificationService.delete_notification()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.bulk_delete_notifications"><code class="docutils literal notranslate"><span class="pre">NotificationService.bulk_delete_notifications()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_new_message"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_new_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_student_enrollment"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_student_enrollment()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_assignment_submission"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_assignment_submission()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_assignment_graded"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_assignment_graded()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_quiz_submission"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_quiz_submission()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_course_completion"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_course_completion()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_new_content"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_new_content()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_achievement_earned"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_achievement_earned()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_assignment_returned"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_assignment_returned()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_quiz_graded"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_quiz_graded()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_certificate_request_submitted"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_certificate_request_submitted()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_certificate_request_resubmitted"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_certificate_request_resubmitted()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_certificate_request_approved"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_certificate_request_approved()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_certificate_request_rejected"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_certificate_request_rejected()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.notification_service.NotificationService.notify_certificate_issued"><code class="docutils literal notranslate"><span class="pre">NotificationService.notify_certificate_issued()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.quiz_service">app.services.quiz_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService"><code class="docutils literal notranslate"><span class="pre">QuizService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.get_course_quizzes"><code class="docutils literal notranslate"><span class="pre">QuizService.get_course_quizzes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.get_quiz"><code class="docutils literal notranslate"><span class="pre">QuizService.get_quiz()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.create_quiz"><code class="docutils literal notranslate"><span class="pre">QuizService.create_quiz()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.update_quiz"><code class="docutils literal notranslate"><span class="pre">QuizService.update_quiz()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.delete_quiz"><code class="docutils literal notranslate"><span class="pre">QuizService.delete_quiz()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.add_question"><code class="docutils literal notranslate"><span class="pre">QuizService.add_question()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.update_question"><code class="docutils literal notranslate"><span class="pre">QuizService.update_question()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.delete_question"><code class="docutils literal notranslate"><span class="pre">QuizService.delete_question()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.start_quiz"><code class="docutils literal notranslate"><span class="pre">QuizService.start_quiz()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.submit_quiz_with_achievements"><code class="docutils literal notranslate"><span class="pre">QuizService.submit_quiz_with_achievements()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.get_quiz_results"><code class="docutils literal notranslate"><span class="pre">QuizService.get_quiz_results()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.get_quiz_statistics"><code class="docutils literal notranslate"><span class="pre">QuizService.get_quiz_statistics()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.create_quiz_attempt"><code class="docutils literal notranslate"><span class="pre">QuizService.create_quiz_attempt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.get_quiz_questions"><code class="docutils literal notranslate"><span class="pre">QuizService.get_quiz_questions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.submit_quiz_attempt"><code class="docutils literal notranslate"><span class="pre">QuizService.submit_quiz_attempt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.get_student_quiz_attempts"><code class="docutils literal notranslate"><span class="pre">QuizService.get_student_quiz_attempts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.can_retake_quiz"><code class="docutils literal notranslate"><span class="pre">QuizService.can_retake_quiz()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.grade_attempt"><code class="docutils literal notranslate"><span class="pre">QuizService.grade_attempt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.quiz_service.QuizService.get_question_details"><code class="docutils literal notranslate"><span class="pre">QuizService.get_question_details()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.student_service">app.services.student_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.student_service.StudentService"><code class="docutils literal notranslate"><span class="pre">StudentService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.student_service.StudentService.get_progress"><code class="docutils literal notranslate"><span class="pre">StudentService.get_progress()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.student_service.StudentService.get_achievements"><code class="docutils literal notranslate"><span class="pre">StudentService.get_achievements()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.student_service.StudentService.get_certificates"><code class="docutils literal notranslate"><span class="pre">StudentService.get_certificates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.student_service.StudentService.request_certificate"><code class="docutils literal notranslate"><span class="pre">StudentService.request_certificate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.student_service.StudentService.get_study_streak"><code class="docutils literal notranslate"><span class="pre">StudentService.get_study_streak()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.student_service.StudentService.get_course_recommendations"><code class="docutils literal notranslate"><span class="pre">StudentService.get_course_recommendations()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.student_service.StudentService.generate_certificate_pdf"><code class="docutils literal notranslate"><span class="pre">StudentService.generate_certificate_pdf()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.student_service.StudentService.get_dashboard"><code class="docutils literal notranslate"><span class="pre">StudentService.get_dashboard()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services.teacher_service">app.services.teacher_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService"><code class="docutils literal notranslate"><span class="pre">TeacherService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_dashboard"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_dashboard()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_teacher_courses"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_teacher_courses()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_course_details"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_course_details()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_pending_submissions"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_pending_submissions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_quiz_analytics"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_quiz_analytics()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_individual_student_progress"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_individual_student_progress()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_student_progress_report"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_student_progress_report()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_course_analytics"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_course_analytics()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_teacher_analytics_overview"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_teacher_analytics_overview()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.export_course_students"><code class="docutils literal notranslate"><span class="pre">TeacherService.export_course_students()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_all_submissions"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_all_submissions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_all_quiz_attempts"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_all_quiz_attempts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_quiz_attempt_details"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_quiz_attempt_details()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="app.services.html#app.services.teacher_service.TeacherService.get_quiz_grading_summary"><code class="docutils literal notranslate"><span class="pre">TeacherService.get_quiz_grading_summary()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="app.services.html#module-app.services">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="module-app">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-app" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.create_app">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">create_app</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app.html#create_app"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.create_app" title="Link to this definition"></a></dt>
+<dd><p>Application factory</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.register_blueprints">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">register_blueprints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app.html#register_blueprints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.register_blueprints" title="Link to this definition"></a></dt>
+<dd><p>Register all blueprints</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.setup_logging">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app.html#setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.setup_logging" title="Link to this definition"></a></dt>
+<dd><p>Setup application logging</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.create_directories">
+<span class="sig-prename descclassname"><span class="pre">app.</span></span><span class="sig-name descname"><span class="pre">create_directories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app.html#create_directories"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.create_directories" title="Link to this definition"></a></dt>
+<dd><p>Create necessary directories</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

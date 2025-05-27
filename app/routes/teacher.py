@@ -1,5 +1,5 @@
-from flask import Blueprint, request, make_response
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import Blueprint, request, make_response, jsonify
+from flask_jwt_extended import get_jwt_identity
 
 from app.services.teacher_service import TeacherService
 from app.utils.base_controller import BaseController

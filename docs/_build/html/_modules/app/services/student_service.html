@@ -1,0 +1,725 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.services.student_service &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.services.student_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.services.student_service</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">desc</span><span class="p">,</span> <span class="n">func</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">db</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">Enrollment</span><span class="p">,</span> <span class="n">LessonProgress</span><span class="p">,</span> <span class="n">QuizAttempt</span><span class="p">,</span> <span class="n">AssignmentSubmission</span><span class="p">,</span> <span class="n">Certificate</span><span class="p">,</span> <span class="n">Assignment</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.services.achievement_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">AchievementService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.services.certificate_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">CertificateService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.base_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationException</span><span class="p">,</span> <span class="n">PermissionException</span><span class="p">,</span> <span class="n">NotFoundException</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+<div class="viewcode-block" id="StudentService">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.student_service.StudentService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StudentService</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Service for student-specific operations&quot;&quot;&quot;</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dashboard</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get student dashboard data&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only students can access dashboard&quot;</span><span class="p">)</span>
+        
+        <span class="n">active_enrollments</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">completed_enrollments</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">total_progress</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">active_enrollments</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">enrollment</span> <span class="ow">in</span> <span class="n">active_enrollments</span><span class="p">:</span>
+                <span class="n">current_progress</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">calculate_progress</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">!=</span> <span class="n">current_progress</span><span class="p">:</span>
+                    <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">=</span> <span class="n">current_progress</span>
+                    
+                    <span class="k">if</span> <span class="n">current_progress</span> <span class="o">&gt;=</span> <span class="mi">100</span><span class="p">:</span>
+                        <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
+                        <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            
+            <span class="n">active_enrollments</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            
+            <span class="n">completed_enrollments</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">active_enrollments</span><span class="p">:</span>
+                <span class="n">total_progress</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">active_enrollments</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">active_enrollments</span><span class="p">)</span>
+        
+        <span class="n">recent_lessons</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">LessonProgress</span><span class="o">.</span><span class="n">viewed_at</span><span class="p">))</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">recent_quiz_attempts</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="o">.</span><span class="n">started_at</span><span class="p">))</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">achievements_data</span> <span class="o">=</span> <span class="n">AchievementService</span><span class="o">.</span><span class="n">get_student_achievements</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        
+        <span class="n">upcoming_assignments</span> <span class="o">=</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">_get_upcoming_assignments</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        
+        <span class="n">recent_activity</span> <span class="o">=</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">_format_recent_activity</span><span class="p">(</span><span class="n">recent_lessons</span><span class="p">,</span> <span class="n">recent_quiz_attempts</span><span class="p">)</span>
+        
+        <span class="n">all_courses</span> <span class="o">=</span> <span class="n">active_enrollments</span> <span class="o">+</span> <span class="n">completed_enrollments</span>
+        <span class="n">active_courses_data</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">enrollment</span> <span class="ow">in</span> <span class="n">all_courses</span><span class="p">:</span>
+            <span class="n">course_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;progress&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span><span class="p">,</span>
+                <span class="s1">&#39;teacher&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher</span><span class="o">.</span><span class="n">full_name</span> <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher</span> <span class="k">else</span> <span class="s1">&#39;Unknown&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;enrolled_at&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">enrolled_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">enrolled_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+                <span class="s1">&#39;completed_at&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">}</span>
+            <span class="n">active_courses_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">course_data</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;stats&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;active_courses&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">active_enrollments</span><span class="p">),</span>
+                <span class="s1">&#39;completed_courses&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">completed_enrollments</span><span class="p">),</span>
+                <span class="s1">&#39;overall_progress&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_progress</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="s1">&#39;total_achievements&#39;</span><span class="p">:</span> <span class="n">achievements_data</span><span class="p">[</span><span class="s1">&#39;total_achievements&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;achievement_points&#39;</span><span class="p">:</span> <span class="n">achievements_data</span><span class="p">[</span><span class="s1">&#39;total_points&#39;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;active_courses&#39;</span><span class="p">:</span> <span class="n">active_courses_data</span><span class="p">,</span> 
+            <span class="s1">&#39;recent_activity&#39;</span><span class="p">:</span> <span class="n">recent_activity</span><span class="p">,</span>
+            <span class="s1">&#39;upcoming_assignments&#39;</span><span class="p">:</span> <span class="n">upcoming_assignments</span><span class="p">,</span>
+            <span class="s1">&#39;achievements&#39;</span><span class="p">:</span> <span class="n">achievements_data</span><span class="p">[</span><span class="s1">&#39;achievements&#39;</span><span class="p">][:</span><span class="mi">5</span><span class="p">]</span>
+        <span class="p">}</span>
+    
+<div class="viewcode-block" id="StudentService.get_progress">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.student_service.StudentService.get_progress">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get detailed student progress&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only students can access progress&quot;</span><span class="p">)</span>
+        
+        <span class="n">enrollments</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">progress_data</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">enrollment</span> <span class="ow">in</span> <span class="n">enrollments</span><span class="p">:</span>
+            <span class="n">course</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">course</span>
+            
+            <span class="n">current_progress</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">calculate_progress</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">!=</span> <span class="n">current_progress</span><span class="p">:</span>
+                <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">=</span> <span class="n">current_progress</span>
+                
+                <span class="k">if</span> <span class="n">current_progress</span> <span class="o">&gt;=</span> <span class="mi">100</span> <span class="ow">and</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span>
+                    <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
+                    <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            
+            <span class="n">lesson_progress</span> <span class="o">=</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">_get_lesson_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">course</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="n">quiz_progress</span> <span class="o">=</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">_get_quiz_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">course</span><span class="p">)</span>
+            <span class="n">assignment_progress</span> <span class="o">=</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">_get_assignment_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">course</span><span class="p">)</span>
+            
+            <span class="n">progress_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;course&#39;</span><span class="p">:</span> <span class="n">course</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="s1">&#39;enrollment&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="s1">&#39;lesson_progress&#39;</span><span class="p">:</span> <span class="n">lesson_progress</span><span class="p">,</span>
+                <span class="s1">&#39;quiz_progress&#39;</span><span class="p">:</span> <span class="n">quiz_progress</span><span class="p">,</span>
+                <span class="s1">&#39;assignment_progress&#39;</span><span class="p">:</span> <span class="n">assignment_progress</span>
+            <span class="p">})</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;courses&#39;</span><span class="p">:</span> <span class="n">progress_data</span><span class="p">,</span>
+            <span class="s1">&#39;total_courses&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">progress_data</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="StudentService.get_achievements">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.student_service.StudentService.get_achievements">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_achievements</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get student achievements&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only students can access achievements&quot;</span><span class="p">)</span>
+        
+        <span class="n">earned_achievements</span> <span class="o">=</span> <span class="n">AchievementService</span><span class="o">.</span><span class="n">get_student_achievements</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="n">available_achievements</span> <span class="o">=</span> <span class="n">AchievementService</span><span class="o">.</span><span class="n">get_available_achievements</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;earned&#39;</span><span class="p">:</span> <span class="n">earned_achievements</span><span class="p">,</span>
+            <span class="s1">&#39;available&#39;</span><span class="p">:</span> <span class="n">available_achievements</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="StudentService.get_certificates">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.student_service.StudentService.get_certificates">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_certificates</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get student certificates&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only students can access certificates&quot;</span><span class="p">)</span>
+        
+        <span class="n">certificates</span> <span class="o">=</span> <span class="n">CertificateService</span><span class="o">.</span><span class="n">get_student_certificates</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;certificates&#39;</span><span class="p">:</span> <span class="n">certificates</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">certificates</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="StudentService.request_certificate">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.student_service.StudentService.request_certificate">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">request_certificate</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Request certificate for completed course - FIXED LOGIC&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only students can request certificates&quot;</span><span class="p">)</span>
+        
+        <span class="n">enrollment</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">enrollment</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;You are not enrolled in this course&quot;</span><span class="p">)</span>
+        
+        <span class="n">current_progress</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">calculate_progress</span><span class="p">()</span>
+        <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">=</span> <span class="n">current_progress</span>
+        
+        <span class="k">if</span> <span class="n">current_progress</span> <span class="o">&gt;=</span> <span class="mi">100</span> <span class="ow">and</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span>
+            <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
+            <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Course must be completed to request certificate. Current progress: </span><span class="si">{</span><span class="n">current_progress</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+        
+        <span class="n">existing_cert</span> <span class="o">=</span> <span class="n">Certificate</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">existing_cert</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Certificate already exists&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;certificate&#39;</span><span class="p">:</span> <span class="n">existing_cert</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="p">}</span>
+        
+        <span class="k">return</span> <span class="n">CertificateService</span><span class="o">.</span><span class="n">request_certificate_approval</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">course_id</span><span class="p">)</span></div>
+
+
+    
+<div class="viewcode-block" id="StudentService.get_study_streak">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.student_service.StudentService.get_study_streak">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_study_streak</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get student study streak information&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only students can access study streak&quot;</span><span class="p">)</span>
+        
+        <span class="n">lesson_progress</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">LessonProgress</span><span class="o">.</span><span class="n">viewed_at</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lesson_progress</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;current_streak&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;longest_streak&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;last_activity&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;total_study_days&#39;</span><span class="p">:</span> <span class="mi">0</span>
+            <span class="p">}</span>
+        
+        <span class="n">dates_with_activity</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">progress</span> <span class="ow">in</span> <span class="n">lesson_progress</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">progress</span><span class="o">.</span><span class="n">viewed_at</span><span class="p">:</span>
+                <span class="n">dates_with_activity</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">progress</span><span class="o">.</span><span class="n">viewed_at</span><span class="o">.</span><span class="n">date</span><span class="p">())</span>
+        
+        <span class="n">sorted_dates</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dates_with_activity</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="n">current_streak</span> <span class="o">=</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">_calculate_current_streak</span><span class="p">(</span><span class="n">sorted_dates</span><span class="p">)</span>
+        <span class="n">longest_streak</span> <span class="o">=</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">_calculate_longest_streak</span><span class="p">(</span><span class="n">sorted_dates</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;current_streak&#39;</span><span class="p">:</span> <span class="n">current_streak</span><span class="p">,</span>
+            <span class="s1">&#39;longest_streak&#39;</span><span class="p">:</span> <span class="n">longest_streak</span><span class="p">,</span>
+            <span class="s1">&#39;last_activity&#39;</span><span class="p">:</span> <span class="n">sorted_dates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">sorted_dates</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;total_study_days&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">dates_with_activity</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="StudentService.get_course_recommendations">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.student_service.StudentService.get_course_recommendations">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_course_recommendations</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get course recommendations for student&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only students can access recommendations&quot;</span><span class="p">)</span>
+        
+        <span class="n">enrolled_courses</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">course_id</span><span class="p">)</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">subquery</span><span class="p">()</span>
+        
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Course</span>
+        <span class="n">student_categories</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+            <span class="n">func</span><span class="o">.</span><span class="n">distinct</span><span class="p">(</span><span class="n">Course</span><span class="o">.</span><span class="n">category</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">enrolled_courses</span><span class="p">,</span> <span class="n">Course</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">enrolled_courses</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">course_id</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">student_categories</span> <span class="o">=</span> <span class="p">[</span><span class="n">cat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">cat</span> <span class="ow">in</span> <span class="n">student_categories</span> <span class="k">if</span> <span class="n">cat</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        
+        <span class="n">recommendations_query</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Course</span><span class="o">.</span><span class="n">is_published</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="o">~</span><span class="n">Course</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">enrolled_courses</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">course_id</span><span class="p">))</span>
+        <span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">student_categories</span><span class="p">:</span>
+            <span class="n">recommendations_query</span> <span class="o">=</span> <span class="n">recommendations_query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Course</span><span class="o">.</span><span class="n">category</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">student_categories</span><span class="p">)</span>
+            <span class="p">)</span>
+        
+        <span class="n">recommendations</span> <span class="o">=</span> <span class="n">recommendations_query</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">recommendations</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="n">popular_courses</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Course</span><span class="o">.</span><span class="n">is_published</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="o">~</span><span class="n">Course</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">enrolled_courses</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">course_id</span><span class="p">)),</span>
+                <span class="o">~</span><span class="n">Course</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">([</span><span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">recommendations</span><span class="p">])</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Enrollment</span><span class="p">)</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="n">Course</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span>
+                <span class="n">desc</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">5</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">recommendations</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            
+            <span class="n">recommendations</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">popular_courses</span><span class="p">)</span>
+        
+        <span class="n">recommendations_data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">recommendations</span><span class="p">:</span>
+            <span class="n">course_data</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="n">course_data</span><span class="p">[</span><span class="s1">&#39;recommendation_reason&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Based on your interest in </span><span class="si">{</span><span class="n">course</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">&quot;</span> 
+                <span class="k">if</span> <span class="n">course</span><span class="o">.</span><span class="n">category</span> <span class="ow">in</span> <span class="n">student_categories</span> 
+                <span class="k">else</span> <span class="s2">&quot;Popular course&quot;</span>
+            <span class="p">)</span>
+            <span class="n">recommendations_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">course_data</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;recommendations&#39;</span><span class="p">:</span> <span class="n">recommendations_data</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">recommendations_data</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_upcoming_assignments</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get upcoming assignments for student&quot;&quot;&quot;</span>
+        <span class="n">week_from_now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+        
+        <span class="n">upcoming_assignments</span> <span class="o">=</span> <span class="n">Assignment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">Enrollment</span><span class="p">,</span> <span class="n">Assignment</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Enrollment</span><span class="o">.</span><span class="n">student_id</span> <span class="o">==</span> <span class="n">student_id</span><span class="p">,</span>
+            <span class="n">Enrollment</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">in_</span><span class="p">([</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">]),</span>  
+            <span class="n">Assignment</span><span class="o">.</span><span class="n">due_date</span> <span class="o">&lt;=</span> <span class="n">week_from_now</span><span class="p">,</span>
+            <span class="n">Assignment</span><span class="o">.</span><span class="n">due_date</span> <span class="o">&gt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Assignment</span><span class="o">.</span><span class="n">due_date</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;course&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;due_date&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">due_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">due_date</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;days_remaining&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">due_date</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span><span class="o">.</span><span class="n">days</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">due_date</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">upcoming_assignments</span>
+        <span class="p">]</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_format_recent_activity</span><span class="p">(</span><span class="n">recent_lessons</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">recent_quiz_attempts</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Format recent activity for dashboard&quot;&quot;&quot;</span>
+        <span class="n">recent_activity</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="n">recent_lessons</span><span class="p">:</span>
+            <span class="n">recent_activity</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;lesson&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Viewed: </span><span class="si">{</span><span class="n">lesson</span><span class="o">.</span><span class="n">lesson</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s1">&#39;course&#39;</span><span class="p">:</span> <span class="n">lesson</span><span class="o">.</span><span class="n">lesson</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;timestamp&#39;</span><span class="p">:</span> <span class="n">lesson</span><span class="o">.</span><span class="n">viewed_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">lesson</span><span class="o">.</span><span class="n">viewed_at</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">})</span>
+        
+        <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="n">recent_quiz_attempts</span><span class="p">:</span>
+            <span class="n">recent_activity</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;quiz&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Quiz: </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s1">&#39;course&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;score&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                <span class="s1">&#39;timestamp&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">started_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">started_at</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">})</span>
+        
+        <span class="n">recent_activity</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">recent_activity</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_lesson_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get lesson progress for a course&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Course</span><span class="p">,</span> <span class="n">Lesson</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        <span class="n">total_lessons</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">lessons</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        
+        <span class="n">completed_lessons</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Lesson</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Lesson</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course_id</span><span class="p">,</span>
+            <span class="n">LessonProgress</span><span class="o">.</span><span class="n">completed_at</span><span class="o">.</span><span class="n">isnot</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="n">completed_lessons</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="n">total_lessons</span><span class="p">,</span>
+            <span class="s1">&#39;percentage&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">completed_lessons</span> <span class="o">/</span> <span class="n">total_lessons</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_lessons</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="p">}</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_quiz_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get quiz progress for a course&quot;&quot;&quot;</span>
+        <span class="n">quiz_progress</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">quiz</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">quizzes</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">best_attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="o">.</span><span class="n">score</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="n">quiz_progress</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;quiz_id&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;quiz_title&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;best_score&#39;</span><span class="p">:</span> <span class="n">best_attempt</span><span class="o">.</span><span class="n">score</span> <span class="k">if</span> <span class="n">best_attempt</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;passed&#39;</span><span class="p">:</span> <span class="n">best_attempt</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span> <span class="k">if</span> <span class="n">best_attempt</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;attempts&#39;</span><span class="p">:</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                    <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span> <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz</span><span class="o">.</span><span class="n">id</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+            <span class="p">})</span>
+        
+        <span class="k">return</span> <span class="n">quiz_progress</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_assignment_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get assignment progress for a course&quot;&quot;&quot;</span>
+        <span class="n">assignment_progress</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">assignments</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">submission</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">assignment_id</span><span class="o">=</span><span class="n">assignment</span><span class="o">.</span><span class="n">id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="n">assignment_progress</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;assignment_id&#39;</span><span class="p">:</span> <span class="n">assignment</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;assignment_title&#39;</span><span class="p">:</span> <span class="n">assignment</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;submitted&#39;</span><span class="p">:</span> <span class="n">submission</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;grade&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">grade</span> <span class="k">if</span> <span class="n">submission</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">status</span> <span class="k">if</span> <span class="n">submission</span> <span class="k">else</span> <span class="s1">&#39;not_submitted&#39;</span>
+            <span class="p">})</span>
+        
+        <span class="k">return</span> <span class="n">assignment_progress</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_current_streak</span><span class="p">(</span><span class="n">sorted_dates</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate current study streak&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sorted_dates</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        
+        <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+        <span class="n">current_streak</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">if</span> <span class="n">sorted_dates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">today</span> <span class="ow">or</span> <span class="n">sorted_dates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">today</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">current_streak</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">last_date</span> <span class="o">=</span> <span class="n">sorted_dates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_dates</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">last_date</span> <span class="o">-</span> <span class="n">sorted_dates</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">days</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">current_streak</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">last_date</span> <span class="o">=</span> <span class="n">sorted_dates</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
+        
+        <span class="k">return</span> <span class="n">current_streak</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_longest_streak</span><span class="p">(</span><span class="n">sorted_dates</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate longest study streak&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sorted_dates</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        
+        <span class="n">longest_streak</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">temp_streak</span> <span class="o">=</span> <span class="mi">1</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_dates</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">sorted_dates</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">sorted_dates</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">days</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">temp_streak</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">longest_streak</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">longest_streak</span><span class="p">,</span> <span class="n">temp_streak</span><span class="p">)</span>
+                <span class="n">temp_streak</span> <span class="o">=</span> <span class="mi">1</span>
+        
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">longest_streak</span><span class="p">,</span> <span class="n">temp_streak</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="StudentService.generate_certificate_pdf">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.student_service.StudentService.generate_certificate_pdf">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_certificate_pdf</span><span class="p">(</span><span class="n">certificate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a PDF certificate&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">reportlab.lib</span><span class="w"> </span><span class="kn">import</span> <span class="n">colors</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">reportlab.lib.pagesizes</span><span class="w"> </span><span class="kn">import</span> <span class="n">A4</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">reportlab.lib.styles</span><span class="w"> </span><span class="kn">import</span> <span class="n">getSampleStyleSheet</span><span class="p">,</span> <span class="n">ParagraphStyle</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">reportlab.lib.units</span><span class="w"> </span><span class="kn">import</span> <span class="n">inch</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">reportlab.platypus</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleDocTemplate</span><span class="p">,</span> <span class="n">Paragraph</span><span class="p">,</span> <span class="n">Spacer</span><span class="p">,</span> <span class="n">Table</span><span class="p">,</span> <span class="n">TableStyle</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">reportlab.lib.enums</span><span class="w"> </span><span class="kn">import</span> <span class="n">TA_CENTER</span>
+            
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">_generate_simple_pdf</span><span class="p">(</span><span class="n">certificate</span><span class="p">)</span>
+        
+        <span class="n">buffer</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">SimpleDocTemplate</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="n">pagesize</span><span class="o">=</span><span class="n">A4</span><span class="p">,</span> <span class="n">rightMargin</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">inch</span><span class="p">,</span> <span class="n">leftMargin</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">inch</span><span class="p">,</span> <span class="n">topMargin</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">inch</span><span class="p">,</span> <span class="n">bottomMargin</span><span class="o">=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">inch</span><span class="p">)</span>
+        
+        <span class="n">styles</span> <span class="o">=</span> <span class="n">getSampleStyleSheet</span><span class="p">()</span>
+        <span class="n">title_style</span> <span class="o">=</span> <span class="n">ParagraphStyle</span><span class="p">(</span><span class="s1">&#39;CustomTitle&#39;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">styles</span><span class="p">[</span><span class="s1">&#39;Heading1&#39;</span><span class="p">],</span> <span class="n">fontSize</span><span class="o">=</span><span class="mi">28</span><span class="p">,</span> <span class="n">spaceAfter</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">alignment</span><span class="o">=</span><span class="n">TA_CENTER</span><span class="p">,</span> <span class="n">textColor</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">HexColor</span><span class="p">(</span><span class="s1">&#39;#1f2937&#39;</span><span class="p">),</span> <span class="n">fontName</span><span class="o">=</span><span class="s1">&#39;Helvetica-Bold&#39;</span><span class="p">)</span>
+        
+        <span class="n">story</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Spacer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">inch</span><span class="p">))</span>
+        <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="s2">&quot;🏆&quot;</span><span class="p">,</span> <span class="n">title_style</span><span class="p">))</span>
+        <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="s2">&quot;CERTIFICATE OF COMPLETION&quot;</span><span class="p">,</span> <span class="n">title_style</span><span class="p">))</span>
+        <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Spacer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">inch</span><span class="p">))</span>
+        <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="n">certificate</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span> <span class="n">title_style</span><span class="p">))</span>
+        <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="n">certificate</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">title_style</span><span class="p">))</span>
+        <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Spacer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">inch</span><span class="p">))</span>
+        <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Issued: </span><span class="si">{</span><span class="n">certificate</span><span class="o">.</span><span class="n">issued_at</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%B </span><span class="si">%d</span><span class="s1">, %Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">styles</span><span class="p">[</span><span class="s1">&#39;Normal&#39;</span><span class="p">]))</span>
+        <span class="n">story</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Paragraph</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Certificate ID: </span><span class="si">{</span><span class="n">certificate</span><span class="o">.</span><span class="n">certificate_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">styles</span><span class="p">[</span><span class="s1">&#39;Normal&#39;</span><span class="p">]))</span>
+        
+        <span class="n">doc</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">story</span><span class="p">)</span>
+        <span class="n">buffer</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">buffer</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_simple_pdf</span><span class="p">(</span><span class="n">certificate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fallback PDF generation without reportlab&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">fpdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">FPDF</span>
+        
+        <span class="n">pdf</span> <span class="o">=</span> <span class="n">FPDF</span><span class="p">()</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">add_page</span><span class="p">()</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">set_font</span><span class="p">(</span><span class="s1">&#39;Arial&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">24</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="s1">&#39;CERTIFICATE OF COMPLETION&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">ln</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">set_font</span><span class="p">(</span><span class="s1">&#39;Arial&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">18</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">certificate</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">ln</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">set_font</span><span class="p">(</span><span class="s1">&#39;Arial&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">certificate</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">ln</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">set_font</span><span class="p">(</span><span class="s1">&#39;Arial&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Issue Date: </span><span class="si">{</span><span class="n">certificate</span><span class="o">.</span><span class="n">issued_at</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%B </span><span class="si">%d</span><span class="s2">, %Y&quot;</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">)</span>
+        <span class="n">pdf</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Certificate ID: </span><span class="si">{</span><span class="n">certificate</span><span class="o">.</span><span class="n">certificate_code</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">)</span>
+        
+        <span class="n">buffer</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+        <span class="n">pdf_content</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">dest</span><span class="o">=</span><span class="s1">&#39;S&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;latin1&#39;</span><span class="p">)</span>
+        <span class="n">buffer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pdf_content</span><span class="p">)</span>
+        <span class="n">buffer</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">buffer</span>
+    
+<div class="viewcode-block" id="StudentService.get_dashboard">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.student_service.StudentService.get_dashboard">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dashboard</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get student dashboard data&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only students can access dashboard&quot;</span><span class="p">)</span>
+        
+        <span class="n">active_enrollments</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">completed_enrollments</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">total_progress</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">active_enrollments</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">enrollment</span> <span class="ow">in</span> <span class="n">active_enrollments</span><span class="p">:</span>
+                <span class="n">current_progress</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">calculate_progress</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">!=</span> <span class="n">current_progress</span><span class="p">:</span>
+                    <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">=</span> <span class="n">current_progress</span>
+                    
+                    <span class="k">if</span> <span class="n">current_progress</span> <span class="o">&gt;=</span> <span class="mi">100</span><span class="p">:</span>
+                        <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
+                        <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            
+            <span class="n">active_enrollments</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            
+            <span class="n">completed_enrollments</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">active_enrollments</span><span class="p">:</span>
+                <span class="n">total_progress</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">active_enrollments</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">active_enrollments</span><span class="p">)</span>
+        
+        <span class="n">recent_lessons</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">LessonProgress</span><span class="o">.</span><span class="n">viewed_at</span><span class="p">))</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">recent_quiz_attempts</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="o">.</span><span class="n">started_at</span><span class="p">))</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">achievements_data</span> <span class="o">=</span> <span class="n">AchievementService</span><span class="o">.</span><span class="n">get_student_achievements</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        
+        <span class="n">upcoming_assignments</span> <span class="o">=</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">_get_upcoming_assignments</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        
+        <span class="n">recent_activity</span> <span class="o">=</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">_format_recent_activity</span><span class="p">(</span><span class="n">recent_lessons</span><span class="p">,</span> <span class="n">recent_quiz_attempts</span><span class="p">)</span>
+        
+        <span class="n">all_courses</span> <span class="o">=</span> <span class="n">active_enrollments</span> <span class="o">+</span> <span class="n">completed_enrollments</span>
+        <span class="n">active_courses_data</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">enrollment</span> <span class="ow">in</span> <span class="n">all_courses</span><span class="p">:</span>
+            <span class="n">course_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;progress&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span><span class="p">,</span>
+                <span class="s1">&#39;teacher&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher</span><span class="o">.</span><span class="n">full_name</span> <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher</span> <span class="k">else</span> <span class="s1">&#39;Unknown&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;enrolled_at&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">enrolled_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">enrolled_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+                <span class="s1">&#39;completed_at&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">}</span>
+            <span class="n">active_courses_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">course_data</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;stats&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;active_courses&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">active_enrollments</span><span class="p">),</span>
+                <span class="s1">&#39;completed_courses&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">completed_enrollments</span><span class="p">),</span>
+                <span class="s1">&#39;overall_progress&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_progress</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="s1">&#39;total_achievements&#39;</span><span class="p">:</span> <span class="n">achievements_data</span><span class="p">[</span><span class="s1">&#39;total_achievements&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;achievement_points&#39;</span><span class="p">:</span> <span class="n">achievements_data</span><span class="p">[</span><span class="s1">&#39;total_points&#39;</span><span class="p">]</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;active_courses&#39;</span><span class="p">:</span> <span class="n">active_courses_data</span><span class="p">,</span> 
+            <span class="s1">&#39;recent_activity&#39;</span><span class="p">:</span> <span class="n">recent_activity</span><span class="p">,</span>
+            <span class="s1">&#39;upcoming_assignments&#39;</span><span class="p">:</span> <span class="n">upcoming_assignments</span><span class="p">,</span>
+            <span class="s1">&#39;achievements&#39;</span><span class="p">:</span> <span class="n">achievements_data</span><span class="p">[</span><span class="s1">&#39;achievements&#39;</span><span class="p">][:</span><span class="mi">5</span><span class="p">]</span>
+        <span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

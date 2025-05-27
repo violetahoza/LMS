@@ -89,17 +89,6 @@ def bulk_delete_notifications():
         success_message=f"{len(notification_ids)} notifications deleted"
     )
 
-@bp.route('/preferences', methods=['GET'])
-@jwt_required()
-def get_notification_preferences():
-    """Get user notification preferences"""
-    user_id = int(get_jwt_identity())
-    
-    return BaseController.handle_request(
-        NotificationService.get_notification_preferences,
-        user_id
-    )
-
 @bp.route('/preferences', methods=['PUT'])
 @jwt_required()
 def update_notification_preferences():

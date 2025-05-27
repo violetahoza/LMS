@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from sqlalchemy import or_
-from app.models import db, User, Course, Enrollment, UserRole
+from app.models import db, User, Course, Enrollment
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from app.services.notification_service import NotificationService
 

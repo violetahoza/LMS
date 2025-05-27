@@ -1,0 +1,890 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.models &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.models</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Learning Management System Models</span>
+
+<span class="sd">This module contains all the database models for the LMS application,</span>
+<span class="sd">including User, Course, Lesson, Quiz, Assignment, and related models.</span>
+<span class="sd">Each model represents a database table and includes methods for</span>
+<span class="sd">data manipulation and serialization.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">app</span><span class="w"> </span><span class="kn">import</span> <span class="n">db</span> 
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask_login</span><span class="w"> </span><span class="kn">import</span> <span class="n">UserMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">werkzeug.security</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_password_hash</span><span class="p">,</span> <span class="n">check_password_hash</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">enum</span>
+
+<div class="viewcode-block" id="UserRole">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.UserRole">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UserRole</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enumeration for user roles in the system.&quot;&quot;&quot;</span>
+    <span class="n">ADMIN</span> <span class="o">=</span> <span class="s1">&#39;admin&#39;</span>
+    <span class="n">TEACHER</span> <span class="o">=</span> <span class="s1">&#39;teacher&#39;</span>
+    <span class="n">STUDENT</span> <span class="o">=</span> <span class="s1">&#39;student&#39;</span></div>
+
+
+<div class="viewcode-block" id="User">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.User">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">UserMixin</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User model representing all system users.&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;users&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">80</span><span class="p">),</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">email</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">120</span><span class="p">),</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">password_hash</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">255</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">full_name</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">150</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">role</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="n">UserRole</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">phone</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">20</span><span class="p">))</span>
+    <span class="n">age</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">is_active</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="n">taught_courses</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Course&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;teacher&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="s1">&#39;Course.teacher_id&#39;</span><span class="p">)</span>
+    <span class="n">enrollments</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Enrollment&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;student&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="s1">&#39;Enrollment.student_id&#39;</span><span class="p">)</span>
+    <span class="n">quiz_attempts</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;QuizAttempt&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;student&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">)</span>
+    <span class="n">assignment_submissions</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;AssignmentSubmission&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;student&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="s1">&#39;AssignmentSubmission.student_id&#39;</span><span class="p">)</span>
+    <span class="n">achievements</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;StudentAchievement&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;student&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">)</span>
+    
+    
+<div class="viewcode-block" id="User.set_password">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.User.set_password">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Hash and set the user&#39;s password.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password_hash</span> <span class="o">=</span> <span class="n">generate_password_hash</span><span class="p">(</span><span class="n">password</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="User.check_password">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.User.check_password">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verify a password against the stored hash.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">check_password_hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">password_hash</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="User.is_admin">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.User.is_admin">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_admin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the user has admin privileges.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">UserRole</span><span class="o">.</span><span class="n">ADMIN</span></div>
+
+    
+<div class="viewcode-block" id="User.is_teacher">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.User.is_teacher">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_teacher</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the user is a teacher.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">UserRole</span><span class="o">.</span><span class="n">TEACHER</span></div>
+
+    
+<div class="viewcode-block" id="User.is_student">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.User.is_student">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_student</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the user is a student.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">UserRole</span><span class="o">.</span><span class="n">STUDENT</span></div>
+
+    
+<div class="viewcode-block" id="User.can_access_course">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.User.can_access_course">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">can_access_course</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">course</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if user can access a specific course.</span>
+<span class="sd">        Permission logic:</span>
+<span class="sd">        - Admins: Can access all courses</span>
+<span class="sd">        - Teachers: Can access courses they teach</span>
+<span class="sd">        - Students: Can access courses they&#39;re enrolled in (active or completed)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_admin</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="n">enrollment</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">course_id</span><span class="o">=</span><span class="n">course</span><span class="o">.</span><span class="n">id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">in_</span><span class="p">([</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">enrollment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+    
+<div class="viewcode-block" id="User.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.User.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+            <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">email</span><span class="p">,</span>
+            <span class="s1">&#39;full_name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span>
+            <span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="s1">&#39;phone&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">phone</span><span class="p">,</span>
+            <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">age</span><span class="p">,</span>
+            <span class="s1">&#39;created_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;is_active&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_active</span>
+        <span class="p">}</span></div>
+</div>
+
+
+<div class="viewcode-block" id="Course">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Course">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Course</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Courses are created by teachers and can be enrolled in by students.</span>
+<span class="sd">    Each course contains lessons, quizzes, assignments, and tracks student progress.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;courses&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">200</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+    <span class="n">category</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+    <span class="n">teacher_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">start_date</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Date</span><span class="p">)</span>
+    <span class="n">end_date</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Date</span><span class="p">)</span>
+    <span class="n">max_students</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">is_published</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+    <span class="n">lessons</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Lesson&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;course&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete-orphan&#39;</span><span class="p">)</span>
+    <span class="n">enrollments</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Enrollment&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;course&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete-orphan&#39;</span><span class="p">)</span>
+    <span class="n">quizzes</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Quiz&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;course&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete-orphan&#39;</span><span class="p">)</span>
+    <span class="n">assignments</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Assignment&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;course&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete-orphan&#39;</span><span class="p">)</span>
+    <span class="n">certificates</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Certificate&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;course&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete-orphan&#39;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Course.get_enrollment_count">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Course.get_enrollment_count">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_enrollment_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the number of currently enrolled students.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">enrollments</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="Course.is_full">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Course.is_full">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_full</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if course has reached maximum enrollment capacity.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_enrollment_count</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_students</span></div>
+
+    
+<div class="viewcode-block" id="Course.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Course.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+            <span class="s1">&#39;category&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">category</span><span class="p">,</span>
+            <span class="s1">&#39;teacher_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">teacher_id</span><span class="p">,</span>
+            <span class="s1">&#39;teacher_name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">teacher</span><span class="o">.</span><span class="n">full_name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">teacher</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;start_date&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;end_date&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;max_students&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_students</span><span class="p">,</span>
+            <span class="s1">&#39;current_students&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_enrollment_count</span><span class="p">(),</span>
+            <span class="s1">&#39;is_published&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_published</span><span class="p">,</span>
+            <span class="s1">&#39;created_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">}</span></div>
+</div>
+
+
+<div class="viewcode-block" id="Lesson">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Lesson">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Lesson</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lessons are part of a course and can contain various types of content (video, text or mixed content).&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;lessons&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">course_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;courses.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">200</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+    <span class="n">order_number</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">lesson_type</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="s1">&#39;video&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="s1">&#39;mixed&#39;</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;text&#39;</span><span class="p">)</span>
+    <span class="n">video_url</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">500</span><span class="p">))</span>
+    <span class="n">duration_minutes</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    
+    <span class="n">progress_records</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;LessonProgress&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;lesson&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete-orphan&#39;</span><span class="p">)</span>
+    <span class="n">quizzes</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Quiz&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;lesson&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">)</span>
+    <span class="n">assignments</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Assignment&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;lesson&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Lesson.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Lesson.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;course_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+            <span class="s1">&#39;order_number&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_number</span><span class="p">,</span>
+            <span class="s1">&#39;lesson_type&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lesson_type</span><span class="p">,</span>
+            <span class="s1">&#39;video_url&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_url</span><span class="p">,</span>
+            <span class="s1">&#39;duration_minutes&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration_minutes</span><span class="p">,</span>
+            <span class="s1">&#39;created_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">}</span></div>
+</div>
+
+
+<div class="viewcode-block" id="Enrollment">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Enrollment">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Enrollment</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Student enrollment in a course. Tracks a student&#39;s participation in a course, including progress,</span>
+<span class="sd">    completion status, and enrollment timeline.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;enrollments&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">student_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">course_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;courses.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">enrolled_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">completed_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">,</span> <span class="s1">&#39;dropped&#39;</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;active&#39;</span><span class="p">)</span>
+    <span class="n">progress_percentage</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+    
+    <span class="n">__table_args__</span> <span class="o">=</span> <span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">UniqueConstraint</span><span class="p">(</span><span class="s1">&#39;student_id&#39;</span><span class="p">,</span> <span class="s1">&#39;course_id&#39;</span><span class="p">),)</span>
+    
+<div class="viewcode-block" id="Enrollment.calculate_progress">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Enrollment.calculate_progress">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate overall course progress percentage.</span>
+<span class="sd">        Progress is calculated based on:</span>
+<span class="sd">        - Completed lessons</span>
+<span class="sd">        - Passed quizzes (meeting passing score)</span>
+<span class="sd">        - Submitted assignments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">course</span>
+        <span class="n">total_components</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">completed_components</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuizAttempt</span><span class="p">,</span> <span class="n">AssignmentSubmission</span><span class="p">,</span> <span class="n">LessonProgress</span><span class="p">,</span> <span class="n">Lesson</span>
+        
+        <span class="n">total_lessons</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">lessons</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">total_lessons</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">completed_lessons</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">student_id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Lesson</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Lesson</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">LessonProgress</span><span class="o">.</span><span class="n">completed_at</span><span class="o">.</span><span class="n">isnot</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+            
+            <span class="n">total_components</span> <span class="o">+=</span> <span class="n">total_lessons</span>
+            <span class="n">completed_components</span> <span class="o">+=</span> <span class="n">completed_lessons</span>
+        
+        <span class="n">course_quizzes</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">quizzes</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">quiz</span> <span class="ow">in</span> <span class="n">course_quizzes</span><span class="p">:</span>
+            <span class="n">total_components</span> <span class="o">+=</span> <span class="mi">1</span>
+            
+            <span class="n">best_attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="o">.</span><span class="n">score</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">best_attempt</span> <span class="ow">and</span> <span class="n">best_attempt</span><span class="o">.</span><span class="n">score</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">best_attempt</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span><span class="p">:</span>
+                <span class="n">completed_components</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="n">course_assignments</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">assignments</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">course_assignments</span><span class="p">:</span>
+            <span class="n">total_components</span> <span class="o">+=</span> <span class="mi">1</span>
+            
+            <span class="n">submission</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">assignment_id</span><span class="o">=</span><span class="n">assignment</span><span class="o">.</span><span class="n">id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">submission</span> <span class="ow">and</span> <span class="n">submission</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;submitted&#39;</span><span class="p">,</span> <span class="s1">&#39;graded&#39;</span><span class="p">]:</span>
+                <span class="n">completed_components</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="k">if</span> <span class="n">total_components</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">100.0</span>  
+        
+        <span class="n">progress</span> <span class="o">=</span> <span class="p">(</span><span class="n">completed_components</span> <span class="o">/</span> <span class="n">total_components</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">progress</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="mf">100.0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Enrollment.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Enrollment.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;student_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="s1">&#39;course_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="s1">&#39;course_title&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">course</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;enrolled_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">enrolled_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enrolled_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;completed_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">completed_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">completed_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+            <span class="s1">&#39;progress_percentage&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">progress_percentage</span>
+        <span class="p">}</span></div>
+</div>
+
+
+<div class="viewcode-block" id="Quiz">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Quiz">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Quiz</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Quizzes are assessments within a course that test student knowledge.</span>
+<span class="sd">    Each quiz can have multiple questions and tracks student attempts and scores.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;quizzes&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">course_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;courses.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">lesson_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;lessons.id&#39;</span><span class="p">))</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">200</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+    <span class="n">total_points</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">passing_score</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+    <span class="n">time_limit_minutes</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">max_attempts</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    
+    <span class="n">questions</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Question&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;quiz&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete-orphan&#39;</span><span class="p">)</span>
+    <span class="n">attempts</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;QuizAttempt&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;quiz&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete-orphan&#39;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Quiz.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Quiz.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;course_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="s1">&#39;lesson_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lesson_id</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+            <span class="s1">&#39;total_points&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_points</span><span class="p">,</span>
+            <span class="s1">&#39;passing_score&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">passing_score</span><span class="p">,</span>
+            <span class="s1">&#39;time_limit_minutes&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_limit_minutes</span><span class="p">,</span>
+            <span class="s1">&#39;max_attempts&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_attempts</span><span class="p">,</span>
+            <span class="s1">&#39;question_count&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">questions</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span>
+            <span class="s1">&#39;created_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">}</span></div>
+</div>
+
+
+<div class="viewcode-block" id="Question">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Question">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Question</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Questions are part of a quiz and can be of various types (multiple choice, true/false, short answer).&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;questions&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">quiz_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;quizzes.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">question_text</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">question_type</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">,</span> <span class="s1">&#39;short_answer&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">order_number</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    
+    <span class="n">answer_options</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;AnswerOption&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;question&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete-orphan&#39;</span><span class="p">)</span>
+    <span class="n">student_answers</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;StudentAnswer&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;question&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Question.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Question.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;quiz_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">quiz_id</span><span class="p">,</span>
+            <span class="s1">&#39;question_text&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">question_text</span><span class="p">,</span>
+            <span class="s1">&#39;question_type&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">question_type</span><span class="p">,</span>
+            <span class="s1">&#39;points&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span>
+            <span class="s1">&#39;order_number&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">order_number</span><span class="p">,</span>
+            <span class="s1">&#39;answer_options&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">answer_options</span><span class="p">]</span>
+        <span class="p">}</span></div>
+</div>
+
+
+<div class="viewcode-block" id="AnswerOption">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.AnswerOption">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AnswerOption</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Answer options for multiple choice questions in quizzes.&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;answer_options&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">question_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;questions.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">option_text</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">500</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">is_correct</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="AnswerOption.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.AnswerOption.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;option_text&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">option_text</span><span class="p">,</span>
+            <span class="s1">&#39;is_correct&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_correct</span>
+        <span class="p">}</span></div>
+</div>
+
+
+<div class="viewcode-block" id="QuizAttempt">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.QuizAttempt">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QuizAttempt</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Quiz attempts by students. Tracks each attempt, including score, time spent, and status.&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;quiz_attempts&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">quiz_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;quizzes.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">student_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">attempt_number</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">started_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">submitted_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">time_spent_minutes</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="s1">&#39;in_progress&#39;</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">,</span> <span class="s1">&#39;abandoned&#39;</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;in_progress&#39;</span><span class="p">)</span>
+    <span class="n">graded_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">student_answers</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;StudentAnswer&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;attempt&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete-orphan&#39;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="QuizAttempt.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.QuizAttempt.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;quiz_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">quiz_id</span><span class="p">,</span>
+            <span class="s1">&#39;student_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="s1">&#39;attempt_number&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">attempt_number</span><span class="p">,</span>
+            <span class="s1">&#39;score&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+            <span class="s1">&#39;started_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">started_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">started_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;submitted_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">submitted_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">submitted_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;graded_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">graded_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">graded_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>  
+            <span class="s1">&#39;time_spent_minutes&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_spent_minutes</span><span class="p">,</span>
+            <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span>
+        <span class="p">}</span></div>
+</div>
+
+
+<div class="viewcode-block" id="StudentAnswer">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.StudentAnswer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StudentAnswer</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Student answers to quiz questions. Tracks the answer text, selected options, correctness, and points earned.&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;student_answers&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">attempt_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;quiz_attempts.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">question_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;questions.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">answer_text</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+    <span class="n">selected_option_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;answer_options.id&#39;</span><span class="p">))</span>
+    <span class="n">is_correct</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Boolean</span><span class="p">)</span>
+    <span class="n">points_earned</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    
+    <span class="n">selected_option</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;AnswerOption&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">selected_option_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="Assignment">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Assignment">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Assignment</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Assignments are tasks given to students within a course.</span>
+<span class="sd">    Each assignment can have a title, description, due date, and total points.</span>
+<span class="sd">    Students can submit assignments, and teachers can grade them.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;assignments&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">course_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;courses.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">lesson_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;lessons.id&#39;</span><span class="p">))</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">200</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+    <span class="n">due_date</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">total_points</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    
+    <span class="n">submissions</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;AssignmentSubmission&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;assignment&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">cascade</span><span class="o">=</span><span class="s1">&#39;all, delete-orphan&#39;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Assignment.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Assignment.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;course_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="s1">&#39;lesson_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lesson_id</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+            <span class="s1">&#39;due_date&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">due_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">due_date</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;total_points&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_points</span><span class="p">,</span>
+            <span class="s1">&#39;created_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">}</span></div>
+</div>
+
+
+<div class="viewcode-block" id="AssignmentSubmission">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.AssignmentSubmission">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AssignmentSubmission</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Assignment submissions by students. Tracks submission text, file uploads, grading status, and feedback.&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;assignment_submissions&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">assignment_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;assignments.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">student_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">submission_text</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+    <span class="n">file_path</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">500</span><span class="p">))</span>
+    <span class="n">submitted_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">grade</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">feedback</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+    <span class="n">graded_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">graded_by</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">))</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="s1">&#39;submitted&#39;</span><span class="p">,</span> <span class="s1">&#39;graded&#39;</span><span class="p">,</span> <span class="s1">&#39;returned&#39;</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;submitted&#39;</span><span class="p">)</span>
+    
+    <span class="n">__table_args__</span> <span class="o">=</span> <span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">UniqueConstraint</span><span class="p">(</span><span class="s1">&#39;assignment_id&#39;</span><span class="p">,</span> <span class="s1">&#39;student_id&#39;</span><span class="p">),)</span>
+    
+    <span class="n">grader</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">graded_by</span><span class="p">])</span>
+    
+<div class="viewcode-block" id="AssignmentSubmission.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.AssignmentSubmission.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;assignment_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">assignment_id</span><span class="p">,</span>
+            <span class="s1">&#39;student_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="s1">&#39;submission_text&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">submission_text</span><span class="p">,</span>
+            <span class="s1">&#39;file_path&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">,</span>
+            <span class="s1">&#39;submitted_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">submitted_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">submitted_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;grade&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">grade</span><span class="p">,</span>
+            <span class="s1">&#39;feedback&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">feedback</span><span class="p">,</span>
+            <span class="s1">&#39;graded_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">graded_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">graded_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;graded_by&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">graded_by</span><span class="p">,</span>
+            <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span>
+        <span class="p">}</span></div>
+</div>
+
+
+<div class="viewcode-block" id="LessonProgress">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.LessonProgress">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LessonProgress</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tracks student progress on lessons, including viewing status, completion time, and time spent.&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;lesson_progress&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">student_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">lesson_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;lessons.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">viewed_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">completed_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">time_spent_minutes</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    
+    <span class="n">__table_args__</span> <span class="o">=</span> <span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">UniqueConstraint</span><span class="p">(</span><span class="s1">&#39;student_id&#39;</span><span class="p">,</span> <span class="s1">&#39;lesson_id&#39;</span><span class="p">),)</span>
+    
+    <span class="n">student</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;lesson_progress&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Achievement">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Achievement">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Achievement</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Achievements are rewards given to students for completing certain criteria in courses.</span>
+<span class="sd">    Each achievement has a name, description, badge icon, points value, and criteria type.&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;achievements&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+    <span class="n">badge_icon</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">255</span><span class="p">))</span>
+    <span class="n">points_value</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">criteria_type</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="s1">&#39;course_completion&#39;</span><span class="p">,</span> <span class="s1">&#39;quiz_score&#39;</span><span class="p">,</span> <span class="s1">&#39;streak&#39;</span><span class="p">,</span> <span class="s1">&#39;participation&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">criteria_value</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">)</span>
+    
+    <span class="n">student_achievements</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;StudentAchievement&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;achievement&#39;</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="s1">&#39;dynamic&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StudentAchievement">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.StudentAchievement">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StudentAchievement</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tracks achievements earned by students.&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;student_achievements&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">student_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">achievement_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;achievements.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">earned_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    
+    <span class="n">__table_args__</span> <span class="o">=</span> <span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">UniqueConstraint</span><span class="p">(</span><span class="s1">&#39;student_id&#39;</span><span class="p">,</span> <span class="s1">&#39;achievement_id&#39;</span><span class="p">),)</span></div>
+
+
+<div class="viewcode-block" id="Certificate">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Certificate">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Certificate</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Certificates are issued to students upon successful completion of a course.</span>
+<span class="sd">    Each certificate has a unique code, student ID, course ID, and issue date.&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;certificates&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">student_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">course_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;courses.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">certificate_code</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">issued_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    
+    <span class="n">__table_args__</span> <span class="o">=</span> <span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">UniqueConstraint</span><span class="p">(</span><span class="s1">&#39;student_id&#39;</span><span class="p">,</span> <span class="s1">&#39;course_id&#39;</span><span class="p">),)</span>
+    
+    <span class="n">student</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;certificates&#39;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Certificate.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Certificate.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;student_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="s1">&#39;course_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="s1">&#39;course_title&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">course</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;student_name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">student</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;certificate_code&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">certificate_code</span><span class="p">,</span>
+            <span class="s1">&#39;issued_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">issued_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">issued_at</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">}</span></div>
+</div>
+
+    
+<div class="viewcode-block" id="Message">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Message">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Message</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Message model for communication between users&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;messages&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">sender_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">recipient_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">course_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;courses.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">subject</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">200</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">sent_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">read_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">is_announcement</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+    <span class="n">sender</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">sender_id</span><span class="p">],</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;sent_messages&#39;</span><span class="p">)</span>
+    <span class="n">recipient</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">recipient_id</span><span class="p">],</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;received_messages&#39;</span><span class="p">)</span>
+    <span class="n">course</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Course&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;messages&#39;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Message.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Message.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;sender_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sender_id</span><span class="p">,</span>
+            <span class="s1">&#39;recipient_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipient_id</span><span class="p">,</span>
+            <span class="s1">&#39;course_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="s1">&#39;subject&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span>
+            <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+            <span class="s1">&#39;sent_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sent_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sent_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;read_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;is_announcement&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_announcement</span><span class="p">,</span>
+            <span class="s1">&#39;sender_name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="o">.</span><span class="n">full_name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sender</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;recipient_name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipient</span><span class="o">.</span><span class="n">full_name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipient</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">}</span></div>
+</div>
+
+    
+<div class="viewcode-block" id="NotificationType">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.NotificationType">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NotificationType</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enumeration for different types of notifications in the LMS.&quot;&quot;&quot;</span>
+    <span class="n">MESSAGE</span> <span class="o">=</span> <span class="s1">&#39;message&#39;</span>
+    <span class="n">ENROLLMENT</span> <span class="o">=</span> <span class="s1">&#39;enrollment&#39;</span>
+    <span class="n">ASSIGNMENT_SUBMISSION</span> <span class="o">=</span> <span class="s1">&#39;assignment_submission&#39;</span>
+    <span class="n">ASSIGNMENT_GRADED</span> <span class="o">=</span> <span class="s1">&#39;assignment_graded&#39;</span>
+    <span class="n">QUIZ_SUBMISSION</span> <span class="o">=</span> <span class="s1">&#39;quiz_submission&#39;</span>
+    <span class="n">QUIZ_GRADED</span> <span class="o">=</span> <span class="s1">&#39;quiz_graded&#39;</span>
+    <span class="n">COURSE_COMPLETION</span> <span class="o">=</span> <span class="s1">&#39;course_completion&#39;</span>
+    <span class="n">NEW_CONTENT</span> <span class="o">=</span> <span class="s1">&#39;new_content&#39;</span>
+    <span class="n">CERTIFICATE_ISSUED</span> <span class="o">=</span> <span class="s1">&#39;certificate_issued&#39;</span>
+    <span class="n">CERTIFICATE_REQUEST</span> <span class="o">=</span> <span class="s1">&#39;certificate_request&#39;</span>
+    <span class="n">CERTIFICATE_APPROVED</span> <span class="o">=</span> <span class="s1">&#39;certificate_approved&#39;</span>
+    <span class="n">CERTIFICATE_REJECTED</span> <span class="o">=</span> <span class="s1">&#39;certificate_rejected&#39;</span>
+    <span class="n">USER_REGISTRATION</span> <span class="o">=</span> <span class="s1">&#39;user_registration&#39;</span> 
+    <span class="n">COURSE_PUBLISHED</span> <span class="o">=</span> <span class="s1">&#39;course_published&#39;</span>  
+    <span class="n">ACHIEVEMENT_EARNED</span> <span class="o">=</span> <span class="s1">&#39;achievement_earned&#39;</span></div>
+
+
+<div class="viewcode-block" id="NotificationPriority">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.NotificationPriority">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NotificationPriority</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enumeration for notification priority levels.&quot;&quot;&quot;</span>
+    <span class="n">LOW</span> <span class="o">=</span> <span class="s1">&#39;low&#39;</span>
+    <span class="n">NORMAL</span> <span class="o">=</span> <span class="s1">&#39;normal&#39;</span>
+    <span class="n">HIGH</span> <span class="o">=</span> <span class="s1">&#39;high&#39;</span>
+    <span class="n">URGENT</span> <span class="o">=</span> <span class="s1">&#39;urgent&#39;</span></div>
+
+
+<div class="viewcode-block" id="Notification">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Notification">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Notification</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Notification model for user notifications&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;notifications&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">recipient_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">sender_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nb">type</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">40</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">priority</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">30</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;normal&#39;</span><span class="p">)</span>
+    
+    <span class="n">title</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">200</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">action_url</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="mi">500</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">related_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">is_read</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">read_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+    <span class="n">recipient</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">recipient_id</span><span class="p">],</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;received_notifications&#39;</span><span class="p">)</span>
+    <span class="n">sender</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">sender_id</span><span class="p">],</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;sent_notifications&#39;</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="Notification.mark_as_read">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Notification.mark_as_read">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mark_as_read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mark notification as read&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_read</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_read</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">read_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="Notification.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.Notification.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;recipient_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipient_id</span><span class="p">,</span>
+            <span class="s1">&#39;sender_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sender_id</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
+            <span class="s1">&#39;priority&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">priority</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span>
+            <span class="s1">&#39;action_url&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_url</span><span class="p">,</span>
+            <span class="s1">&#39;related_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">related_id</span><span class="p">,</span>
+            <span class="s1">&#39;is_read&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_read</span><span class="p">,</span>
+            <span class="s1">&#39;read_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;created_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;sender_name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="o">.</span><span class="n">full_name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sender</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;recipient_name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipient</span><span class="o">.</span><span class="n">full_name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">recipient</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">}</span></div>
+</div>
+
+<div class="viewcode-block" id="CertificateRequest">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.CertificateRequest">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CertificateRequest</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Certificate request model for students to request course completion certificates.</span>
+<span class="sd">    Admins can review and approve or reject requests.&quot;&quot;&quot;</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;certificate_requests&#39;</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">student_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">course_id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;courses.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">requested_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="s1">&#39;pending&#39;</span><span class="p">,</span> <span class="s1">&#39;approved&#39;</span><span class="p">,</span> <span class="s1">&#39;rejected&#39;</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;pending&#39;</span><span class="p">)</span>
+    <span class="n">reviewed_by</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;users.id&#39;</span><span class="p">))</span>
+    <span class="n">reviewed_at</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">DateTime</span><span class="p">)</span>
+    <span class="n">rejection_reason</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+    
+    <span class="n">student</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">student_id</span><span class="p">],</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;certificate_requests&#39;</span><span class="p">)</span>
+    <span class="n">course</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Course&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;certificate_requests&#39;</span><span class="p">)</span>
+    <span class="n">reviewer</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">foreign_keys</span><span class="o">=</span><span class="p">[</span><span class="n">reviewed_by</span><span class="p">])</span>
+    
+    <span class="n">__table_args__</span> <span class="o">=</span> <span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">UniqueConstraint</span><span class="p">(</span><span class="s1">&#39;student_id&#39;</span><span class="p">,</span> <span class="s1">&#39;course_id&#39;</span><span class="p">),)</span>
+    
+<div class="viewcode-block" id="CertificateRequest.to_dict">
+<a class="viewcode-back" href="../../source/app.models.html#app.models.CertificateRequest.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;student_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="s1">&#39;course_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="s1">&#39;student_name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">student</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;course_title&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">course</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;requested_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">requested_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">requested_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+            <span class="s1">&#39;reviewed_by&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reviewed_by</span><span class="p">,</span>
+            <span class="s1">&#39;reviewer_name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reviewer</span><span class="o">.</span><span class="n">full_name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reviewer</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;reviewed_at&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reviewed_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reviewed_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;rejection_reason&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rejection_reason</span>
+        <span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

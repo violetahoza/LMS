@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from sqlalchemy import func, cast, Date, desc, or_
-from app.models import db, User, Course, Enrollment, Quiz, QuizAttempt, Assignment, Achievement
+from app.models import db, User, Course, Enrollment, Quiz, QuizAttempt, Achievement
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from app.utils.helpers import calculate_course_statistics
 import csv
@@ -668,7 +668,7 @@ class AdminService:
                 Course.category,
                 func.count(Course.id)
             ).filter(
-                Course.is_published == True  # or remove this filter to include drafts
+                Course.is_published == True  # remove this filter to include drafts
             ).group_by(Course.category).all()
 
             return {category or "Uncategorized": count for category, count in result}

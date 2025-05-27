@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.routes.teacher &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.routes.teacher</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.routes.teacher</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Blueprint</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">make_response</span><span class="p">,</span> <span class="n">jsonify</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask_jwt_extended</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_jwt_identity</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.services.teacher_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">TeacherService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.base_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseController</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">teacher_required</span>
+
+<span class="n">bp</span> <span class="o">=</span> <span class="n">Blueprint</span><span class="p">(</span><span class="s1">&#39;teacher&#39;</span><span class="p">,</span> <span class="vm">__name__</span><span class="p">,</span> <span class="n">url_prefix</span><span class="o">=</span><span class="s1">&#39;/api/teacher&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_dashboard">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_dashboard">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/dashboard&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dashboard</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get teacher dashboard data&quot;&quot;&quot;</span>
+    <span class="n">teacher_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">teacher_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="p">(</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="p">())</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid teacher ID&quot;</span><span class="p">)),</span>
+            <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Dashboard data retrieved&quot;</span>
+        <span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_dashboard</span><span class="p">,</span>
+        <span class="n">teacher_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_teacher_courses">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_teacher_courses">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/courses&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_teacher_courses</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get all courses for the teacher&quot;&quot;&quot;</span>
+    <span class="n">teacher_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">teacher_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="p">(</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="p">())</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid teacher ID&quot;</span><span class="p">)),</span>
+            <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Courses retrieved&quot;</span>
+        <span class="p">)</span>
+    
+    <span class="n">page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;page&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">per_page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;per_page&#39;</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_list_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_teacher_courses</span><span class="p">,</span>
+        <span class="n">teacher_id</span><span class="p">,</span>
+        <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+        <span class="n">per_page</span><span class="o">=</span><span class="n">per_page</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_course_details">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_course_details">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/courses/&lt;int:course_id&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_course_details</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get detailed course information&quot;&quot;&quot;</span>
+    <span class="n">teacher_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">teacher_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="p">(</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="p">())</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid teacher ID&quot;</span><span class="p">)),</span>
+            <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Course details retrieved&quot;</span>
+        <span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_course_details</span><span class="p">,</span>
+        <span class="n">teacher_id</span><span class="p">,</span>
+        <span class="n">course_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_pending_submissions">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_pending_submissions">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/submissions/pending&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_pending_submissions</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get assignments that need grading&quot;&quot;&quot;</span>
+    <span class="n">teacher_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">teacher_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="p">(</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="p">())</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid teacher ID&quot;</span><span class="p">)),</span>
+            <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Submissions retrieved&quot;</span>
+        <span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_pending_submissions</span><span class="p">,</span>
+        <span class="n">teacher_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_all_submissions">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_all_submissions">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/submissions/all&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_all_submissions</span><span class="p">():</span>
+    <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_all_submissions</span><span class="p">,</span>
+        <span class="n">teacher_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_quiz_analytics">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_quiz_analytics">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/quiz/&lt;int:quiz_id&gt;/analytics&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_quiz_analytics</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get detailed quiz analytics&quot;&quot;&quot;</span>
+    <span class="n">teacher_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">teacher_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="p">(</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="p">())</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid teacher ID&quot;</span><span class="p">)),</span>
+            <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Quiz analytics retrieved&quot;</span>
+        <span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_quiz_analytics</span><span class="p">,</span>
+        <span class="n">teacher_id</span><span class="p">,</span>
+        <span class="n">quiz_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_student_progress_report">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_student_progress_report">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/course/&lt;int:course_id&gt;/students&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_student_progress_report</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get student progress report for a course&quot;&quot;&quot;</span>
+    <span class="n">teacher_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">teacher_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="p">(</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="p">())</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid teacher ID&quot;</span><span class="p">)),</span>
+            <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Student progress retrieved&quot;</span>
+        <span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_student_progress_report</span><span class="p">,</span>
+        <span class="n">teacher_id</span><span class="p">,</span>
+        <span class="n">course_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_course_analytics">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_course_analytics">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/course/&lt;int:course_id&gt;/analytics&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_course_analytics</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get comprehensive course analytics&quot;&quot;&quot;</span>
+    <span class="n">teacher_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">teacher_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="p">(</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="p">())</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid teacher ID&quot;</span><span class="p">)),</span>
+            <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Course analytics retrieved&quot;</span>
+        <span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_course_analytics</span><span class="p">,</span>
+        <span class="n">teacher_id</span><span class="p">,</span>
+        <span class="n">course_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_teacher_analytics_overview">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_teacher_analytics_overview">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/analytics/overview&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_teacher_analytics_overview</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get aggregate analytics for all teacher&#39;s courses&quot;&quot;&quot;</span>
+    <span class="n">teacher_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">teacher_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="p">(</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="p">())</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid teacher ID&quot;</span><span class="p">)),</span>
+            <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Overview analytics retrieved&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_teacher_analytics_overview</span><span class="p">,</span>
+        <span class="n">teacher_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_individual_student_progress">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_individual_student_progress">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/&lt;int:student_id&gt;/progress&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_individual_student_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get detailed progress for a student (by teacher)&quot;&quot;&quot;</span>
+    <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="n">course_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;course_id&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">course_id</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Missing course_id parameter&#39;</span><span class="p">},</span> <span class="mi">400</span>
+
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_individual_student_progress</span><span class="p">,</span>
+        <span class="n">teacher_id</span><span class="p">,</span>
+        <span class="n">student_id</span><span class="p">,</span>
+        <span class="n">course_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="export_course_students">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.export_course_students">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/course/&lt;int:course_id&gt;/students/export&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">export_course_students</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Export course students to CSV&quot;&quot;&quot;</span>
+    <span class="n">teacher_id_str</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">teacher_id_str</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Invalid teacher ID&#39;</span><span class="p">}),</span> <span class="mi">400</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">csv_content</span> <span class="o">=</span> <span class="n">TeacherService</span><span class="o">.</span><span class="n">export_course_students</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">,</span> <span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="n">response</span> <span class="o">=</span> <span class="n">make_response</span><span class="p">(</span><span class="n">csv_content</span><span class="p">)</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;text/csv&#39;</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Content-Disposition&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;attachment; filename=course_</span><span class="si">{</span><span class="n">course_id</span><span class="si">}</span><span class="s1">_students.csv&#39;</span>
+        
+        <span class="k">return</span> <span class="n">response</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="p">(</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="p">())</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="n">e</span><span class="p">),</span>
+            <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Export completed&quot;</span>
+        <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="get_all_quiz_attempts">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_all_quiz_attempts">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/quiz-attempts/all&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_all_quiz_attempts</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get all quiz attempts for teacher&#39;s courses&quot;&quot;&quot;</span>
+    <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_all_quiz_attempts</span><span class="p">,</span>
+        <span class="n">teacher_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_quiz_attempt_details">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_quiz_attempt_details">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/quiz-attempts/&lt;int:attempt_id&gt;/details&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_quiz_attempt_details</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get detailed quiz attempt information for grading&quot;&quot;&quot;</span>
+    <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_quiz_attempt_details</span><span class="p">,</span>
+        <span class="n">teacher_id</span><span class="p">,</span>
+        <span class="n">attempt_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="grade_quiz_attempt">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.grade_quiz_attempt">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/quiz-attempts/&lt;int:attempt_id&gt;/grade&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">grade_quiz_attempt</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Grade a quiz attempt (mainly for short answer questions)&quot;&quot;&quot;</span>
+    <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+    
+    <span class="kn">from</span><span class="w"> </span><span class="nn">app.services.quiz_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuizService</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">QuizService</span><span class="o">.</span><span class="n">grade_attempt</span><span class="p">,</span>
+        <span class="n">teacher_id</span><span class="p">,</span>
+        <span class="n">attempt_id</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;short_answer_grades&#39;</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Quiz graded successfully&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_quiz_grading_summary">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.teacher.get_quiz_grading_summary">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/quiz-grading/summary&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@teacher_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_quiz_grading_summary</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get quiz grading summary statistics&quot;&quot;&quot;</span>
+    <span class="n">teacher_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_quiz_grading_summary</span><span class="p">,</span>
+        <span class="n">teacher_id</span>
+    <span class="p">)</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

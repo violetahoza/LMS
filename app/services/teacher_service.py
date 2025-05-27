@@ -1,13 +1,12 @@
 from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from typing import Dict, Any
 from sqlalchemy import desc, func
 from app.models import AnswerOption, Question, StudentAnswer, db, User, Course, Enrollment, Lesson, Quiz, Assignment, QuizAttempt, AssignmentSubmission, LessonProgress
-from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
-from app.utils.helpers import calculate_course_statistics, calculate_quiz_statistics
+from app.utils.base_controller import PermissionException, NotFoundException
+from app.utils.helpers import calculate_course_statistics
 from collections import defaultdict
 import io
 import csv
-from flask import make_response, jsonify
 
 class TeacherService:
     """Service for teacher-specific operations"""

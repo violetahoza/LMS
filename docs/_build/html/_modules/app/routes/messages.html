@@ -1,0 +1,332 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.routes.messages &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.routes.messages</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.routes.messages</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Blueprint</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">jsonify</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">or_</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask_jwt_extended</span><span class="w"> </span><span class="kn">import</span> <span class="n">jwt_required</span><span class="p">,</span> <span class="n">get_jwt_identity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app</span><span class="w"> </span><span class="kn">import</span> <span class="n">db</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.services.messaging_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">MessagingService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.base_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseController</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span><span class="p">,</span> <span class="n">UserRole</span><span class="p">,</span> <span class="n">Course</span><span class="p">,</span> <span class="n">Enrollment</span>
+
+<span class="n">bp</span> <span class="o">=</span> <span class="n">Blueprint</span><span class="p">(</span><span class="s1">&#39;messages&#39;</span><span class="p">,</span> <span class="vm">__name__</span><span class="p">,</span> <span class="n">url_prefix</span><span class="o">=</span><span class="s1">&#39;/api/messages&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="send_message">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.messages.send_message">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/send&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="nd">@jwt_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">send_message</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Send a message&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">MessagingService</span><span class="o">.</span><span class="n">send_message</span><span class="p">,</span>
+        <span class="n">user_id</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Message sent successfully&quot;</span><span class="p">,</span>
+        <span class="n">success_code</span><span class="o">=</span><span class="mi">201</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_messages">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.messages.get_messages">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@jwt_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_messages</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get messages for current user&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="n">message_type</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="s1">&#39;received&#39;</span><span class="p">)</span>  
+    <span class="n">page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;page&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">per_page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;per_page&#39;</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_list_request</span><span class="p">(</span>
+        <span class="n">MessagingService</span><span class="o">.</span><span class="n">get_messages</span><span class="p">,</span>
+        <span class="n">user_id</span><span class="p">,</span>
+        <span class="n">message_type</span><span class="o">=</span><span class="n">message_type</span><span class="p">,</span>
+        <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+        <span class="n">per_page</span><span class="o">=</span><span class="n">per_page</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_message">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.messages.get_message">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/&lt;int:message_id&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@jwt_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_message</span><span class="p">(</span><span class="n">message_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a specific message&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">MessagingService</span><span class="o">.</span><span class="n">get_message</span><span class="p">,</span>
+        <span class="n">user_id</span><span class="p">,</span>
+        <span class="n">message_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mark_as_read">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.messages.mark_as_read">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/&lt;int:message_id&gt;/read&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="nd">@jwt_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mark_as_read</span><span class="p">(</span><span class="n">message_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark a message as read&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">MessagingService</span><span class="o">.</span><span class="n">mark_as_read</span><span class="p">,</span>
+        <span class="n">user_id</span><span class="p">,</span>
+        <span class="n">message_id</span><span class="p">,</span>
+        <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Message marked as read&quot;</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_conversations">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.messages.get_conversations">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/conversations&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@jwt_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_conversations</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get conversations for current user&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">MessagingService</span><span class="o">.</span><span class="n">get_conversations</span><span class="p">,</span>
+        <span class="n">user_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_conversation_messages">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.messages.get_conversation_messages">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/conversations/&lt;int:partner_id&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@jwt_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_conversation_messages</span><span class="p">(</span><span class="n">partner_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get messages in a conversation with a specific user&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;page&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">per_page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;per_page&#39;</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_list_request</span><span class="p">(</span>
+        <span class="n">MessagingService</span><span class="o">.</span><span class="n">get_conversation_messages</span><span class="p">,</span>
+        <span class="n">user_id</span><span class="p">,</span>
+        <span class="n">partner_id</span><span class="p">,</span>
+        <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+        <span class="n">per_page</span><span class="o">=</span><span class="n">per_page</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="search_users">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.messages.search_users">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/search-users&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@jwt_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">search_users</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Search for users that the current user can message&quot;&quot;&quot;</span>
+    <span class="n">current_user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="n">current_user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">current_user_id</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">current_user</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;User not found&#39;</span><span class="p">}),</span> <span class="mi">404</span>
+    
+    <span class="n">query</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;q&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">limit</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;limit&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;users&#39;</span><span class="p">:</span> <span class="p">[]})</span>
+    
+    <span class="k">if</span> <span class="n">current_user</span><span class="o">.</span><span class="n">is_admin</span><span class="p">():</span>
+        <span class="n">users_query</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">current_user_id</span><span class="p">,</span>
+            <span class="n">User</span><span class="o">.</span><span class="n">is_active</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="n">or_</span><span class="p">(</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">full_name</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;%</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">),</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">email</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;%</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">),</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">username</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;%</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
+    
+    <span class="k">elif</span> <span class="n">current_user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+        <span class="c1"># Teachers can message:</span>
+        <span class="c1"># 1. Students enrolled in their courses</span>
+        <span class="c1"># 2. Other teachers</span>
+        <span class="c1"># 3. Admins</span>
+        <span class="n">enrolled_student_ids</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">student_id</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Enrollment</span><span class="o">.</span><span class="n">course_id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span>
+                <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Course</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">teacher_id</span><span class="o">=</span><span class="n">current_user_id</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">subquery</span><span class="p">()</span>
+        
+        <span class="n">users_query</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">current_user_id</span><span class="p">,</span>
+            <span class="n">User</span><span class="o">.</span><span class="n">is_active</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="n">or_</span><span class="p">(</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">full_name</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;%</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">),</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">email</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;%</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">),</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">username</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;%</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">or_</span><span class="p">(</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">enrolled_student_ids</span><span class="p">),</span> 
+                <span class="n">User</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">UserRole</span><span class="o">.</span><span class="n">TEACHER</span><span class="p">,</span>     
+                <span class="n">User</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">UserRole</span><span class="o">.</span><span class="n">ADMIN</span>      
+            <span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
+    
+    <span class="k">elif</span> <span class="n">current_user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+        <span class="c1"># Students can message:</span>
+        <span class="c1"># 1. Teachers of courses they&#39;re enrolled in</span>
+        <span class="c1"># 2. Admins</span>
+        <span class="n">teacher_ids</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Course</span><span class="o">.</span><span class="n">teacher_id</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Course</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span>
+                <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">course_id</span><span class="p">)</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                    <span class="n">student_id</span><span class="o">=</span><span class="n">current_user_id</span><span class="p">,</span>
+                    <span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">subquery</span><span class="p">()</span>
+        
+        <span class="n">users_query</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">User</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">current_user_id</span><span class="p">,</span>
+            <span class="n">User</span><span class="o">.</span><span class="n">is_active</span> <span class="o">==</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="n">or_</span><span class="p">(</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">full_name</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;%</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">),</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">email</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;%</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">),</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">username</span><span class="o">.</span><span class="n">ilike</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;%</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">or_</span><span class="p">(</span>
+                <span class="n">User</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">teacher_ids</span><span class="p">),</span>           
+                <span class="n">User</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">UserRole</span><span class="o">.</span><span class="n">ADMIN</span>       
+            <span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;users&#39;</span><span class="p">:</span> <span class="p">[]})</span>
+    
+    <span class="n">users</span> <span class="o">=</span> <span class="n">users_query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    
+    <span class="n">users_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">users</span><span class="p">:</span>
+        <span class="n">user_dict</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">current_user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">()</span> <span class="ow">and</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="n">shared_courses</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Course</span><span class="o">.</span><span class="n">title</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">==</span> <span class="n">current_user_id</span><span class="p">,</span>
+                <span class="n">Course</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span>
+                    <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">course_id</span><span class="p">)</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">student_id</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">shared_courses</span><span class="p">:</span>
+                <span class="n">user_dict</span><span class="p">[</span><span class="s1">&#39;context&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Student in: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">title</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">shared_courses</span><span class="p">[:</span><span class="mi">2</span><span class="p">]])</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shared_courses</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">user_dict</span><span class="p">[</span><span class="s1">&#39;context&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; (+</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">shared_courses</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2"> more)&quot;</span>
+        
+        <span class="k">elif</span> <span class="n">current_user</span><span class="o">.</span><span class="n">is_student</span><span class="p">()</span> <span class="ow">and</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="n">shared_courses</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Course</span><span class="o">.</span><span class="n">title</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">==</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">Course</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span>
+                    <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">course_id</span><span class="p">)</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                        <span class="n">student_id</span><span class="o">=</span><span class="n">current_user_id</span><span class="p">,</span>
+                        <span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">shared_courses</span><span class="p">:</span>
+                <span class="n">user_dict</span><span class="p">[</span><span class="s1">&#39;context&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Teacher of: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">title</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">shared_courses</span><span class="p">[:</span><span class="mi">2</span><span class="p">]])</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shared_courses</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">user_dict</span><span class="p">[</span><span class="s1">&#39;context&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; (+</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">shared_courses</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2"> more)&quot;</span>
+        
+        <span class="n">users_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user_dict</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;users&#39;</span><span class="p">:</span> <span class="n">users_data</span><span class="p">})</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

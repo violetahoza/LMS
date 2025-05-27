@@ -1,8 +1,7 @@
 from typing import Dict, Any, List, Optional
-from datetime import datetime
-from app.models import Assignment, Quiz, db, User, Notification, NotificationType, NotificationPriority
-from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
-from sqlalchemy import desc, or_
+from app.models import Assignment, db, User, Notification, NotificationType, NotificationPriority
+from app.utils.base_controller import PermissionException, NotFoundException
+from sqlalchemy import desc
 
 class NotificationService:
     """Service for managing notifications"""
@@ -133,23 +132,6 @@ class NotificationService:
         
         db.session.commit()
         return {'message': f'{len(notifications)} notifications deleted'}
-    
-    @staticmethod
-    def get_notification_preferences(user_id: int) -> Dict[str, Any]:
-        """Get user notification preferences (placeholder for future implementation)"""
-        # This would typically fetch from a user_preferences table
-        return {
-            'email_notifications': True,
-            'push_notifications': True,
-            'notification_types': {
-                'messages': True,
-                'enrollments': True,
-                'assignments': True,
-                'quizzes': True,
-                'achievements': True,
-                'certificates': True
-            }
-        }
 
     @staticmethod
     def notify_new_message(sender_id: int, recipient_id: int, subject: str):

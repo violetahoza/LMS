@@ -4,7 +4,6 @@ This is the main Flask application file that creates and runs the LMS.
 """
 
 import os
-from flask import Flask, jsonify
 
 def create_application():
     """Create Flask application with proper configuration"""

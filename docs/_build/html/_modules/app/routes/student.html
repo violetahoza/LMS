@@ -1,0 +1,430 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.routes.student &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.routes.student</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.routes.student</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Blueprint</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">jsonify</span><span class="p">,</span> <span class="n">send_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask_jwt_extended</span><span class="w"> </span><span class="kn">import</span> <span class="n">jwt_required</span><span class="p">,</span> <span class="n">get_jwt_identity</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.services.student_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">StudentService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.services.teacher_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">TeacherService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.base_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseController</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">student_required</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span><span class="p">,</span> <span class="n">Course</span><span class="p">,</span> <span class="n">Enrollment</span>
+
+<span class="n">bp</span> <span class="o">=</span> <span class="n">Blueprint</span><span class="p">(</span><span class="s1">&#39;student&#39;</span><span class="p">,</span> <span class="vm">__name__</span><span class="p">,</span> <span class="n">url_prefix</span><span class="o">=</span><span class="s1">&#39;/api/student&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_dashboard">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.get_dashboard">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/dashboard&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@student_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dashboard</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get student dashboard data&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">StudentService</span><span class="o">.</span><span class="n">get_dashboard</span><span class="p">,</span>
+        <span class="n">user_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_student_progress">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.get_student_progress">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/progress&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@jwt_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_student_progress</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get student progress - accessible by teachers and the student themselves&quot;&quot;&quot;</span>
+    <span class="n">current_user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="n">current_user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">current_user_id</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">current_user</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;User not found&#39;</span><span class="p">},</span> <span class="mi">404</span>
+    
+    <span class="n">student_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;student_id&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">course_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;course_id&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">current_user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">student_id</span> <span class="ow">and</span> <span class="n">student_id</span> <span class="o">!=</span> <span class="n">current_user_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied&#39;</span><span class="p">},</span> <span class="mi">403</span>
+        <span class="n">student_id</span> <span class="o">=</span> <span class="n">current_user_id</span>
+        
+        <span class="k">if</span> <span class="n">course_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+                <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_individual_student_progress</span><span class="p">,</span>
+                <span class="n">current_user_id</span><span class="p">,</span>  <span class="c1">#</span>
+                <span class="n">student_id</span><span class="p">,</span>
+                <span class="n">course_id</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+                <span class="n">StudentService</span><span class="o">.</span><span class="n">get_progress</span><span class="p">,</span>
+                <span class="n">student_id</span>
+            <span class="p">)</span>
+            
+    <span class="k">elif</span> <span class="n">current_user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">student_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;student_id parameter required for teachers&#39;</span><span class="p">},</span> <span class="mi">400</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;course_id parameter required for teachers&#39;</span><span class="p">},</span> <span class="mi">400</span>
+            
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span> <span class="ow">or</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">current_user_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied to this course&#39;</span><span class="p">},</span> <span class="mi">403</span>
+            
+        <span class="n">enrollment</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">enrollment</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Student not enrolled in this course&#39;</span><span class="p">},</span> <span class="mi">404</span>
+            
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_individual_student_progress</span><span class="p">,</span>
+            <span class="n">current_user_id</span><span class="p">,</span>
+            <span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied&#39;</span><span class="p">},</span> <span class="mi">403</span></div>
+
+
+<div class="viewcode-block" id="get_achievements">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.get_achievements">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/achievements&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@student_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_achievements</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get student achievements&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">StudentService</span><span class="o">.</span><span class="n">get_achievements</span><span class="p">,</span>
+        <span class="n">user_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_certificates">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.get_certificates">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/certificates&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@student_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_certificates</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get student certificates&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">StudentService</span><span class="o">.</span><span class="n">get_certificates</span><span class="p">,</span>
+        <span class="n">user_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="request_certificate">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.request_certificate">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/certificates/request/&lt;int:course_id&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="nd">@student_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">request_certificate</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Request certificate for completed course&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">StudentService</span><span class="o">.</span><span class="n">request_certificate</span><span class="p">,</span>
+        <span class="n">user_id</span><span class="p">,</span>
+        <span class="n">course_id</span><span class="p">,</span>
+        <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Certificate requested successfully&quot;</span><span class="p">,</span>
+        <span class="n">success_code</span><span class="o">=</span><span class="mi">201</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_study_streak">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.get_study_streak">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/study-streak&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@student_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_study_streak</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get student study streak information&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">StudentService</span><span class="o">.</span><span class="n">get_study_streak</span><span class="p">,</span>
+        <span class="n">user_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_course_recommendations">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.get_course_recommendations">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/recommendations&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@student_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_course_recommendations</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get course recommendations for student&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">StudentService</span><span class="o">.</span><span class="n">get_course_recommendations</span><span class="p">,</span>
+        <span class="n">user_id</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="send_message">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.send_message">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/messages/send&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="nd">@student_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">send_message</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Send a message from student&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+    
+    <span class="kn">from</span><span class="w"> </span><span class="nn">app.services.messaging_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">MessagingService</span>
+    <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+        <span class="n">MessagingService</span><span class="o">.</span><span class="n">send_message</span><span class="p">,</span>
+        <span class="n">user_id</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">success_message</span><span class="o">=</span><span class="s2">&quot;Message sent successfully&quot;</span><span class="p">,</span>
+        <span class="n">success_code</span><span class="o">=</span><span class="mi">201</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_student_progress_by_teacher">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.get_student_progress_by_teacher">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/progress&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@jwt_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_student_progress_by_teacher</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get student progress - accessible by teachers and the student themselves&quot;&quot;&quot;</span>
+    <span class="n">current_user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="n">current_user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">current_user_id</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">current_user</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;User not found&#39;</span><span class="p">}),</span> <span class="mi">404</span>
+    
+    <span class="n">student_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;student_id&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">course_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;course_id&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">current_user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">student_id</span> <span class="ow">and</span> <span class="n">student_id</span> <span class="o">!=</span> <span class="n">current_user_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied&#39;</span><span class="p">}),</span> <span class="mi">403</span>
+        <span class="n">student_id</span> <span class="o">=</span> <span class="n">current_user_id</span>
+    <span class="k">elif</span> <span class="n">current_user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">student_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;student_id parameter required for teachers&#39;</span><span class="p">}),</span> <span class="mi">400</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;course_id parameter required for teachers&#39;</span><span class="p">}),</span> <span class="mi">400</span>
+            
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span> <span class="ow">or</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">current_user_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied to this course&#39;</span><span class="p">}),</span> <span class="mi">403</span>
+            
+        <span class="n">enrollment</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">enrollment</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Student not enrolled in this course&#39;</span><span class="p">}),</span> <span class="mi">404</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied&#39;</span><span class="p">}),</span> <span class="mi">403</span>
+    
+    <span class="k">if</span> <span class="n">course_id</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_individual_student_progress</span><span class="p">,</span>
+            <span class="n">current_user_id</span> <span class="k">if</span> <span class="n">current_user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">()</span> <span class="k">else</span> <span class="n">student_id</span><span class="p">,</span>
+            <span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="n">StudentService</span><span class="o">.</span><span class="n">get_progress</span><span class="p">,</span>
+            <span class="n">student_id</span>
+        <span class="p">)</span></div>
+
+    
+
+<div class="viewcode-block" id="get_student_quiz_attempts">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.get_student_quiz_attempts">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/quiz-attempts&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@student_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_student_quiz_attempts</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get student&#39;s quiz attempts&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">get_jwt_identity</span><span class="p">()</span>
+    <span class="n">quiz_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;quiz_id&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    
+    <span class="kn">from</span><span class="w"> </span><span class="nn">app.services.quiz_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">QuizService</span>
+    
+    <span class="k">if</span> <span class="n">quiz_id</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="n">QuizService</span><span class="o">.</span><span class="n">get_student_quiz_attempts</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">user_id</span><span class="p">),</span>
+            <span class="n">quiz_id</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BaseController</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span>
+            <span class="n">QuizService</span><span class="o">.</span><span class="n">get_student_quiz_attempts</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="download_certificate">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.download_certificate">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/certificates/&lt;string:certificate_code&gt;/download&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@student_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">download_certificate</span><span class="p">(</span><span class="n">certificate_code</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Download certificate as PDF&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.services.certificate_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">CertificateService</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Certificate</span>
+        
+        <span class="n">certificate</span> <span class="o">=</span> <span class="n">Certificate</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">certificate_code</span><span class="o">=</span><span class="n">certificate_code</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">certificate</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Certificate not found&#39;</span><span class="p">}),</span> <span class="mi">404</span>
+        
+        <span class="k">if</span> <span class="n">certificate</span><span class="o">.</span><span class="n">student_id</span> <span class="o">!=</span> <span class="n">user_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied&#39;</span><span class="p">}),</span> <span class="mi">403</span>
+        
+        <span class="n">pdf_buffer</span> <span class="o">=</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">generate_certificate_pdf</span><span class="p">(</span><span class="n">certificate</span><span class="p">)</span>
+        
+        <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;certificate_</span><span class="si">{</span><span class="n">certificate</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;_&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">certificate_code</span><span class="si">}</span><span class="s2">.pdf&quot;</span>
+        
+        <span class="k">return</span> <span class="n">send_file</span><span class="p">(</span>
+            <span class="n">pdf_buffer</span><span class="p">,</span>
+            <span class="n">as_attachment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">download_name</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
+            <span class="n">mimetype</span><span class="o">=</span><span class="s1">&#39;application/pdf&#39;</span>
+        <span class="p">)</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error generating certificate PDF: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Failed to generate certificate PDF&#39;</span><span class="p">}),</span> <span class="mi">500</span></div>
+
+
+<div class="viewcode-block" id="bulk_download_certificates">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.student.bulk_download_certificates">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/certificates/bulk-download&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="nd">@student_required</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">bulk_download_certificates</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Download all certificates as a ZIP file&quot;&quot;&quot;</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">get_jwt_identity</span><span class="p">())</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+    <span class="n">certificate_codes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;certificate_codes&#39;</span><span class="p">,</span> <span class="p">[])</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Certificate</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">zipfile</span>
+        
+        <span class="n">certificates</span> <span class="o">=</span> <span class="n">Certificate</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Certificate</span><span class="o">.</span><span class="n">certificate_code</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">certificate_codes</span><span class="p">),</span>
+            <span class="n">Certificate</span><span class="o">.</span><span class="n">student_id</span> <span class="o">==</span> <span class="n">user_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">certificates</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;No certificates found&#39;</span><span class="p">}),</span> <span class="mi">404</span>
+        
+        <span class="n">zip_buffer</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+        
+        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">zip_buffer</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span> <span class="k">as</span> <span class="n">zip_file</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">certificate</span> <span class="ow">in</span> <span class="n">certificates</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">pdf_buffer</span> <span class="o">=</span> <span class="n">StudentService</span><span class="o">.</span><span class="n">generate_certificate_pdf</span><span class="p">(</span><span class="n">certificate</span><span class="p">)</span>
+                    <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;certificate_</span><span class="si">{</span><span class="n">certificate</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;_&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">certificate</span><span class="o">.</span><span class="n">certificate_code</span><span class="si">}</span><span class="s2">.pdf&quot;</span>
+                    <span class="n">zip_file</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">pdf_buffer</span><span class="o">.</span><span class="n">getvalue</span><span class="p">())</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error adding certificate </span><span class="si">{</span><span class="n">certificate</span><span class="o">.</span><span class="n">certificate_code</span><span class="si">}</span><span class="s2"> to ZIP: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+        
+        <span class="n">zip_buffer</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">send_file</span><span class="p">(</span>
+            <span class="n">zip_buffer</span><span class="p">,</span>
+            <span class="n">as_attachment</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">download_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;certificates_</span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s2">.zip&quot;</span><span class="p">,</span>
+            <span class="n">mimetype</span><span class="o">=</span><span class="s1">&#39;application/zip&#39;</span>
+        <span class="p">)</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error generating certificates ZIP: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Failed to generate certificates archive&#39;</span><span class="p">}),</span> <span class="mi">500</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

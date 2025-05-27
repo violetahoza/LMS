@@ -1,0 +1,1122 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.services.teacher_service &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.services.teacher_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.services.teacher_service</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">desc</span><span class="p">,</span> <span class="n">func</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnswerOption</span><span class="p">,</span> <span class="n">Question</span><span class="p">,</span> <span class="n">StudentAnswer</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">Course</span><span class="p">,</span> <span class="n">Enrollment</span><span class="p">,</span> <span class="n">Lesson</span><span class="p">,</span> <span class="n">Quiz</span><span class="p">,</span> <span class="n">Assignment</span><span class="p">,</span> <span class="n">QuizAttempt</span><span class="p">,</span> <span class="n">AssignmentSubmission</span><span class="p">,</span> <span class="n">LessonProgress</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.base_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">PermissionException</span><span class="p">,</span> <span class="n">NotFoundException</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_course_statistics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+
+<div class="viewcode-block" id="TeacherService">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TeacherService</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Service for teacher-specific operations&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="TeacherService.get_dashboard">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_dashboard">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dashboard</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get teacher dashboard data&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access this dashboard&quot;</span><span class="p">)</span>
+        
+        <span class="n">courses</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">taught_courses</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">total_courses</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">courses</span><span class="p">)</span>
+        <span class="n">published_courses</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">courses</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">is_published</span><span class="p">])</span>
+        
+        <span class="n">total_students</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">active_students</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">courses</span><span class="p">:</span>
+            <span class="n">enrollments</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">enrollments</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="n">total_students</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">enrollments</span><span class="p">)</span>
+            <span class="n">active_students</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">([</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">enrollments</span> <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;active&#39;</span><span class="p">])</span>
+        
+        <span class="n">week_ago</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+        <span class="n">recent_enrollments</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">recent_submissions</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">courses</span><span class="p">:</span>
+            <span class="n">recent_enrollments</span> <span class="o">+=</span> <span class="n">course</span><span class="o">.</span><span class="n">enrollments</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Enrollment</span><span class="o">.</span><span class="n">enrolled_at</span> <span class="o">&gt;=</span> <span class="n">week_ago</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+            
+            <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">assignments</span><span class="p">:</span>
+                <span class="n">recent_submissions</span> <span class="o">+=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">submissions</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">submitted_at</span> <span class="o">&gt;=</span> <span class="n">week_ago</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        
+        <span class="n">course_performance</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">courses</span><span class="p">[:</span><span class="mi">5</span><span class="p">]:</span>  
+            <span class="n">stats</span> <span class="o">=</span> <span class="n">calculate_course_statistics</span><span class="p">(</span><span class="n">course</span><span class="p">)</span>
+            <span class="n">course_performance</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">course</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;students&#39;</span><span class="p">:</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_students&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;completion_rate&#39;</span><span class="p">:</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;completion_rate&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;lessons&#39;</span><span class="p">:</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_lessons&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;quizzes&#39;</span><span class="p">:</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;total_quizzes&#39;</span><span class="p">]</span>
+            <span class="p">})</span>
+        
+        <span class="n">recent_quiz_attempts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">courses</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">quiz</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">quizzes</span><span class="p">:</span>
+                <span class="n">attempts</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">attempts</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">submitted_at</span> <span class="o">&gt;=</span> <span class="n">week_ago</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="o">.</span><span class="n">submitted_at</span><span class="p">))</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+                
+                <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="n">attempts</span><span class="p">:</span>
+                    <span class="n">recent_quiz_attempts</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                        <span class="s1">&#39;student_name&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span>
+                        <span class="s1">&#39;quiz_title&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                        <span class="s1">&#39;course_title&#39;</span><span class="p">:</span> <span class="n">course</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                        <span class="s1">&#39;score&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                        <span class="s1">&#39;submitted_at&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">submitted_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">submitted_at</span> <span class="k">else</span> <span class="kc">None</span>
+                    <span class="p">})</span>
+        
+        <span class="n">recent_quiz_attempts</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;submitted_at&#39;</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">recent_quiz_attempts</span> <span class="o">=</span> <span class="n">recent_quiz_attempts</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;stats&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;total_courses&#39;</span><span class="p">:</span> <span class="n">total_courses</span><span class="p">,</span>
+                <span class="s1">&#39;published_courses&#39;</span><span class="p">:</span> <span class="n">published_courses</span><span class="p">,</span>
+                <span class="s1">&#39;total_students&#39;</span><span class="p">:</span> <span class="n">total_students</span><span class="p">,</span>
+                <span class="s1">&#39;active_students&#39;</span><span class="p">:</span> <span class="n">active_students</span><span class="p">,</span>
+                <span class="s1">&#39;recent_enrollments&#39;</span><span class="p">:</span> <span class="n">recent_enrollments</span><span class="p">,</span>
+                <span class="s1">&#39;recent_submissions&#39;</span><span class="p">:</span> <span class="n">recent_submissions</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;top_courses&#39;</span><span class="p">:</span> <span class="n">course_performance</span><span class="p">,</span>
+            <span class="s1">&#39;recent_quiz_attempts&#39;</span><span class="p">:</span> <span class="n">recent_quiz_attempts</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="TeacherService.get_teacher_courses">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_teacher_courses">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_teacher_courses</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">page</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">per_page</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all courses for a teacher with pagination&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access their courses&quot;</span><span class="p">)</span>
+        
+        <span class="n">query</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">taught_courses</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">Course</span><span class="o">.</span><span class="n">created_at</span><span class="p">))</span>
+        
+        <span class="n">pagination</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span>
+            <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+            <span class="n">per_page</span><span class="o">=</span><span class="n">per_page</span><span class="p">,</span>
+            <span class="n">error_out</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+        
+        <span class="n">courses</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">pagination</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+            <span class="n">course_data</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="n">course_data</span><span class="p">[</span><span class="s1">&#39;statistics&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">calculate_course_statistics</span><span class="p">(</span><span class="n">course</span><span class="p">)</span>
+            <span class="n">courses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">course_data</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;courses&#39;</span><span class="p">:</span> <span class="n">courses</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="n">pagination</span><span class="o">.</span><span class="n">total</span><span class="p">,</span>
+            <span class="s1">&#39;page&#39;</span><span class="p">:</span> <span class="n">page</span><span class="p">,</span>
+            <span class="s1">&#39;per_page&#39;</span><span class="p">:</span> <span class="n">per_page</span><span class="p">,</span>
+            <span class="s1">&#39;pages&#39;</span><span class="p">:</span> <span class="n">pagination</span><span class="o">.</span><span class="n">pages</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="TeacherService.get_course_details">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_course_details">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_course_details</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get detailed course information for teacher&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access course details&quot;</span><span class="p">)</span>
+        
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Course not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied to this course&quot;</span><span class="p">)</span>
+        
+        <span class="n">course_data</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="n">course_data</span><span class="p">[</span><span class="s1">&#39;statistics&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">calculate_course_statistics</span><span class="p">(</span><span class="n">course</span><span class="p">)</span>
+        
+        <span class="n">lessons</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">lessons</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Lesson</span><span class="o">.</span><span class="n">order_number</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">course_data</span><span class="p">[</span><span class="s1">&#39;lessons&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">lesson</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="n">lessons</span><span class="p">]</span>
+        
+        <span class="n">quizzes</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">quizzes</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">course_data</span><span class="p">[</span><span class="s1">&#39;quizzes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">quiz</span> <span class="ow">in</span> <span class="n">quizzes</span><span class="p">]</span>
+        
+        <span class="n">assignments</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">assignments</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">course_data</span><span class="p">[</span><span class="s1">&#39;assignments&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">assignment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">assignments</span><span class="p">]</span>
+        
+        <span class="n">enrollments</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">enrollments</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">students</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">enrollment</span> <span class="ow">in</span> <span class="n">enrollments</span><span class="p">:</span>
+            <span class="n">student_data</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="n">student_data</span><span class="p">[</span><span class="s1">&#39;enrollment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="n">student_data</span><span class="p">[</span><span class="s1">&#39;progress&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">TeacherService</span><span class="o">.</span><span class="n">_calculate_student_progress</span><span class="p">(</span>
+                <span class="n">enrollment</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span> <span class="n">course_id</span>
+            <span class="p">)</span>
+            <span class="n">students</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">student_data</span><span class="p">)</span>
+        
+        <span class="n">course_data</span><span class="p">[</span><span class="s1">&#39;students&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">students</span>
+        
+        <span class="k">return</span> <span class="n">course_data</span></div>
+
+    
+<div class="viewcode-block" id="TeacherService.get_pending_submissions">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_pending_submissions">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_pending_submissions</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get assignments that need grading&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access submissions&quot;</span><span class="p">)</span>
+        
+        <span class="n">courses</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">taught_courses</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">pending_submissions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">courses</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">assignments</span><span class="p">:</span>
+                <span class="n">submissions</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">submissions</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;submitted&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+                
+                <span class="k">for</span> <span class="n">submission</span> <span class="ow">in</span> <span class="n">submissions</span><span class="p">:</span>
+                    <span class="n">submission_data</span> <span class="o">=</span> <span class="n">submission</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="n">submission_data</span><span class="p">[</span><span class="s1">&#39;student&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">submission</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="n">submission_data</span><span class="p">[</span><span class="s1">&#39;assignment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="n">submission_data</span><span class="p">[</span><span class="s1">&#39;course&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="n">pending_submissions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">submission_data</span><span class="p">)</span>
+        
+        <span class="n">pending_submissions</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;submitted_at&#39;</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;submissions&#39;</span><span class="p">:</span> <span class="n">pending_submissions</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">pending_submissions</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="TeacherService.get_quiz_analytics">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_quiz_analytics">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_quiz_analytics</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get detailed quiz analytics with REAL student performance data&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access quiz analytics&quot;</span><span class="p">)</span>
+        
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied to this quiz&quot;</span><span class="p">)</span>
+        
+        <span class="n">best_attempts</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">quiz_id</span> <span class="o">==</span> <span class="n">quiz_id</span><span class="p">,</span>
+            <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;completed&#39;</span><span class="p">,</span>
+            <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">score</span><span class="o">.</span><span class="n">isnot</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">student_id</span> <span class="o">==</span> <span class="n">User</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">student_best_attempts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="n">best_attempts</span><span class="p">:</span>
+            <span class="n">student_id</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student_id</span>
+            <span class="k">if</span> <span class="n">student_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">student_best_attempts</span> <span class="ow">or</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;</span> <span class="n">student_best_attempts</span><span class="p">[</span><span class="n">student_id</span><span class="p">]</span><span class="o">.</span><span class="n">score</span><span class="p">:</span>
+                <span class="n">student_best_attempts</span><span class="p">[</span><span class="n">student_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">attempt</span>
+        
+        <span class="n">best_attempts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">student_best_attempts</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        
+        <span class="k">if</span> <span class="n">best_attempts</span><span class="p">:</span>
+            <span class="n">scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">attempt</span><span class="o">.</span><span class="n">score</span> <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="n">best_attempts</span> <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;total_attempts&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">best_attempts</span><span class="p">),</span>
+                <span class="s1">&#39;average_score&#39;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span> <span class="k">if</span> <span class="n">scores</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;highest_score&#39;</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span> <span class="k">if</span> <span class="n">scores</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;lowest_score&#39;</span><span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span> <span class="k">if</span> <span class="n">scores</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;pass_rate&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">([</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scores</span> <span class="k">if</span> <span class="n">s</span> <span class="o">&gt;=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span> <span class="k">if</span> <span class="n">scores</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;total_attempts&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;average_score&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;highest_score&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;lowest_score&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;pass_rate&#39;</span><span class="p">:</span> <span class="mi">0</span>
+            <span class="p">}</span>
+        
+        <span class="n">question_analytics</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">questions</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">questions</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Question</span><span class="o">.</span><span class="n">order_number</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">:</span>
+            <span class="n">student_answers</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="n">best_attempts</span><span class="p">:</span>
+                <span class="n">answer</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">StudentAnswer</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="n">StudentAnswer</span><span class="o">.</span><span class="n">attempt_id</span> <span class="o">==</span> <span class="n">attempt</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="n">StudentAnswer</span><span class="o">.</span><span class="n">question_id</span> <span class="o">==</span> <span class="n">question</span><span class="o">.</span><span class="n">id</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">answer</span><span class="p">:</span>
+                    <span class="n">student_answers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span>
+            
+            <span class="n">correct_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">ans</span> <span class="k">for</span> <span class="n">ans</span> <span class="ow">in</span> <span class="n">student_answers</span> <span class="k">if</span> <span class="n">ans</span><span class="o">.</span><span class="n">is_correct</span> <span class="o">==</span> <span class="kc">True</span><span class="p">])</span>
+            <span class="n">total_answers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">student_answers</span><span class="p">)</span>
+            
+            <span class="n">answer_distribution</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">answer</span> <span class="ow">in</span> <span class="n">student_answers</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">selected_option_id</span><span class="p">:</span>
+                        <span class="n">option</span> <span class="o">=</span> <span class="n">AnswerOption</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">answer</span><span class="o">.</span><span class="n">selected_option_id</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">option</span><span class="p">:</span>
+                            <span class="n">key</span> <span class="o">=</span> <span class="n">option</span><span class="o">.</span><span class="n">option_text</span>
+                            <span class="n">answer_distribution</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">answer_distribution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">elif</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="o">==</span> <span class="s1">&#39;short_answer&#39;</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">answer</span> <span class="ow">in</span> <span class="n">student_answers</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">answer_text</span><span class="p">:</span>
+                        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">answer</span><span class="o">.</span><span class="n">answer_text</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">answer</span><span class="o">.</span><span class="n">answer_text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">50</span> <span class="k">else</span> <span class="n">answer</span><span class="o">.</span><span class="n">answer_text</span>
+                        <span class="n">answer_distribution</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">answer_distribution</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            
+            <span class="n">question_analytics</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;question&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;question_text&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">question_text</span><span class="p">,</span>
+                    <span class="s1">&#39;question_type&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span><span class="p">,</span>
+                    <span class="s1">&#39;points&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">points</span><span class="p">,</span>
+                    <span class="s1">&#39;order_number&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">order_number</span>
+                <span class="p">},</span>
+                <span class="s1">&#39;total_answers&#39;</span><span class="p">:</span> <span class="n">total_answers</span><span class="p">,</span>
+                <span class="s1">&#39;correct_answers&#39;</span><span class="p">:</span> <span class="n">correct_count</span><span class="p">,</span>
+                <span class="s1">&#39;accuracy_rate&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">correct_count</span> <span class="o">/</span> <span class="n">total_answers</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_answers</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;answer_distribution&#39;</span><span class="p">:</span> <span class="n">answer_distribution</span>
+            <span class="p">})</span>
+        
+        <span class="n">student_performance</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="n">best_attempts</span><span class="p">:</span>
+            <span class="n">answers</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">StudentAnswer</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">StudentAnswer</span><span class="o">.</span><span class="n">attempt_id</span> <span class="o">==</span> <span class="n">attempt</span><span class="o">.</span><span class="n">id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Question</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Question</span><span class="o">.</span><span class="n">order_number</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            
+            <span class="n">question_breakdown</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">answer</span> <span class="ow">in</span> <span class="n">answers</span><span class="p">:</span>
+                <span class="n">question</span> <span class="o">=</span> <span class="n">answer</span><span class="o">.</span><span class="n">question</span>
+                <span class="n">breakdown_item</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;question_id&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;question_text&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">question_text</span><span class="p">[:</span><span class="mi">100</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">question</span><span class="o">.</span><span class="n">question_text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">100</span> <span class="k">else</span> <span class="n">question</span><span class="o">.</span><span class="n">question_text</span><span class="p">,</span>
+                    <span class="s1">&#39;question_type&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span><span class="p">,</span>
+                    <span class="s1">&#39;points&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">points</span><span class="p">,</span>
+                    <span class="s1">&#39;points_earned&#39;</span><span class="p">:</span> <span class="n">answer</span><span class="o">.</span><span class="n">points_earned</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s1">&#39;is_correct&#39;</span><span class="p">:</span> <span class="n">answer</span><span class="o">.</span><span class="n">is_correct</span><span class="p">,</span>
+                    <span class="s1">&#39;student_answer&#39;</span><span class="p">:</span> <span class="kc">None</span>
+                <span class="p">}</span>
+                
+                <span class="k">if</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="o">==</span> <span class="s1">&#39;short_answer&#39;</span><span class="p">:</span>
+                    <span class="n">breakdown_item</span><span class="p">[</span><span class="s1">&#39;student_answer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">answer</span><span class="o">.</span><span class="n">answer_text</span>
+                <span class="k">elif</span> <span class="n">answer</span><span class="o">.</span><span class="n">selected_option_id</span><span class="p">:</span>
+                    <span class="n">option</span> <span class="o">=</span> <span class="n">AnswerOption</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">answer</span><span class="o">.</span><span class="n">selected_option_id</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">option</span><span class="p">:</span>
+                        <span class="n">breakdown_item</span><span class="p">[</span><span class="s1">&#39;student_answer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">option</span><span class="o">.</span><span class="n">option_text</span>
+                
+                <span class="n">question_breakdown</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">breakdown_item</span><span class="p">)</span>
+            
+            <span class="n">student_performance</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;student&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;full_name&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span>
+                    <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">email</span><span class="p">,</span>
+                    <span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">username</span>
+                <span class="p">},</span>
+                <span class="s1">&#39;attempt&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;attempt_number&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">attempt_number</span><span class="p">,</span>
+                    <span class="s1">&#39;score&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                    <span class="s1">&#39;submitted_at&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">submitted_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">submitted_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;time_spent_minutes&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">time_spent_minutes</span><span class="p">,</span>
+                    <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+                    <span class="s1">&#39;graded_at&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">graded_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">graded_at</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">},</span>
+                <span class="s1">&#39;question_breakdown&#39;</span><span class="p">:</span> <span class="n">question_breakdown</span>
+            <span class="p">})</span>
+        
+        <span class="n">student_performance</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;attempt&#39;</span><span class="p">][</span><span class="s1">&#39;score&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;quiz&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s1">&#39;statistics&#39;</span><span class="p">:</span> <span class="n">stats</span><span class="p">,</span>
+            <span class="s1">&#39;question_statistics&#39;</span><span class="p">:</span> <span class="n">question_analytics</span><span class="p">,</span>
+            <span class="s1">&#39;student_performance&#39;</span><span class="p">:</span> <span class="n">student_performance</span><span class="p">,</span>
+            <span class="s1">&#39;total_students&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">student_performance</span><span class="p">)</span>
+    <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="TeacherService.get_individual_student_progress">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_individual_student_progress">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_individual_student_progress</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get REAL detailed progress for individual student&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access this data&quot;</span><span class="p">)</span>
+
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span> <span class="ow">or</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied to this course&quot;</span><span class="p">)</span>
+
+        <span class="n">student</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">student</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Student not found&quot;</span><span class="p">)</span>
+
+        <span class="n">enrollment</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">enrollment</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Student not enrolled in this course&quot;</span><span class="p">)</span>
+
+        <span class="n">progress</span> <span class="o">=</span> <span class="n">TeacherService</span><span class="o">.</span><span class="n">_calculate_detailed_student_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="n">last_activity</span> <span class="o">=</span> <span class="n">TeacherService</span><span class="o">.</span><span class="n">_get_last_activity</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;student&#39;</span><span class="p">:</span> <span class="n">student</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s1">&#39;course&#39;</span><span class="p">:</span> <span class="n">course</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s1">&#39;progress&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="o">**</span><span class="n">progress</span><span class="p">,</span>
+                <span class="s1">&#39;overall_percentage&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">calculate_progress</span><span class="p">(),</span>  <span class="c1"># Use the fixed calculation</span>
+                <span class="s1">&#39;last_activity&#39;</span><span class="p">:</span> <span class="n">last_activity</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">last_activity</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;time_spent_minutes&#39;</span><span class="p">:</span> <span class="n">progress</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total_time_spent&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_detailed_student_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate REAL comprehensive student progress with actual database data&quot;&quot;&quot;</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="n">total_lessons</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">lessons</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="n">lesson_progress_records</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">LessonProgress</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">LessonProgress</span><span class="o">.</span><span class="n">student_id</span> <span class="o">==</span> <span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Lesson</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Lesson</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">completed_lessons</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">lp</span> <span class="k">for</span> <span class="n">lp</span> <span class="ow">in</span> <span class="n">lesson_progress_records</span> <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">completed_at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">])</span>
+        <span class="n">viewed_lessons</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lesson_progress_records</span><span class="p">)</span>
+        <span class="n">total_lesson_time</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">lp</span><span class="o">.</span><span class="n">time_spent_minutes</span> <span class="ow">or</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">lp</span> <span class="ow">in</span> <span class="n">lesson_progress_records</span><span class="p">])</span>
+        
+        <span class="n">detailed_lessons</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">lessons</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Lesson</span><span class="o">.</span><span class="n">order_number</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">progress_record</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">lp</span> <span class="k">for</span> <span class="n">lp</span> <span class="ow">in</span> <span class="n">lesson_progress_records</span> <span class="k">if</span> <span class="n">lp</span><span class="o">.</span><span class="n">lesson_id</span> <span class="o">==</span> <span class="n">lesson</span><span class="o">.</span><span class="n">id</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">detailed_lessons</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;lesson&#39;</span><span class="p">:</span> <span class="n">lesson</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="s1">&#39;viewed&#39;</span><span class="p">:</span> <span class="n">progress_record</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="n">progress_record</span><span class="o">.</span><span class="n">completed_at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">progress_record</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;time_spent&#39;</span><span class="p">:</span> <span class="n">progress_record</span><span class="o">.</span><span class="n">time_spent_minutes</span> <span class="ow">or</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">progress_record</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;last_viewed&#39;</span><span class="p">:</span> <span class="n">progress_record</span><span class="o">.</span><span class="n">viewed_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">progress_record</span> <span class="ow">and</span> <span class="n">progress_record</span><span class="o">.</span><span class="n">viewed_at</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">})</span>
+        
+        <span class="n">quiz_progress</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">quiz_summary</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;attempted&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;passed&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;average_score&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        
+        <span class="k">for</span> <span class="n">quiz</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">quizzes</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">attempts</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz</span><span class="o">.</span><span class="n">id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="o">.</span><span class="n">attempt_number</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            
+            <span class="n">best_attempt</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">attempts</span><span class="p">:</span>
+                <span class="n">completed_attempts</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attempts</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;completed&#39;</span> <span class="ow">and</span> <span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">completed_attempts</span><span class="p">:</span>
+                    <span class="n">best_attempt</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">completed_attempts</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">score</span><span class="p">)</span>
+            
+            <span class="n">quiz_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;quiz_id&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;quiz_title&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;total_points&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">total_points</span><span class="p">,</span>
+                <span class="s1">&#39;passing_score&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span><span class="p">,</span>
+                <span class="s1">&#39;attempts&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">attempts</span><span class="p">),</span>
+                <span class="s1">&#39;max_attempts&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">max_attempts</span><span class="p">,</span>
+                <span class="s1">&#39;best_score&#39;</span><span class="p">:</span> <span class="n">best_attempt</span><span class="o">.</span><span class="n">score</span> <span class="k">if</span> <span class="n">best_attempt</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;passed&#39;</span><span class="p">:</span> <span class="n">best_attempt</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span> <span class="k">if</span> <span class="n">best_attempt</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;last_attempt_date&#39;</span><span class="p">:</span> <span class="n">best_attempt</span><span class="o">.</span><span class="n">submitted_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">best_attempt</span> <span class="ow">and</span> <span class="n">best_attempt</span><span class="o">.</span><span class="n">submitted_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;details&#39;</span><span class="p">:</span> <span class="p">[{</span>
+                    <span class="s1">&#39;attempt_number&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">attempt_number</span><span class="p">,</span>
+                    <span class="s1">&#39;score&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                    <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+                    <span class="s1">&#39;submitted_at&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">submitted_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">submitted_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;time_spent&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">time_spent_minutes</span>
+                <span class="p">}</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attempts</span><span class="p">]</span>
+            <span class="p">}</span>
+            
+            <span class="n">quiz_progress</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">quiz_data</span><span class="p">)</span>
+            <span class="n">quiz_summary</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">attempts</span><span class="p">:</span>
+                <span class="n">quiz_summary</span><span class="p">[</span><span class="s1">&#39;attempted&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">quiz_data</span><span class="p">[</span><span class="s1">&#39;passed&#39;</span><span class="p">]:</span>
+                    <span class="n">quiz_summary</span><span class="p">[</span><span class="s1">&#39;passed&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="n">all_scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">qp</span><span class="p">[</span><span class="s1">&#39;best_score&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">qp</span> <span class="ow">in</span> <span class="n">quiz_progress</span> <span class="k">if</span> <span class="n">qp</span><span class="p">[</span><span class="s1">&#39;best_score&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">quiz_summary</span><span class="p">[</span><span class="s1">&#39;average_score&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">all_scores</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_scores</span><span class="p">)</span> <span class="k">if</span> <span class="n">all_scores</span> <span class="k">else</span> <span class="mi">0</span>
+        
+        <span class="n">assignment_progress</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">assignment_summary</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;submitted&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;graded&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;average_score&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        
+        <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">assignments</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="n">submission</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">assignment_id</span><span class="o">=</span><span class="n">assignment</span><span class="o">.</span><span class="n">id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="n">assignment_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;assignment_id&#39;</span><span class="p">:</span> <span class="n">assignment</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;assignment_title&#39;</span><span class="p">:</span> <span class="n">assignment</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="s1">&#39;total_points&#39;</span><span class="p">:</span> <span class="n">assignment</span><span class="o">.</span><span class="n">total_points</span><span class="p">,</span>
+                <span class="s1">&#39;due_date&#39;</span><span class="p">:</span> <span class="n">assignment</span><span class="o">.</span><span class="n">due_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">assignment</span><span class="o">.</span><span class="n">due_date</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;submitted&#39;</span><span class="p">:</span> <span class="n">submission</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;submission_date&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">submitted_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">submission</span> <span class="ow">and</span> <span class="n">submission</span><span class="o">.</span><span class="n">submitted_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;grade&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">grade</span> <span class="k">if</span> <span class="n">submission</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">status</span> <span class="k">if</span> <span class="n">submission</span> <span class="k">else</span> <span class="s1">&#39;not_submitted&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;feedback&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">feedback</span> <span class="k">if</span> <span class="n">submission</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;graded_at&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">graded_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">submission</span> <span class="ow">and</span> <span class="n">submission</span><span class="o">.</span><span class="n">graded_at</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;percentage&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">submission</span><span class="o">.</span><span class="n">grade</span> <span class="o">/</span> <span class="n">assignment</span><span class="o">.</span><span class="n">total_points</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">submission</span> <span class="ow">and</span> <span class="n">submission</span><span class="o">.</span><span class="n">grade</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">}</span>
+            
+            <span class="n">assignment_progress</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">assignment_data</span><span class="p">)</span>
+            <span class="n">assignment_summary</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">submission</span><span class="p">:</span>
+                <span class="n">assignment_summary</span><span class="p">[</span><span class="s1">&#39;submitted&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">submission</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;graded&#39;</span> <span class="ow">and</span> <span class="n">submission</span><span class="o">.</span><span class="n">grade</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">assignment_summary</span><span class="p">[</span><span class="s1">&#39;graded&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="n">graded_assignments</span> <span class="o">=</span> <span class="p">[</span><span class="n">ap</span> <span class="k">for</span> <span class="n">ap</span> <span class="ow">in</span> <span class="n">assignment_progress</span> <span class="k">if</span> <span class="n">ap</span><span class="p">[</span><span class="s1">&#39;grade&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">graded_assignments</span><span class="p">:</span>
+            <span class="n">assignment_summary</span><span class="p">[</span><span class="s1">&#39;average_score&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">ap</span><span class="p">[</span><span class="s1">&#39;percentage&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">ap</span> <span class="ow">in</span> <span class="n">graded_assignments</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">graded_assignments</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;lessons&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="n">completed_lessons</span><span class="p">,</span>
+                <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="n">total_lessons</span><span class="p">,</span>
+                <span class="s1">&#39;viewed&#39;</span><span class="p">:</span> <span class="n">viewed_lessons</span><span class="p">,</span>
+                <span class="s1">&#39;percentage&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">completed_lessons</span> <span class="o">/</span> <span class="n">total_lessons</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_lessons</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;quizzes&#39;</span><span class="p">:</span> <span class="n">quiz_summary</span><span class="p">,</span>
+            <span class="s1">&#39;assignments&#39;</span><span class="p">:</span> <span class="n">assignment_summary</span><span class="p">,</span>
+            <span class="s1">&#39;detailed_lessons&#39;</span><span class="p">:</span> <span class="n">detailed_lessons</span><span class="p">,</span>
+            <span class="s1">&#39;detailed_quizzes&#39;</span><span class="p">:</span> <span class="n">quiz_progress</span><span class="p">,</span>
+            <span class="s1">&#39;detailed_assignments&#39;</span><span class="p">:</span> <span class="n">assignment_progress</span><span class="p">,</span>
+            <span class="s1">&#39;total_time_spent&#39;</span><span class="p">:</span> <span class="n">total_lesson_time</span>
+        <span class="p">}</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_last_activity</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the most recent activity timestamp for a student in a course&quot;&quot;&quot;</span>
+        <span class="n">activities</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="n">latest_lesson</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">LessonProgress</span><span class="o">.</span><span class="n">viewed_at</span><span class="p">))</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">LessonProgress</span><span class="o">.</span><span class="n">student_id</span> <span class="o">==</span> <span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Lesson</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Lesson</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course_id</span><span class="p">)</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">latest_lesson</span><span class="p">:</span>
+            <span class="n">activities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">latest_lesson</span><span class="p">)</span>
+        
+        <span class="n">latest_quiz</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="o">.</span><span class="n">submitted_at</span><span class="p">))</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">student_id</span> <span class="o">==</span> <span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Quiz</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Quiz</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course_id</span><span class="p">)</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">latest_quiz</span><span class="p">:</span>
+            <span class="n">activities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">latest_quiz</span><span class="p">)</span>
+        
+        <span class="n">latest_assignment</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">submitted_at</span><span class="p">))</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">student_id</span> <span class="o">==</span> <span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Assignment</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Assignment</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course_id</span><span class="p">)</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">latest_assignment</span><span class="p">:</span>
+            <span class="n">activities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">latest_assignment</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">activities</span><span class="p">)</span> <span class="k">if</span> <span class="n">activities</span> <span class="k">else</span> <span class="kc">None</span>
+    
+<div class="viewcode-block" id="TeacherService.get_student_progress_report">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_student_progress_report">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_student_progress_report</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get REAL detailed student progress report for a course&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access student progress&quot;</span><span class="p">)</span>
+        
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Course not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied to this course&quot;</span><span class="p">)</span>
+        
+        <span class="n">enrollments</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">enrollments</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Enrollment</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">in_</span><span class="p">([</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">])</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">student_reports</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">enrollment</span> <span class="ow">in</span> <span class="n">enrollments</span><span class="p">:</span>
+            <span class="n">student</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">student</span>
+            
+            <span class="n">progress</span> <span class="o">=</span> <span class="n">TeacherService</span><span class="o">.</span><span class="n">_calculate_detailed_student_progress</span><span class="p">(</span><span class="n">student</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">course_id</span><span class="p">)</span>
+            
+            <span class="n">current_progress</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">calculate_progress</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">-</span> <span class="n">current_progress</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.1</span><span class="p">:</span>
+                <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">=</span> <span class="n">current_progress</span>
+                <span class="k">if</span> <span class="n">current_progress</span> <span class="o">&gt;=</span> <span class="mi">100</span> <span class="ow">and</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span>
+                    <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
+                    <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">enrollment</span> <span class="ow">in</span> <span class="n">enrollments</span><span class="p">:</span>
+            <span class="n">student</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">student</span>
+            <span class="n">progress</span> <span class="o">=</span> <span class="n">TeacherService</span><span class="o">.</span><span class="n">_calculate_detailed_student_progress</span><span class="p">(</span><span class="n">student</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">course_id</span><span class="p">)</span>
+            <span class="n">last_activity</span> <span class="o">=</span> <span class="n">TeacherService</span><span class="o">.</span><span class="n">_get_last_activity</span><span class="p">(</span><span class="n">student</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">course_id</span><span class="p">)</span>
+            
+            <span class="n">student_reports</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;student&#39;</span><span class="p">:</span> <span class="n">student</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="s1">&#39;enrollment&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="s1">&#39;progress&#39;</span><span class="p">:</span> <span class="n">progress</span><span class="p">,</span>
+                <span class="s1">&#39;last_activity&#39;</span><span class="p">:</span> <span class="n">last_activity</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">last_activity</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;overall_progress&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span>
+            <span class="p">})</span>
+        
+        <span class="n">student_reports</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;overall_progress&#39;</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;course&#39;</span><span class="p">:</span> <span class="n">course</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s1">&#39;student_reports&#39;</span><span class="p">:</span> <span class="n">student_reports</span><span class="p">,</span>
+            <span class="s1">&#39;total_students&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">student_reports</span><span class="p">),</span>
+            <span class="s1">&#39;summary&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;average_progress&#39;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">([</span><span class="n">sr</span><span class="p">[</span><span class="s1">&#39;overall_progress&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">sr</span> <span class="ow">in</span> <span class="n">student_reports</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">student_reports</span><span class="p">)</span> <span class="k">if</span> <span class="n">student_reports</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;completed_students&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">([</span><span class="n">sr</span> <span class="k">for</span> <span class="n">sr</span> <span class="ow">in</span> <span class="n">student_reports</span> <span class="k">if</span> <span class="n">sr</span><span class="p">[</span><span class="s1">&#39;enrollment&#39;</span><span class="p">][</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;completed&#39;</span><span class="p">]),</span>
+                <span class="s1">&#39;active_students&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">([</span><span class="n">sr</span> <span class="k">for</span> <span class="n">sr</span> <span class="ow">in</span> <span class="n">student_reports</span> <span class="k">if</span> <span class="n">sr</span><span class="p">[</span><span class="s1">&#39;enrollment&#39;</span><span class="p">][</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;active&#39;</span><span class="p">])</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="TeacherService.get_course_analytics">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_course_analytics">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_course_analytics</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get comprehensive course analytics&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access course analytics&quot;</span><span class="p">)</span>
+        
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Course not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied to this course&quot;</span><span class="p">)</span>
+        
+        <span class="n">thirty_days_ago</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+        <span class="n">enrollment_data</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+            <span class="n">date</span> <span class="o">=</span> <span class="n">thirty_days_ago</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">enrollments</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">func</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">enrolled_at</span><span class="p">)</span> <span class="o">==</span> <span class="n">date</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+            <span class="n">enrollment_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;date&#39;</span><span class="p">:</span> <span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;enrollments&#39;</span><span class="p">:</span> <span class="n">count</span>
+            <span class="p">})</span>
+        
+        <span class="n">lesson_engagement</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">lessons</span><span class="p">:</span>
+            <span class="n">views</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+            <span class="n">completions</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">LessonProgress</span><span class="o">.</span><span class="n">completed_at</span><span class="o">.</span><span class="n">isnot</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+            
+            <span class="n">lesson_engagement</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;lesson&#39;</span><span class="p">:</span> <span class="n">lesson</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="s1">&#39;views&#39;</span><span class="p">:</span> <span class="n">views</span><span class="p">,</span>
+                <span class="s1">&#39;completions&#39;</span><span class="p">:</span> <span class="n">completions</span><span class="p">,</span>
+                <span class="s1">&#39;completion_rate&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">completions</span> <span class="o">/</span> <span class="n">views</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">views</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="p">})</span>
+        
+        <span class="n">quiz_performance</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">quiz</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">quizzes</span><span class="p">:</span>
+            <span class="n">attempts</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">attempts</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">attempts</span><span class="p">:</span>
+                <span class="n">avg_score</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attempts</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">score</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">attempts</span><span class="p">)</span>
+                <span class="n">quiz_performance</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;quiz&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                    <span class="s1">&#39;total_attempts&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">attempts</span><span class="p">),</span>
+                    <span class="s1">&#39;average_score&#39;</span><span class="p">:</span> <span class="n">avg_score</span><span class="p">,</span>
+                    <span class="s1">&#39;pass_rate&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">([</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attempts</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">attempts</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+                <span class="p">})</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;course&#39;</span><span class="p">:</span> <span class="n">course</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s1">&#39;enrollment_trends&#39;</span><span class="p">:</span> <span class="n">enrollment_data</span><span class="p">,</span>
+            <span class="s1">&#39;lesson_engagement&#39;</span><span class="p">:</span> <span class="n">lesson_engagement</span><span class="p">,</span>
+            <span class="s1">&#39;quiz_performance&#39;</span><span class="p">:</span> <span class="n">quiz_performance</span><span class="p">,</span>
+            <span class="s1">&#39;overall_stats&#39;</span><span class="p">:</span> <span class="n">calculate_course_statistics</span><span class="p">(</span><span class="n">course</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_student_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate comprehensive student progress for a course&quot;&quot;&quot;</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="n">total_lessons</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">lessons</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="n">completed_lessons</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Lesson</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Lesson</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course_id</span><span class="p">,</span>
+            <span class="n">LessonProgress</span><span class="o">.</span><span class="n">completed_at</span><span class="o">.</span><span class="n">isnot</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        
+        <span class="n">quiz_scores</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">quiz</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">quizzes</span><span class="p">:</span>
+            <span class="n">best_attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="o">.</span><span class="n">score</span><span class="p">))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">best_attempt</span><span class="p">:</span>
+                <span class="n">quiz_scores</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;quiz_id&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;quiz_title&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                    <span class="s1">&#39;score&#39;</span><span class="p">:</span> <span class="n">best_attempt</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                    <span class="s1">&#39;passed&#39;</span><span class="p">:</span> <span class="n">best_attempt</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span>
+                <span class="p">})</span>
+        
+        <span class="n">assignment_grades</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">assignments</span><span class="p">:</span>
+            <span class="n">submission</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">assignment_id</span><span class="o">=</span><span class="n">assignment</span><span class="o">.</span><span class="n">id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">submission</span><span class="p">:</span>
+                <span class="n">assignment_grades</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;assignment_id&#39;</span><span class="p">:</span> <span class="n">assignment</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;assignment_title&#39;</span><span class="p">:</span> <span class="n">assignment</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                    <span class="s1">&#39;grade&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">grade</span><span class="p">,</span>
+                    <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">status</span>
+                <span class="p">})</span>
+        
+        <span class="n">lesson_progress</span> <span class="o">=</span> <span class="p">(</span><span class="n">completed_lessons</span> <span class="o">/</span> <span class="n">total_lessons</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_lessons</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">quiz_average</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">quiz_scores</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">quiz_scores</span><span class="p">)</span> <span class="k">if</span> <span class="n">quiz_scores</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">assignment_average</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s1">&#39;grade&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">assignment_grades</span> <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s1">&#39;grade&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">([</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">assignment_grades</span> <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s1">&#39;grade&#39;</span><span class="p">]])</span> <span class="k">if</span> <span class="n">assignment_grades</span> <span class="k">else</span> <span class="mi">0</span>
+        
+        <span class="n">overall_percentage</span> <span class="o">=</span> <span class="p">(</span><span class="n">lesson_progress</span> <span class="o">+</span> <span class="n">quiz_average</span> <span class="o">+</span> <span class="n">assignment_average</span><span class="p">)</span> <span class="o">/</span> <span class="mi">3</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;lessons&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="n">completed_lessons</span><span class="p">,</span>
+                <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="n">total_lessons</span><span class="p">,</span>
+                <span class="s1">&#39;percentage&#39;</span><span class="p">:</span> <span class="n">lesson_progress</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;quizzes&#39;</span><span class="p">:</span> <span class="n">quiz_scores</span><span class="p">,</span>
+            <span class="s1">&#39;assignments&#39;</span><span class="p">:</span> <span class="n">assignment_grades</span><span class="p">,</span>
+            <span class="s1">&#39;quiz_average&#39;</span><span class="p">:</span> <span class="n">quiz_average</span><span class="p">,</span>
+            <span class="s1">&#39;assignment_average&#39;</span><span class="p">:</span> <span class="n">assignment_average</span><span class="p">,</span>
+            <span class="s1">&#39;overall_percentage&#39;</span><span class="p">:</span> <span class="n">overall_percentage</span>
+        <span class="p">}</span>
+    
+   
+<div class="viewcode-block" id="TeacherService.get_teacher_analytics_overview">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_teacher_analytics_overview">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_teacher_analytics_overview</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Aggregate analytics overview across all courses taught by the teacher&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access this analytics overview&quot;</span><span class="p">)</span>
+
+        <span class="n">courses</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">taught_courses</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+        <span class="n">total_students</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total_completion</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total_days</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">completion_counts</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">lesson_engagement</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">quiz_performance</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">enrollment_trends_counter</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">start_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">courses</span><span class="p">:</span>
+            <span class="n">stats</span> <span class="o">=</span> <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_course_analytics</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">,</span> <span class="n">course</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+            <span class="n">total_students</span> <span class="o">+=</span> <span class="n">stats</span><span class="p">[</span><span class="s2">&quot;overall_stats&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;total_students&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">total_completion</span> <span class="o">+=</span> <span class="n">stats</span><span class="p">[</span><span class="s2">&quot;overall_stats&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;completion_rate&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">total_days</span> <span class="o">+=</span> <span class="n">stats</span><span class="p">[</span><span class="s2">&quot;overall_stats&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;average_completion_days&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">completion_counts</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">lesson_engagement</span> <span class="o">+=</span> <span class="n">stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lesson_engagement&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">quiz_performance</span> <span class="o">+=</span> <span class="n">stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quiz_performance&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+            <span class="n">enrollments</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">enrollments</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Enrollment</span><span class="o">.</span><span class="n">enrolled_at</span> <span class="o">&gt;=</span> <span class="n">start_date</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">enrollments</span><span class="p">:</span>
+                <span class="n">day</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">enrolled_at</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+                <span class="n">enrollment_trends_counter</span><span class="p">[</span><span class="n">day</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">enrollment_trends</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+            <span class="n">date</span> <span class="o">=</span> <span class="p">(</span><span class="n">start_date</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">i</span><span class="p">))</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+            <span class="n">enrollment_trends</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span>
+                <span class="s2">&quot;enrollments&quot;</span><span class="p">:</span> <span class="n">enrollment_trends_counter</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">})</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;summary&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;total_courses&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">courses</span><span class="p">),</span>
+                <span class="s2">&quot;total_students&quot;</span><span class="p">:</span> <span class="n">total_students</span><span class="p">,</span>
+                <span class="s2">&quot;avg_completion_rate&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_completion</span> <span class="o">/</span> <span class="n">completion_counts</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">completion_counts</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;avg_completion_days&quot;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_days</span> <span class="o">/</span> <span class="n">completion_counts</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">completion_counts</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="p">},</span>
+            <span class="s2">&quot;enrollment_trends&quot;</span><span class="p">:</span> <span class="n">enrollment_trends</span><span class="p">,</span>
+            <span class="s2">&quot;lesson_engagement&quot;</span><span class="p">:</span> <span class="n">lesson_engagement</span><span class="p">,</span>
+            <span class="s2">&quot;quiz_performance&quot;</span><span class="p">:</span> <span class="n">quiz_performance</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="TeacherService.export_course_students">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.export_course_students">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_course_students</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export course students to CSV&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can export student data&quot;</span><span class="p">)</span>
+        
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Course not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied to this course&quot;</span><span class="p">)</span>
+        
+        <span class="n">report_data</span> <span class="o">=</span> <span class="n">TeacherService</span><span class="o">.</span><span class="n">get_student_progress_report</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">,</span> <span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="n">output</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span>
+            <span class="s1">&#39;Student Name&#39;</span><span class="p">,</span> <span class="s1">&#39;Email&#39;</span><span class="p">,</span> <span class="s1">&#39;Enrollment Date&#39;</span><span class="p">,</span> <span class="s1">&#39;Progress %&#39;</span><span class="p">,</span> 
+            <span class="s1">&#39;Lessons Completed&#39;</span><span class="p">,</span> <span class="s1">&#39;Quiz Average&#39;</span><span class="p">,</span> <span class="s1">&#39;Assignment Average&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Last Activity&#39;</span><span class="p">,</span> <span class="s1">&#39;Status&#39;</span>
+        <span class="p">])</span>
+        
+        <span class="k">for</span> <span class="n">report</span> <span class="ow">in</span> <span class="n">report_data</span><span class="p">[</span><span class="s1">&#39;student_reports&#39;</span><span class="p">]:</span>
+            <span class="n">student</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s1">&#39;student&#39;</span><span class="p">]</span>
+            <span class="n">enrollment</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s1">&#39;enrollment&#39;</span><span class="p">]</span>
+            <span class="n">progress</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s1">&#39;progress&#39;</span><span class="p">]</span>
+            
+            <span class="n">last_activity</span> <span class="o">=</span> <span class="s1">&#39;Never&#39;</span>
+            <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enrolled_at&#39;</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+                    <span class="n">enrollment_date</span> <span class="o">=</span> <span class="n">enrollment</span><span class="p">[</span><span class="s1">&#39;enrolled_at&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enrollment_date</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                        <span class="n">last_activity</span> <span class="o">=</span> <span class="n">enrollment_date</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">last_activity</span> <span class="o">=</span> <span class="n">enrollment_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+                    <span class="n">last_activity</span> <span class="o">=</span> <span class="s1">&#39;Never&#39;</span>
+            
+            <span class="n">lessons</span> <span class="o">=</span> <span class="n">progress</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lessons&#39;</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">completed_lessons</span> <span class="o">=</span> <span class="n">lessons</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;completed&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">total_lessons</span> <span class="o">=</span> <span class="n">lessons</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span>
+                <span class="n">student</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;full_name&#39;</span><span class="p">,</span> <span class="s1">&#39;Unknown&#39;</span><span class="p">),</span>
+                <span class="n">student</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                <span class="n">enrollment</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enrolled_at&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)[:</span><span class="mi">10</span><span class="p">]</span> <span class="k">if</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enrolled_at&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">progress</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;overall_percentage&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">completed_lessons</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">total_lessons</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">progress</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;quiz_average&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">progress</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;assignment_average&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">last_activity</span><span class="p">,</span>
+                <span class="n">enrollment</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
+            <span class="p">])</span>
+        
+        <span class="n">output</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">csv_content</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="n">csv_content</span></div>
+
+    
+<div class="viewcode-block" id="TeacherService.get_all_submissions">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_all_submissions">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all_submissions</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all submissions (not just pending)&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access submissions&quot;</span><span class="p">)</span>
+
+        <span class="n">courses</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">taught_courses</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">all_submissions</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">courses</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">assignments</span><span class="p">:</span>
+                <span class="n">submissions</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">submissions</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> 
+                <span class="k">for</span> <span class="n">submission</span> <span class="ow">in</span> <span class="n">submissions</span><span class="p">:</span>
+                    <span class="n">submission_data</span> <span class="o">=</span> <span class="n">submission</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="n">submission_data</span><span class="p">[</span><span class="s1">&#39;student&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">submission</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="n">submission_data</span><span class="p">[</span><span class="s1">&#39;assignment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="n">submission_data</span><span class="p">[</span><span class="s1">&#39;course&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="n">all_submissions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">submission_data</span><span class="p">)</span>
+
+        <span class="n">all_submissions</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;submitted_at&#39;</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;submissions&#39;</span><span class="p">:</span> <span class="n">all_submissions</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_submissions</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="TeacherService.get_all_quiz_attempts">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_all_quiz_attempts">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all_quiz_attempts</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all quiz attempts for teacher&#39;s courses&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access quiz attempts&quot;</span><span class="p">)</span>
+        
+        <span class="n">courses</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">taught_courses</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">all_attempts</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">courses</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">quiz</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">quizzes</span><span class="p">:</span>
+                <span class="n">attempts</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">attempts</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">in_</span><span class="p">([</span><span class="s1">&#39;completed&#39;</span><span class="p">,</span> <span class="s1">&#39;in_progress&#39;</span><span class="p">])</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="o">.</span><span class="n">submitted_at</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+                
+                <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="n">attempts</span><span class="p">:</span>
+                    <span class="n">attempt_data</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="n">attempt_data</span><span class="p">[</span><span class="s1">&#39;student&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="n">attempt_data</span><span class="p">[</span><span class="s1">&#39;quiz&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    <span class="n">attempt_data</span><span class="p">[</span><span class="s1">&#39;course&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                    
+                    <span class="n">questions</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">quiz</span><span class="o">.</span><span class="n">questions</span><span class="p">:</span>
+                        <span class="n">question_data</span> <span class="o">=</span> <span class="n">question</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+                        <span class="n">questions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">question_data</span><span class="p">)</span>
+                    <span class="n">attempt_data</span><span class="p">[</span><span class="s1">&#39;quiz&#39;</span><span class="p">][</span><span class="s1">&#39;questions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">questions</span>
+                    
+                    <span class="n">all_attempts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attempt_data</span><span class="p">)</span>
+        
+        <span class="n">all_attempts</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;submitted_at&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">x</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;started_at&#39;</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;attempts&#39;</span><span class="p">:</span> <span class="n">all_attempts</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_attempts</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="TeacherService.get_quiz_attempt_details">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_quiz_attempt_details">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_quiz_attempt_details</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">attempt_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get detailed quiz attempt information for grading&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access quiz attempt details&quot;</span><span class="p">)</span>
+        
+        <span class="n">attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">attempt</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz attempt not found&quot;</span><span class="p">)</span>
+        
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span>
+        <span class="k">if</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied to this quiz attempt&quot;</span><span class="p">)</span>
+        
+        <span class="n">attempt_data</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="n">attempt_data</span><span class="p">[</span><span class="s1">&#39;student&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="n">attempt_data</span><span class="p">[</span><span class="s1">&#39;quiz&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="n">attempt_data</span><span class="p">[</span><span class="s1">&#39;course&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        
+        <span class="n">questions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">student_answers</span> <span class="o">=</span> <span class="p">{</span><span class="n">sa</span><span class="o">.</span><span class="n">question_id</span><span class="p">:</span> <span class="n">sa</span> <span class="k">for</span> <span class="n">sa</span> <span class="ow">in</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student_answers</span><span class="p">}</span>
+        
+        <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">quiz</span><span class="o">.</span><span class="n">questions</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Question</span><span class="o">.</span><span class="n">order_number</span><span class="p">):</span>
+            <span class="n">question_data</span> <span class="o">=</span> <span class="n">question</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="n">student_answer</span> <span class="o">=</span> <span class="n">student_answers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">question</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">student_answer</span><span class="p">:</span>
+                <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;student_answer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">student_answer</span><span class="o">.</span><span class="n">answer_text</span> <span class="k">if</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="o">==</span> <span class="s1">&#39;short_answer&#39;</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;selected_option_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">student_answer</span><span class="o">.</span><span class="n">selected_option_id</span>
+                <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;is_correct&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">student_answer</span><span class="o">.</span><span class="n">is_correct</span>
+                <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;points_earned&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">student_answer</span><span class="o">.</span><span class="n">points_earned</span>
+                <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;answer_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">student_answer</span><span class="o">.</span><span class="n">id</span>
+                
+                <span class="k">if</span> <span class="n">student_answer</span><span class="o">.</span><span class="n">selected_option</span><span class="p">:</span>
+                    <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;selected_option_text&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">student_answer</span><span class="o">.</span><span class="n">selected_option</span><span class="o">.</span><span class="n">option_text</span>
+            
+            <span class="n">questions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">question_data</span><span class="p">)</span>
+        
+        <span class="n">attempt_data</span><span class="p">[</span><span class="s1">&#39;questions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">questions</span>
+        
+        <span class="k">return</span> <span class="n">attempt_data</span></div>
+
+
+<div class="viewcode-block" id="TeacherService.get_quiz_grading_summary">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.teacher_service.TeacherService.get_quiz_grading_summary">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_quiz_grading_summary</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get summary statistics for quiz grading dashboard&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only teachers can access grading summary&quot;</span><span class="p">)</span>
+        
+        <span class="n">courses</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">taught_courses</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">total_attempts</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">pending_grading</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">graded_today</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total_score</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">completed_attempts</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">failed_attempts</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">course</span> <span class="ow">in</span> <span class="n">courses</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">quiz</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">quizzes</span><span class="p">:</span>
+                <span class="n">attempts</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">attempts</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+                <span class="n">total_attempts</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">attempts</span><span class="p">)</span>
+                
+                <span class="n">has_short_answer</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">question_type</span> <span class="o">==</span> <span class="s1">&#39;short_answer&#39;</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">quiz</span><span class="o">.</span><span class="n">questions</span><span class="p">)</span>
+                
+                <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="n">attempts</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">has_short_answer</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">attempt</span><span class="o">.</span><span class="n">graded_at</span><span class="p">:</span>
+                        <span class="n">pending_grading</span> <span class="o">+=</span> <span class="mi">1</span>
+                    
+                    <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">graded_at</span> <span class="ow">and</span> <span class="n">attempt</span><span class="o">.</span><span class="n">graded_at</span><span class="o">.</span><span class="n">date</span><span class="p">()</span> <span class="o">==</span> <span class="n">today</span><span class="p">:</span>
+                        <span class="n">graded_today</span> <span class="o">+=</span> <span class="mi">1</span>
+                    
+                    <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">total_score</span> <span class="o">+=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span>
+                        <span class="n">completed_attempts</span> <span class="o">+=</span> <span class="mi">1</span>
+                        
+                        <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span> <span class="o">&lt;</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span><span class="p">:</span>
+                            <span class="n">failed_attempts</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="n">avg_score</span> <span class="o">=</span> <span class="n">total_score</span> <span class="o">/</span> <span class="n">completed_attempts</span> <span class="k">if</span> <span class="n">completed_attempts</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;total_attempts&#39;</span><span class="p">:</span> <span class="n">total_attempts</span><span class="p">,</span>
+            <span class="s1">&#39;pending_grading&#39;</span><span class="p">:</span> <span class="n">pending_grading</span><span class="p">,</span>
+            <span class="s1">&#39;graded_today&#39;</span><span class="p">:</span> <span class="n">graded_today</span><span class="p">,</span>
+            <span class="s1">&#39;average_score&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">avg_score</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s1">&#39;failed_attempts&#39;</span><span class="p">:</span> <span class="n">failed_attempts</span><span class="p">,</span>
+            <span class="s1">&#39;completed_attempts&#39;</span><span class="p">:</span> <span class="n">completed_attempts</span>
+        <span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

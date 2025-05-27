@@ -2,10 +2,8 @@ from flask import Blueprint, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app.services.quiz_service import QuizService
-from app.services.achievement_service import AchievementService
 from app.utils.base_controller import BaseController
 from app.utils.decorators import teacher_required, student_required
-from app.utils.validators import validate_quiz_answers
 
 bp = Blueprint('quizzes', __name__, url_prefix='/api/quizzes')
 

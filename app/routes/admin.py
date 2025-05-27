@@ -1,8 +1,5 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import func
-from datetime import datetime, timedelta
-from collections import defaultdict
 from app.services.admin_service import AdminService
 from app.utils.base_controller import BaseController
 from app.utils.decorators import admin_required
@@ -116,15 +113,11 @@ def export_users():
     status = request.args.get('status')
     search = request.args.get('search')
     
-    try:
-        from flask import make_response
-        
+    try:        
         result = AdminService.export_users(role=role, status=status, search=search)
-        
         response = make_response(result['csv_content'])
         response.headers['Content-Type'] = 'text/csv'
         response.headers['Content-Disposition'] = f'attachment; filename={result["filename"]}'
-        
         return response
     except Exception as e:
         print(f"Export users error: {str(e)}")
@@ -201,15 +194,11 @@ def export_courses():
     status = request.args.get('status')
     search = request.args.get('search')
     
-    try:
-        from flask import make_response
-        
+    try:        
         result = AdminService.export_courses(category=category, status=status, search=search)
-        
         response = make_response(result['csv_content'])
         response.headers['Content-Type'] = 'text/csv'
         response.headers['Content-Disposition'] = f'attachment; filename={result["filename"]}'
-        
         return response
     except Exception as e:
         print(f"Export courses error: {str(e)}")

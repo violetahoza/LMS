@@ -1,0 +1,1171 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.routes.frontend &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.routes.frontend</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.routes.frontend</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Blueprint</span><span class="p">,</span> <span class="n">render_template</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">redirect</span><span class="p">,</span> <span class="n">url_for</span><span class="p">,</span> <span class="n">flash</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">jsonify</span><span class="p">,</span> <span class="n">make_response</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+<span class="n">bp</span> <span class="o">=</span> <span class="n">Blueprint</span><span class="p">(</span><span class="s1">&#39;frontend&#39;</span><span class="p">,</span> <span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">API_BASE_URL</span> <span class="o">=</span> <span class="s1">&#39;http://localhost:5000/api&#39;</span>
+
+<div class="viewcode-block" id="get_auth_headers">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.get_auth_headers">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_auth_headers</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get authentication headers from session&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s1">&#39;access_token&#39;</span> <span class="ow">in</span> <span class="n">session</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Authorization&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Bearer </span><span class="si">{</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;access_token&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">{}</span></div>
+
+
+<div class="viewcode-block" id="index">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.index">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">index</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Home page - redirect based on login status&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s1">&#39;access_token&#39;</span> <span class="ow">in</span> <span class="n">session</span><span class="p">:</span>
+        <span class="n">user_role</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">user_role</span> <span class="o">==</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.admin_dashboard&#39;</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">user_role</span> <span class="o">==</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.teacher_dashboard&#39;</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">user_role</span> <span class="o">==</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.student_dashboard&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;home.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="login">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.login">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/login&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">login</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Login page&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span>  
+        <span class="n">password</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
+        <span class="n">remember</span> <span class="o">=</span> <span class="s1">&#39;remember&#39;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/auth/login&#39;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="n">username</span><span class="p">,</span> 
+                <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="n">password</span><span class="p">,</span>
+                <span class="s1">&#39;remember&#39;</span><span class="p">:</span> <span class="n">remember</span>
+            <span class="p">})</span>
+            
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
+                <span class="n">session</span><span class="p">[</span><span class="s1">&#39;access_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;access_token&#39;</span><span class="p">]</span>
+                <span class="n">session</span><span class="p">[</span><span class="s1">&#39;refresh_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;refresh_token&#39;</span><span class="p">]</span>
+                <span class="n">session</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+                <span class="n">session</span><span class="p">[</span><span class="s1">&#39;user_role&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;role&#39;</span><span class="p">]</span>
+                <span class="n">session</span><span class="p">[</span><span class="s1">&#39;user_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;full_name&#39;</span><span class="p">]</span>
+                
+                <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Login successful!&#39;</span><span class="p">,</span> <span class="s1">&#39;success&#39;</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;role&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.admin_dashboard&#39;</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;role&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.teacher_dashboard&#39;</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;role&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.student_dashboard&#39;</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Unknown user role&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">error_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="n">error_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;Login failed&#39;</span><span class="p">)</span>
+                <span class="n">field_errors</span> <span class="o">=</span> <span class="n">error_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;field_errors&#39;</span><span class="p">,</span> <span class="p">{})</span>
+                
+                <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;auth/login.html&#39;</span><span class="p">,</span> 
+                                     <span class="n">error</span><span class="o">=</span><span class="n">error_message</span><span class="p">,</span>
+                                     <span class="n">field_errors</span><span class="o">=</span><span class="n">field_errors</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;auth/login.html&#39;</span><span class="p">,</span> 
+                                 <span class="n">error</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Connection error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;auth/login.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="register">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.register">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/register&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">register</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Registration page&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;POST&#39;</span><span class="p">:</span>
+        <span class="n">field_errors</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;full_name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">field_errors</span><span class="p">[</span><span class="s1">&#39;full_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Full name is required&#39;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">field_errors</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Username is required&#39;</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">field_errors</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Username must be at least 3 characters long&#39;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">field_errors</span><span class="p">[</span><span class="s1">&#39;email&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Email is required&#39;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">):</span>
+            <span class="n">field_errors</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Password is required&#39;</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="n">field_errors</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Password must be at least 8 characters long&#39;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;confirm_password&#39;</span><span class="p">):</span>
+            <span class="n">field_errors</span><span class="p">[</span><span class="s1">&#39;confirm_password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Please confirm your password&#39;</span>
+        <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;confirm_password&#39;</span><span class="p">):</span>
+            <span class="n">field_errors</span><span class="p">[</span><span class="s1">&#39;confirm_password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Passwords do not match&#39;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">):</span>
+            <span class="n">field_errors</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Please select your role&#39;</span>
+        
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;age&#39;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">age</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;age&#39;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">age</span> <span class="o">&lt;</span> <span class="mi">13</span> <span class="ow">or</span> <span class="n">age</span> <span class="o">&gt;</span> <span class="mi">120</span><span class="p">:</span>
+                    <span class="n">field_errors</span><span class="p">[</span><span class="s1">&#39;age&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Age must be between 13 and 120&#39;</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">field_errors</span><span class="p">[</span><span class="s1">&#39;age&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Please enter a valid age&#39;</span>
+        
+        <span class="k">if</span> <span class="n">field_errors</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;auth/register.html&#39;</span><span class="p">,</span> <span class="n">field_errors</span><span class="o">=</span><span class="n">field_errors</span><span class="p">)</span>
+        
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;email&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;full_name&#39;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;full_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;phone&#39;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;phone&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;age&#39;</span><span class="p">])</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;age&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">}</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/auth/register&#39;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">201</span><span class="p">:</span>
+                <span class="n">login_response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/auth/login&#39;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;remember&#39;</span><span class="p">:</span> <span class="kc">False</span>
+                <span class="p">})</span>
+                
+                <span class="k">if</span> <span class="n">login_response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                    <span class="n">login_data</span> <span class="o">=</span> <span class="n">login_response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
+                    <span class="n">session</span><span class="p">[</span><span class="s1">&#39;access_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">login_data</span><span class="p">[</span><span class="s1">&#39;access_token&#39;</span><span class="p">]</span>
+                    <span class="n">session</span><span class="p">[</span><span class="s1">&#39;refresh_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">login_data</span><span class="p">[</span><span class="s1">&#39;refresh_token&#39;</span><span class="p">]</span>
+                    <span class="n">session</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">login_data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+                    <span class="n">session</span><span class="p">[</span><span class="s1">&#39;user_role&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">login_data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;role&#39;</span><span class="p">]</span>
+                    <span class="n">session</span><span class="p">[</span><span class="s1">&#39;user_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">login_data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;full_name&#39;</span><span class="p">]</span>
+                    
+                    <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Registration successful! Welcome to EduPlatform!&#39;</span><span class="p">,</span> <span class="s1">&#39;success&#39;</span><span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="n">login_data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;role&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.admin_dashboard&#39;</span><span class="p">))</span>
+                    <span class="k">elif</span> <span class="n">login_data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;role&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.teacher_dashboard&#39;</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.student_dashboard&#39;</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Registration successful! Please log in.&#39;</span><span class="p">,</span> <span class="s1">&#39;success&#39;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.login&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">error_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+                <span class="n">error_message</span> <span class="o">=</span> <span class="n">error_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;Registration failed&#39;</span><span class="p">)</span>
+                <span class="n">field_errors</span> <span class="o">=</span> <span class="n">error_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;field_errors&#39;</span><span class="p">,</span> <span class="p">{})</span>
+                
+                <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;auth/register.html&#39;</span><span class="p">,</span> 
+                                     <span class="n">error</span><span class="o">=</span><span class="n">error_message</span><span class="p">,</span>
+                                     <span class="n">field_errors</span><span class="o">=</span><span class="n">field_errors</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;auth/register.html&#39;</span><span class="p">,</span> 
+                                 <span class="n">error</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Connection error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;auth/register.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="logout">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.logout">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/logout&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">logout</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Logout user&quot;&quot;&quot;</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;You have been logged out successfully.&#39;</span><span class="p">,</span> <span class="s1">&#39;success&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="admin_dashboard">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.admin_dashboard">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/dashboard&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">admin_dashboard</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Admin dashboard&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Admin privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/admin/dashboard&#39;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">response_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="n">dashboard_data</span> <span class="o">=</span> <span class="n">response_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/dashboard.html&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dashboard_data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Failed to load dashboard data&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/dashboard.html&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;users&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;students&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;teachers&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;recent&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+                <span class="s1">&#39;courses&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;published&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;recent&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+                <span class="s1">&#39;enrollments&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;recent&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+                <span class="s1">&#39;quizzes&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;attempts&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+            <span class="p">})</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error loading dashboard: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/dashboard.html&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;users&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;students&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;teachers&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;recent&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+            <span class="s1">&#39;courses&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;published&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;recent&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+            <span class="s1">&#39;enrollments&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;recent&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+            <span class="s1">&#39;quizzes&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;attempts&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="admin_users">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.admin_users">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/users&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">admin_users</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Admin users management&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Admin privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="n">page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;page&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">role</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">search</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;search&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;page&#39;</span><span class="p">:</span> <span class="n">page</span><span class="p">,</span> <span class="s1">&#39;per_page&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">role</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">role</span>
+        <span class="k">if</span> <span class="n">status</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="k">if</span> <span class="n">search</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;search&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search</span>
+            
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/admin/users&#39;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">users_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/users.html&#39;</span><span class="p">,</span> 
+                                 <span class="n">users</span><span class="o">=</span><span class="n">users_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;users&#39;</span><span class="p">,</span> <span class="p">[]),</span>
+                                 <span class="n">total</span><span class="o">=</span><span class="n">users_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                 <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+                                 <span class="n">pages</span><span class="o">=</span><span class="n">users_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pages&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                 <span class="n">current_role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span>
+                                 <span class="n">current_status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span>
+                                 <span class="n">current_search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Failed to load users data&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/users.html&#39;</span><span class="p">,</span> 
+                                 <span class="n">users</span><span class="o">=</span><span class="p">[],</span> <span class="n">total</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">page</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pages</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                 <span class="n">current_role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span> <span class="n">current_status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span> <span class="n">current_search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error loading users: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/users.html&#39;</span><span class="p">,</span> 
+                             <span class="n">users</span><span class="o">=</span><span class="p">[],</span> <span class="n">total</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">page</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pages</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                             <span class="n">current_role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span> <span class="n">current_status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span> <span class="n">current_search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="admin_courses">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.admin_courses">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/courses&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">admin_courses</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Admin courses management&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Admin privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="n">page</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;page&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">category</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">search</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;search&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;page&#39;</span><span class="p">:</span> <span class="n">page</span><span class="p">,</span> <span class="s1">&#39;per_page&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">category</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">category</span>
+        <span class="k">if</span> <span class="n">status</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="k">if</span> <span class="n">search</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;search&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search</span>
+            
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/admin/courses&#39;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">courses_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/courses.html&#39;</span><span class="p">,</span> 
+                                 <span class="n">courses</span><span class="o">=</span><span class="n">courses_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;courses&#39;</span><span class="p">,</span> <span class="p">[]),</span>
+                                 <span class="n">total</span><span class="o">=</span><span class="n">courses_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                                 <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+                                 <span class="n">pages</span><span class="o">=</span><span class="n">courses_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pages&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                 <span class="n">current_category</span><span class="o">=</span><span class="n">category</span><span class="p">,</span>
+                                 <span class="n">current_status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span>
+                                 <span class="n">current_search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Failed to load courses data&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/courses.html&#39;</span><span class="p">,</span> 
+                                 <span class="n">courses</span><span class="o">=</span><span class="p">[],</span> <span class="n">total</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">page</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pages</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                 <span class="n">current_category</span><span class="o">=</span><span class="n">category</span><span class="p">,</span> <span class="n">current_status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span> <span class="n">current_search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error loading courses: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/courses.html&#39;</span><span class="p">,</span> 
+                             <span class="n">courses</span><span class="o">=</span><span class="p">[],</span> <span class="n">total</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">page</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pages</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                             <span class="n">current_category</span><span class="o">=</span><span class="n">category</span><span class="p">,</span> <span class="n">current_status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span> <span class="n">current_search</span><span class="o">=</span><span class="n">search</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="admin_reports">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.admin_reports">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/reports&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">admin_reports</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Admin reports page&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Admin privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="n">days</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;days&#39;</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        
+        <span class="n">activity_response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/admin/reports/user-activity&#39;</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;days&#39;</span><span class="p">:</span> <span class="n">days</span><span class="p">}</span>
+        <span class="p">)</span>
+        
+        <span class="n">performance_response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/admin/reports/course-performance&#39;</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="n">headers</span>
+        <span class="p">)</span>
+        
+        <span class="n">activity_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">performance_data</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="k">if</span> <span class="n">activity_response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">activity_data</span> <span class="o">=</span> <span class="n">activity_response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">activity_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;period_days&#39;</span><span class="p">:</span> <span class="n">days</span><span class="p">,</span>
+                <span class="s1">&#39;user_registrations&#39;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s1">&#39;course_enrollments&#39;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s1">&#39;quiz_attempts&#39;</span><span class="p">:</span> <span class="p">[]</span>
+            <span class="p">}</span>
+        
+        <span class="k">if</span> <span class="n">performance_response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">performance_data</span> <span class="o">=</span> <span class="n">performance_response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">performance_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;courses&#39;</span><span class="p">:</span> <span class="p">[],</span>
+                <span class="s1">&#39;total_courses&#39;</span><span class="p">:</span> <span class="mi">0</span>
+            <span class="p">}</span>
+        
+        <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/reports.html&#39;</span><span class="p">,</span> 
+                             <span class="n">activity_data</span><span class="o">=</span><span class="n">activity_data</span><span class="p">,</span>
+                             <span class="n">performance_data</span><span class="o">=</span><span class="n">performance_data</span><span class="p">,</span>
+                             <span class="n">selected_days</span><span class="o">=</span><span class="n">days</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error loading reports: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/reports.html&#39;</span><span class="p">,</span> 
+                             <span class="n">activity_data</span><span class="o">=</span><span class="p">{</span>
+                                 <span class="s1">&#39;period_days&#39;</span><span class="p">:</span> <span class="n">days</span><span class="p">,</span>
+                                 <span class="s1">&#39;user_registrations&#39;</span><span class="p">:</span> <span class="p">[],</span>
+                                 <span class="s1">&#39;course_enrollments&#39;</span><span class="p">:</span> <span class="p">[],</span>
+                                 <span class="s1">&#39;quiz_attempts&#39;</span><span class="p">:</span> <span class="p">[]</span>
+                             <span class="p">},</span> 
+                             <span class="n">performance_data</span><span class="o">=</span><span class="p">{</span>
+                                 <span class="s1">&#39;courses&#39;</span><span class="p">:</span> <span class="p">[],</span>
+                                 <span class="s1">&#39;total_courses&#39;</span><span class="p">:</span> <span class="mi">0</span>
+                             <span class="p">},</span>
+                             <span class="n">selected_days</span><span class="o">=</span><span class="n">days</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="toggle_user_active">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.toggle_user_active">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/users/&lt;int:user_id&gt;/toggle-active&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">toggle_user_active</span><span class="p">(</span><span class="n">user_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Toggle user active status&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied&#39;</span><span class="p">}),</span> <span class="mi">403</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/admin/users/</span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s1">/toggle-active&#39;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">error_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to toggle user status&#39;</span><span class="p">)}),</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Connection error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}),</span> <span class="mi">500</span></div>
+
+
+<div class="viewcode-block" id="get_user_details">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.get_user_details">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/users/&lt;int:user_id&gt;/details&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_user_details</span><span class="p">(</span><span class="n">user_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get user details for modal&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied&#39;</span><span class="p">}),</span> <span class="mi">403</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/admin/users/</span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">error_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to load user details&#39;</span><span class="p">)}),</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Connection error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}),</span> <span class="mi">500</span></div>
+
+
+<div class="viewcode-block" id="edit_user">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.edit_user">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/users/&lt;int:user_id&gt;/edit&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">edit_user</span><span class="p">(</span><span class="n">user_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update user information&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied&#39;</span><span class="p">}),</span> <span class="mi">403</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+        
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/admin/users/</span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> 
+                              <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> 
+                              <span class="n">json</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">error_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to update user&#39;</span><span class="p">)}),</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Connection error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}),</span> <span class="mi">500</span></div>
+
+
+<div class="viewcode-block" id="export_users">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.export_users">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/users/export&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">export_users</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Export users to CSV&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Admin privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        
+        <span class="n">role</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;role&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">search</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;search&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">role</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;role&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">role</span>
+        <span class="k">if</span> <span class="n">status</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="k">if</span> <span class="n">search</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;search&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search</span>
+        
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/admin/users/export&#39;</span><span class="p">,</span> 
+                              <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> 
+                              <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">make_response</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-Disposition&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Content-Disposition&#39;</span><span class="p">)</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">output</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Failed to export users&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.admin_users&#39;</span><span class="p">))</span>
+            
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error exporting users: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.admin_users&#39;</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="toggle_course_published">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.toggle_course_published">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/courses/&lt;int:course_id&gt;/toggle-published&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">toggle_course_published</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Toggle course published status&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied&#39;</span><span class="p">}),</span> <span class="mi">403</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/admin/courses/</span><span class="si">{</span><span class="n">course_id</span><span class="si">}</span><span class="s1">/toggle-published&#39;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">error_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to toggle course status&#39;</span><span class="p">)}),</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Connection error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}),</span> <span class="mi">500</span></div>
+
+
+<div class="viewcode-block" id="get_course_details">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.get_course_details">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/courses/&lt;int:course_id&gt;/details&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_course_details</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get course details for viewing - NEW&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Access denied&#39;</span><span class="p">}),</span> <span class="mi">403</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/courses/</span><span class="si">{</span><span class="n">course_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">error_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;Failed to load course details&#39;</span><span class="p">)}),</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Connection error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}),</span> <span class="mi">500</span></div>
+
+
+<div class="viewcode-block" id="export_courses">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.export_courses">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/courses/export&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">export_courses</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Export courses to CSV&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Admin privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        
+        <span class="n">category</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">search</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;search&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">category</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">category</span>
+        <span class="k">if</span> <span class="n">status</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="k">if</span> <span class="n">search</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;search&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search</span>
+        
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/admin/courses/export&#39;</span><span class="p">,</span> 
+                              <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> 
+                              <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">make_response</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-Disposition&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Content-Disposition&#39;</span><span class="p">)</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Content-type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">output</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Failed to export courses&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.admin_courses&#39;</span><span class="p">))</span>
+            
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error exporting courses: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.admin_courses&#39;</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="profile">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.profile">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/profile&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">profile</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User profile page&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">):</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Please log in to access your profile.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;profile.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="update_profile">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.update_profile">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/profile/update&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_profile</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update user profile - AJAX endpoint&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Authentication required&#39;</span><span class="p">}),</span> <span class="mi">401</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+        
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/auth/profile&#39;</span><span class="p">,</span> 
+                              <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> 
+                              <span class="n">json</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s1">&#39;data&#39;</span> <span class="ow">in</span> <span class="n">result</span> <span class="ow">and</span> <span class="s1">&#39;user&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]:</span>
+                <span class="n">session</span><span class="p">[</span><span class="s1">&#39;user_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;full_name&#39;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">error_data</span><span class="p">),</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Connection error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}),</span> <span class="mi">500</span></div>
+
+
+<div class="viewcode-block" id="change_password">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.change_password">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/profile/change-password&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">change_password</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Change user password - AJAX endpoint&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;Authentication required&#39;</span><span class="p">}),</span> <span class="mi">401</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">get_auth_headers</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+        
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/auth/change-password&#39;</span><span class="p">,</span> 
+                               <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> 
+                               <span class="n">json</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">error_data</span><span class="p">),</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Connection error: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}),</span> <span class="mi">500</span></div>
+
+
+<div class="viewcode-block" id="student_dashboard">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_dashboard">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/dashboard&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_dashboard</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Student dashboard (placeholder)&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/dashboard.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="student_browse_courses">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_browse_courses">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/courses/browse&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_browse_courses</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Browse available courses for students&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/browse_courses.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="student_courses">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_courses">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/courses&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_courses</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Student&#39;s enrolled courses&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/courses.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="student_course_view">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_course_view">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/courses/&lt;int:course_id&gt;&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_course_view</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;View course content as student&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/course_view.html&#39;</span><span class="p">,</span> <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="student_lesson_view">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_lesson_view">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/courses/&lt;int:course_id&gt;/lesson/&lt;int:lesson_id&gt;&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_lesson_view</span><span class="p">(</span><span class="n">course_id</span><span class="p">,</span> <span class="n">lesson_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;View specific lesson&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/lesson_view.html&#39;</span><span class="p">,</span> <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">,</span> <span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="student_quiz_take">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_quiz_take">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/courses/&lt;int:course_id&gt;/quiz/&lt;int:quiz_id&gt;&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_quiz_take</span><span class="p">(</span><span class="n">course_id</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Take a quiz&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/quiz_take.html&#39;</span><span class="p">,</span> <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">,</span> <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="student_quiz_results">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_quiz_results">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/quiz/&lt;int:attempt_id&gt;/results&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_quiz_results</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;View quiz results&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/quiz_results.html&#39;</span><span class="p">,</span> <span class="n">attempt_id</span><span class="o">=</span><span class="n">attempt_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="student_assignment_view">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_assignment_view">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/courses/&lt;int:course_id&gt;/assignment/&lt;int:assignment_id&gt;&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_assignment_view</span><span class="p">(</span><span class="n">course_id</span><span class="p">,</span> <span class="n">assignment_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;View and submit assignment&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/assignment_view.html&#39;</span><span class="p">,</span> <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">,</span> <span class="n">assignment_id</span><span class="o">=</span><span class="n">assignment_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="student_assignments">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_assignments">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/assignments&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_assignments</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Student assignments overview&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/assignments.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="student_progress">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_progress">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/progress&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_progress</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Student progress overview&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/progress.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="student_achievements">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_achievements">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/achievements&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_achievements</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Student achievements&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/achievements.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="student_certificates">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.student_certificates">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/student/certificates&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">student_certificates</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Student certificates&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;student&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Student privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;student/certificates.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_dashboard">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_dashboard">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/dashboard&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_dashboard</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Teacher dashboard&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/dashboard.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_courses">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_courses">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/courses&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_courses</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Teacher courses management&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/courses.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_create_course">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_create_course">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/courses/create&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_create_course</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create new course page&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/create_course.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_course_view">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_course_view">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/courses/&lt;int:course_id&gt;&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_course_view</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;View specific course - redirects to content management&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.teacher_course_content&#39;</span><span class="p">,</span> <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="teacher_course_content">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_course_content">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/courses/&lt;int:course_id&gt;/content&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_course_content</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manage course content&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/course_content.html&#39;</span><span class="p">,</span> <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_course_analytics">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_course_analytics">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/courses/&lt;int:course_id&gt;/analytics&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_course_analytics</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Course analytics&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/course_analytics.html&#39;</span><span class="p">,</span> <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_course_students">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_course_students">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/courses/&lt;int:course_id&gt;/students&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_course_students</span><span class="p">(</span><span class="n">course_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Course students management&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/course_students.html&#39;</span><span class="p">,</span> <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_submissions">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_submissions">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/submissions&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_submissions</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pending submissions for grading&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/submissions.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_analytics">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_analytics">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/analytics&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_analytics</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Teacher analytics overview&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/analytics.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_lesson_preview">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_lesson_preview">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/lesson/&lt;int:lesson_id&gt;/preview&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_lesson_preview</span><span class="p">(</span><span class="n">lesson_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Preview a lesson&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/lesson_preview.html&#39;</span><span class="p">,</span> <span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_quiz_analytics">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_quiz_analytics">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/quiz/&lt;int:quiz_id&gt;/analytics&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_quiz_analytics</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Quiz analytics&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/quiz_analytics.html&#39;</span><span class="p">,</span> <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_quiz_questions">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_quiz_questions">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/quiz/&lt;int:quiz_id&gt;/questions&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_quiz_questions</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manage quiz questions&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/quiz_questions.html&#39;</span><span class="p">,</span> <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_assignment_submissions">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_assignment_submissions">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/assignment/&lt;int:assignment_id&gt;/submissions&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_assignment_submissions</span><span class="p">(</span><span class="n">assignment_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;View assignment submissions&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/assignment_submissions.html&#39;</span><span class="p">,</span> <span class="n">assignment_id</span><span class="o">=</span><span class="n">assignment_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="messages">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.messages">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/messages&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">messages</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Messages inbox page&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">):</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Please log in to access messages.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;messages/inbox.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="compose_message">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.compose_message">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/messages/compose&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compose_message</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compose new message page&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">):</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Please log in to compose messages.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;messages/compose.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="message_conversation">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.message_conversation">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/messages/conversation/&lt;int:partner_id&gt;&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">message_conversation</span><span class="p">(</span><span class="n">partner_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;View conversation with specific user&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">):</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Please log in to view conversations.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;messages/conversation.html&#39;</span><span class="p">,</span> <span class="n">partner_id</span><span class="o">=</span><span class="n">partner_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_student_progress">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_student_progress">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/student/&lt;int:student_id&gt;/progress&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_student_progress</span><span class="p">(</span><span class="n">student_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;View individual student progress&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="n">course_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;course&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">course_id</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Course ID is required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.teacher_courses&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/student_progress.html&#39;</span><span class="p">,</span> <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span> <span class="n">course_id</span><span class="o">=</span><span class="n">course_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="notifications">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.notifications">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/notifications&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">notifications</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Notifications page&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">):</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Please log in to view notifications.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;components/view_notifications.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="admin_certificates">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.admin_certificates">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/admin/certificates&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">admin_certificates</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Admin certificate management page&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;admin&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Admin privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;admin/certificates.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="verify_certificate_public">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.verify_certificate_public">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/verify-certificate/&lt;certificate_code&gt;&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">verify_certificate_public</span><span class="p">(</span><span class="n">certificate_code</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Public certificate verification page&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">API_BASE_URL</span><span class="si">}</span><span class="s1">/certificates/verify/</span><span class="si">{</span><span class="n">certificate_code</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">certificate_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;public/verify_certificate.html&#39;</span><span class="p">,</span> 
+                                 <span class="n">certificate</span><span class="o">=</span><span class="n">certificate_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="p">{}),</span>
+                                 <span class="n">verified</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;public/verify_certificate.html&#39;</span><span class="p">,</span> 
+                                 <span class="n">certificate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">verified</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                 <span class="n">error</span><span class="o">=</span><span class="s1">&#39;Certificate not found or invalid&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;public/verify_certificate.html&#39;</span><span class="p">,</span> 
+                             <span class="n">certificate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">verified</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">error</span><span class="o">=</span><span class="s1">&#39;Error verifying certificate&#39;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="teacher_quiz_grading">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_quiz_grading">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/grading&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_quiz_grading</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;View pending quiz grading&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/quiz_grading.html&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="teacher_quiz_results">
+<a class="viewcode-back" href="../../../source/app.routes.html#app.routes.frontend.teacher_quiz_results">[docs]</a>
+<span class="nd">@bp</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/teacher/quiz/&lt;int:attempt_id&gt;/results&#39;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">teacher_quiz_results</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;View quiz results as teacher&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;access_token&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_role&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;teacher&#39;</span><span class="p">:</span>
+        <span class="n">flash</span><span class="p">(</span><span class="s1">&#39;Access denied. Teacher privileges required.&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="n">url_for</span><span class="p">(</span><span class="s1">&#39;frontend.index&#39;</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;teacher/quiz_results.html&#39;</span><span class="p">,</span> <span class="n">attempt_id</span><span class="o">=</span><span class="n">attempt_id</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

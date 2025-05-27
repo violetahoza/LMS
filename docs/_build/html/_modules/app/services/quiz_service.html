@@ -1,0 +1,1111 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.services.quiz_service &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.services.quiz_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.services.quiz_service</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">db</span><span class="p">,</span> <span class="n">Quiz</span><span class="p">,</span> <span class="n">QuizAttempt</span><span class="p">,</span> <span class="n">Question</span><span class="p">,</span> <span class="n">AnswerOption</span><span class="p">,</span> <span class="n">StudentAnswer</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">Course</span><span class="p">,</span> <span class="n">Enrollment</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.services.achievement_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">AchievementService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.base_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationException</span><span class="p">,</span> <span class="n">PermissionException</span><span class="p">,</span> <span class="n">NotFoundException</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_time_spent</span><span class="p">,</span> <span class="n">calculate_quiz_statistics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.validators</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_quiz_answers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.services.notification_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">NotificationService</span>
+
+<div class="viewcode-block" id="QuizService">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QuizService</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Service class for quiz-related operations&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="QuizService.get_course_quizzes">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.get_course_quizzes">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_course_quizzes</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all quizzes for a course&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Course not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">can_access_course</span><span class="p">(</span><span class="n">course</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">quizzes</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">quizzes</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">quizzes_data</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">quiz</span> <span class="ow">in</span> <span class="n">quizzes</span><span class="p">:</span>
+            <span class="n">quiz_dict</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+                <span class="n">attempts</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                    <span class="n">student_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span>
+                    <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz</span><span class="o">.</span><span class="n">id</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+                
+                <span class="n">quiz_dict</span><span class="p">[</span><span class="s1">&#39;attempts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">attempts</span><span class="p">),</span>
+                    <span class="s1">&#39;remaining&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">max_attempts</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">attempts</span><span class="p">),</span>
+                    <span class="s1">&#39;best_score&#39;</span><span class="p">:</span> <span class="nb">max</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attempts</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">attempts</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s1">&#39;has_passed&#39;</span><span class="p">:</span> <span class="nb">any</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attempts</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="p">}</span>
+            
+            <span class="n">quiz_dict</span><span class="p">[</span><span class="s1">&#39;question_count&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">questions</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+            
+            <span class="n">quizzes_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">quiz_dict</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;quizzes&#39;</span><span class="p">:</span> <span class="n">quizzes_data</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">quizzes_data</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.get_quiz">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.get_quiz">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_quiz</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a specific quiz with questions&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">can_access_course</span><span class="p">(</span><span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">quiz_data</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">()</span> <span class="ow">and</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">==</span> <span class="n">user_id</span><span class="p">:</span>
+            <span class="n">questions</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">questions</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Question</span><span class="o">.</span><span class="n">order_number</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="n">quiz_data</span><span class="p">[</span><span class="s1">&#39;questions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;question_text&#39;</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">question_text</span><span class="p">,</span>
+                    <span class="s1">&#39;question_type&#39;</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">question_type</span><span class="p">,</span>
+                    <span class="s1">&#39;points&#39;</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">points</span><span class="p">,</span>
+                    <span class="s1">&#39;order_number&#39;</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">order_number</span><span class="p">,</span>
+                    <span class="s1">&#39;answer_options&#39;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                            <span class="s1">&#39;option_text&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">option_text</span><span class="p">,</span>
+                            <span class="s1">&#39;is_correct&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_correct</span>
+                        <span class="p">}</span>
+                        <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">q</span><span class="o">.</span><span class="n">answer_options</span>
+                    <span class="p">]</span> <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">question_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="p">[]</span>
+                <span class="p">}</span>
+                <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">questions</span>
+            <span class="p">]</span>
+        
+        <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="n">can_retake</span><span class="p">,</span> <span class="n">message</span> <span class="o">=</span> <span class="n">QuizService</span><span class="o">.</span><span class="n">can_retake_quiz</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">)</span>
+            <span class="n">quiz_data</span><span class="p">[</span><span class="s1">&#39;can_take&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">can_retake</span>
+            <span class="n">quiz_data</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">message</span>
+            <span class="n">in_progress_attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span>
+                <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">,</span>
+                <span class="n">status</span><span class="o">=</span><span class="s1">&#39;in_progress&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">in_progress_attempt</span><span class="p">:</span>
+                <span class="n">quiz_data</span><span class="p">[</span><span class="s1">&#39;in_progress_attempt_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">in_progress_attempt</span><span class="o">.</span><span class="n">id</span>
+
+            <span class="n">attempts</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">student_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span> <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="n">quiz_data</span><span class="p">[</span><span class="s1">&#39;attempts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">attempts</span><span class="p">),</span>
+                <span class="s1">&#39;remaining&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">max_attempts</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">attempts</span><span class="p">),</span>
+                <span class="s1">&#39;best_score&#39;</span><span class="p">:</span> <span class="nb">max</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attempts</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">attempts</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;has_passed&#39;</span><span class="p">:</span> <span class="nb">any</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attempts</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">score</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="p">}</span>
+        
+        <span class="k">return</span> <span class="n">quiz_data</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.create_quiz">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.create_quiz">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_quiz</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new quiz&quot;&quot;&quot;</span>
+        <span class="n">required_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">required_fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">quiz_data</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s1"> is required&#39;</span><span class="p">)</span>
+        
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_data</span><span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Course not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="p">(</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">quiz_data</span><span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">],</span>
+            <span class="n">lesson_id</span><span class="o">=</span><span class="n">quiz_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lesson_id&#39;</span><span class="p">),</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">quiz_data</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">],</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">quiz_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">),</span>
+            <span class="n">total_points</span><span class="o">=</span><span class="n">quiz_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total_points&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+            <span class="n">passing_score</span><span class="o">=</span><span class="n">quiz_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;passing_score&#39;</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+            <span class="n">time_limit_minutes</span><span class="o">=</span><span class="n">quiz_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;time_limit_minutes&#39;</span><span class="p">),</span>
+            <span class="n">max_attempts</span><span class="o">=</span><span class="n">quiz_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;max_attempts&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">quiz</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="n">enrolled_students</span> <span class="o">=</span> <span class="p">[</span><span class="n">enrollment</span><span class="o">.</span><span class="n">student_id</span> <span class="k">for</span> <span class="n">enrollment</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">enrollments</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span><span class="p">)]</span>
+    
+        <span class="k">if</span> <span class="n">enrolled_students</span><span class="p">:</span>
+            <span class="n">NotificationService</span><span class="o">.</span><span class="n">notify_new_content</span><span class="p">(</span>
+                <span class="n">student_ids</span><span class="o">=</span><span class="n">enrolled_students</span><span class="p">,</span>
+                <span class="n">teacher_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+                <span class="n">course_id</span><span class="o">=</span><span class="n">course</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;quiz&#39;</span><span class="p">,</span>
+                <span class="n">content_title</span><span class="o">=</span><span class="n">quiz</span><span class="o">.</span><span class="n">title</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Quiz created successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;quiz&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.update_quiz">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.update_quiz">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_quiz</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update a quiz&quot;&quot;&quot;</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">allowed_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">,</span> <span class="s1">&#39;total_points&#39;</span><span class="p">,</span> <span class="s1">&#39;passing_score&#39;</span><span class="p">,</span> <span class="s1">&#39;time_limit_minutes&#39;</span><span class="p">,</span> <span class="s1">&#39;max_attempts&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">allowed_fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">quiz_data</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">quiz</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">quiz_data</span><span class="p">[</span><span class="n">field</span><span class="p">])</span>
+        
+        <span class="n">quiz</span><span class="o">.</span><span class="n">updated_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Quiz updated successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;quiz&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.delete_quiz">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.delete_quiz">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_quiz</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete a quiz&quot;&quot;&quot;</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">attempt_count</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">attempts</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">attempt_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cannot delete quiz with </span><span class="si">{</span><span class="n">attempt_count</span><span class="si">}</span><span class="s1"> student attempts&#39;</span><span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">quiz</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Quiz deleted successfully&#39;</span><span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.add_question">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.add_question">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_question</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">question_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a question to a quiz&quot;&quot;&quot;</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">required_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;question_text&#39;</span><span class="p">,</span> <span class="s1">&#39;question_type&#39;</span><span class="p">,</span> <span class="s1">&#39;order_number&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">required_fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">question_data</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s1"> is required&#39;</span><span class="p">)</span>
+        
+        <span class="n">existing_question</span> <span class="o">=</span> <span class="n">Question</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">,</span>
+            <span class="n">order_number</span><span class="o">=</span><span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;order_number&#39;</span><span class="p">]</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">existing_question</span><span class="p">:</span>
+            <span class="n">questions_to_shift</span> <span class="o">=</span> <span class="n">Question</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Question</span><span class="o">.</span><span class="n">quiz_id</span> <span class="o">==</span> <span class="n">quiz_id</span><span class="p">,</span>
+                <span class="n">Question</span><span class="o">.</span><span class="n">order_number</span> <span class="o">&gt;=</span> <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;order_number&#39;</span><span class="p">]</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            
+            <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">questions_to_shift</span><span class="p">:</span>
+                <span class="n">q</span><span class="o">.</span><span class="n">order_number</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="n">question</span> <span class="o">=</span> <span class="n">Question</span><span class="p">(</span>
+            <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">,</span>
+            <span class="n">question_text</span><span class="o">=</span><span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;question_text&#39;</span><span class="p">],</span>
+            <span class="n">question_type</span><span class="o">=</span><span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;question_type&#39;</span><span class="p">],</span>
+            <span class="n">points</span><span class="o">=</span><span class="n">question_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;points&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="n">order_number</span><span class="o">=</span><span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;order_number&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">question</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>  <span class="c1"># Get question ID</span>
+        
+        <span class="k">if</span> <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;question_type&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]:</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="n">question_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;options&#39;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">options</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s2">&quot;Options are required for this question type&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_correct&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">options</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s2">&quot;At least one option must be marked as correct&quot;</span><span class="p">)</span>
+            
+            <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                    <span class="k">continue</span>
+                    
+                <span class="n">answer_option</span> <span class="o">=</span> <span class="n">AnswerOption</span><span class="p">(</span>
+                    <span class="n">question_id</span><span class="o">=</span><span class="n">question</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="n">option_text</span><span class="o">=</span><span class="n">option</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+                    <span class="n">is_correct</span><span class="o">=</span><span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_correct&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">answer_option</span><span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="n">question_dict</span> <span class="o">=</span> <span class="n">question</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]:</span>
+            <span class="n">question_dict</span><span class="p">[</span><span class="s1">&#39;answer_options&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">question</span><span class="o">.</span><span class="n">answer_options</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Question added successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;question&#39;</span><span class="p">:</span> <span class="n">question_dict</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.update_question">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.update_question">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_question</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">question_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">question_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update a question&quot;&quot;&quot;</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">question</span> <span class="o">=</span> <span class="n">Question</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">question_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">question</span> <span class="ow">or</span> <span class="n">question</span><span class="o">.</span><span class="n">quiz_id</span> <span class="o">!=</span> <span class="n">quiz_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Question not found&quot;</span><span class="p">)</span>
+        
+        <span class="n">allowed_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;question_text&#39;</span><span class="p">,</span> <span class="s1">&#39;question_type&#39;</span><span class="p">,</span> <span class="s1">&#39;points&#39;</span><span class="p">,</span> <span class="s1">&#39;order_number&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">allowed_fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">question_data</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">question_data</span><span class="p">[</span><span class="n">field</span><span class="p">])</span>
+        
+        <span class="k">if</span> <span class="s1">&#39;options&#39;</span> <span class="ow">in</span> <span class="n">question_data</span> <span class="ow">and</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]:</span>
+            <span class="n">AnswerOption</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">question_id</span><span class="o">=</span><span class="n">question</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+            
+            <span class="n">options</span> <span class="o">=</span> <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">opt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_correct&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">options</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s2">&quot;At least one option must be marked as correct&quot;</span><span class="p">)</span>
+            
+            <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                    <span class="k">continue</span>
+                    
+                <span class="n">answer_option</span> <span class="o">=</span> <span class="n">AnswerOption</span><span class="p">(</span>
+                    <span class="n">question_id</span><span class="o">=</span><span class="n">question</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="n">option_text</span><span class="o">=</span><span class="n">option</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+                    <span class="n">is_correct</span><span class="o">=</span><span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;is_correct&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">answer_option</span><span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="n">question_dict</span> <span class="o">=</span> <span class="n">question</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]:</span>
+            <span class="n">question_dict</span><span class="p">[</span><span class="s1">&#39;answer_options&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">question</span><span class="o">.</span><span class="n">answer_options</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Question updated successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;question&#39;</span><span class="p">:</span> <span class="n">question_dict</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.delete_question">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.delete_question">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_question</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">question_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete a question&quot;&quot;&quot;</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">question</span> <span class="o">=</span> <span class="n">Question</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">question_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">question</span> <span class="ow">or</span> <span class="n">question</span><span class="o">.</span><span class="n">quiz_id</span> <span class="o">!=</span> <span class="n">quiz_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Question not found&quot;</span><span class="p">)</span>
+        
+        <span class="n">attempt_count</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">attempts</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">attempt_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cannot delete question from quiz with </span><span class="si">{</span><span class="n">attempt_count</span><span class="si">}</span><span class="s1"> student attempts&#39;</span><span class="p">)</span>
+        
+        <span class="n">order_number</span> <span class="o">=</span> <span class="n">question</span><span class="o">.</span><span class="n">order_number</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">question</span><span class="p">)</span>
+        
+        <span class="n">questions_to_shift</span> <span class="o">=</span> <span class="n">Question</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Question</span><span class="o">.</span><span class="n">quiz_id</span> <span class="o">==</span> <span class="n">quiz_id</span><span class="p">,</span>
+            <span class="n">Question</span><span class="o">.</span><span class="n">order_number</span> <span class="o">&gt;</span> <span class="n">order_number</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">questions_to_shift</span><span class="p">:</span>
+            <span class="n">q</span><span class="o">.</span><span class="n">order_number</span> <span class="o">-=</span> <span class="mi">1</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Question deleted successfully&#39;</span><span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.start_quiz">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.start_quiz">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start_quiz</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start a quiz attempt&quot;&quot;&quot;</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+        
+        <span class="n">enrollment</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">quiz</span><span class="o">.</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">in_</span><span class="p">([</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">enrollment</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Not enrolled in this course&quot;</span><span class="p">)</span>
+        
+        <span class="n">in_progress</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">,</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s1">&#39;in_progress&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">in_progress</span><span class="p">:</span>
+            <span class="n">attempt</span> <span class="o">=</span> <span class="n">in_progress</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">can_take</span><span class="p">,</span> <span class="n">message</span> <span class="o">=</span> <span class="n">QuizService</span><span class="o">.</span><span class="n">can_retake_quiz</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">can_take</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            <span class="n">attempt</span> <span class="o">=</span> <span class="n">QuizService</span><span class="o">.</span><span class="n">create_quiz_attempt</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">,</span> <span class="n">student_id</span><span class="p">)</span>
+        
+        <span class="n">questions</span> <span class="o">=</span> <span class="n">QuizService</span><span class="o">.</span><span class="n">_get_resume_questions</span><span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;attempt_id&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;quiz&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s1">&#39;questions&#39;</span><span class="p">:</span> <span class="n">questions</span><span class="p">,</span>
+            <span class="s1">&#39;started_at&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">started_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.submit_quiz_with_achievements">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.submit_quiz_with_achievements">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">submit_quiz_with_achievements</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">attempt_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">answers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submit quiz and check for achievements&quot;&quot;&quot;</span>
+        <span class="n">attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">attempt</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz attempt not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student_id</span> <span class="o">!=</span> <span class="n">student_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">questions</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">questions</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">valid</span><span class="p">,</span> <span class="n">errors</span> <span class="o">=</span> <span class="n">validate_quiz_answers</span><span class="p">(</span><span class="n">questions</span><span class="p">,</span> <span class="n">answers</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">valid</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid answers: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="n">result</span> <span class="o">=</span> <span class="n">QuizService</span><span class="o">.</span><span class="n">submit_quiz_attempt</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">,</span> <span class="n">answers</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">NotificationService</span><span class="o">.</span><span class="n">notify_quiz_submission</span><span class="p">(</span>
+                <span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span><span class="p">,</span>
+                <span class="n">student_id</span><span class="p">,</span>
+                <span class="n">attempt</span><span class="o">.</span><span class="n">quiz_id</span><span class="p">,</span>
+                <span class="n">attempt</span><span class="o">.</span><span class="n">score</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to send quiz submission notification: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">achievements</span> <span class="o">=</span> <span class="n">AchievementService</span><span class="o">.</span><span class="n">check_quiz_achievement</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">attempt_id</span><span class="p">)</span>
+        
+        <span class="n">enrollment</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">in_</span><span class="p">([</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">enrollment</span><span class="p">:</span>
+            <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">calculate_progress</span><span class="p">()</span>
+            
+            <span class="kn">from</span><span class="w"> </span><span class="nn">app.services.lesson_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">LessonService</span>
+            <span class="n">course_completed</span> <span class="o">=</span> <span class="n">LessonService</span><span class="o">.</span><span class="n">_is_course_fully_completed</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">course_id</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">course_completed</span> <span class="ow">and</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span>
+                <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
+                <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+                <span class="n">NotificationService</span><span class="o">.</span><span class="n">notify_course_completion</span><span class="p">(</span>
+                    <span class="n">teacher_id</span><span class="o">=</span><span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span><span class="p">,</span>
+                    <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                    <span class="n">course_id</span><span class="o">=</span><span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">course_id</span>
+                <span class="p">)</span>
+                
+                <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Quiz submitted successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;result&#39;</span><span class="p">:</span> <span class="n">result</span>
+        <span class="p">}</span>
+        
+        <span class="k">if</span> <span class="n">achievements</span><span class="p">:</span>
+            <span class="n">response</span><span class="p">[</span><span class="s1">&#39;achievements_earned&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+                    <span class="s1">&#39;points&#39;</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">points_value</span>
+                <span class="p">}</span>
+                <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">achievements</span>
+            <span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">response</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.get_quiz_results">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.get_quiz_results">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_quiz_results</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">attempt_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get quiz results&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="n">attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">attempt</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz attempt not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">()</span> <span class="ow">and</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student_id</span> <span class="o">!=</span> <span class="n">user_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">()</span> <span class="ow">and</span> <span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">user_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">results</span> <span class="o">=</span> <span class="n">QuizService</span><span class="o">.</span><span class="n">_get_detailed_results</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.get_quiz_statistics">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.get_quiz_statistics">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_quiz_statistics</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get quiz statistics&quot;&quot;&quot;</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">attempts</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">stats</span> <span class="o">=</span> <span class="n">calculate_quiz_statistics</span><span class="p">(</span><span class="n">attempts</span><span class="p">)</span>
+        
+        <span class="n">question_stats</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">quiz</span><span class="o">.</span><span class="n">questions</span><span class="p">:</span>
+            <span class="n">correct_count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">total_answers</span> <span class="o">=</span> <span class="mi">0</span>
+            
+            <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="n">attempts</span><span class="p">:</span>
+                <span class="n">answer</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student_answers</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">question_id</span> <span class="o">==</span> <span class="n">question</span><span class="o">.</span><span class="n">id</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">answer</span><span class="p">:</span>
+                    <span class="n">total_answers</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">is_correct</span><span class="p">:</span>
+                        <span class="n">correct_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            
+            <span class="n">question_stats</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;question&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="o">**</span><span class="n">question</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                    <span class="s1">&#39;question_type&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span>  
+                <span class="p">},</span>
+                <span class="s1">&#39;total_answers&#39;</span><span class="p">:</span> <span class="n">total_answers</span><span class="p">,</span>
+                <span class="s1">&#39;correct_answers&#39;</span><span class="p">:</span> <span class="n">correct_count</span><span class="p">,</span>
+                <span class="s1">&#39;accuracy_rate&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">correct_count</span> <span class="o">/</span> <span class="n">total_answers</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_answers</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="p">})</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;quiz&#39;</span><span class="p">:</span> <span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s1">&#39;statistics&#39;</span><span class="p">:</span> <span class="n">stats</span><span class="p">,</span>
+            <span class="s1">&#39;question_statistics&#39;</span><span class="p">:</span> <span class="n">question_stats</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.create_quiz_attempt">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.create_quiz_attempt">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_quiz_attempt</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new quiz attempt&quot;&quot;&quot;</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+        
+        <span class="n">existing_attempts</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">,</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">existing_attempts</span> <span class="o">&gt;=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">max_attempts</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Maximum attempts (</span><span class="si">{</span><span class="n">quiz</span><span class="o">.</span><span class="n">max_attempts</span><span class="si">}</span><span class="s2">) reached&quot;</span><span class="p">)</span>
+        
+        <span class="n">attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="p">(</span>
+            <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">,</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">attempt_number</span><span class="o">=</span><span class="n">existing_attempts</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s1">&#39;in_progress&#39;</span>
+        <span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">attempt</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="n">attempt</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.get_quiz_questions">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.get_quiz_questions">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_quiz_questions</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">include_answers</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all questions for a quiz&quot;&quot;&quot;</span>
+        <span class="n">questions</span> <span class="o">=</span> <span class="n">Question</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Question</span><span class="o">.</span><span class="n">order_number</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">questions_data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">:</span>
+            <span class="n">q_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;question_text&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">question_text</span><span class="p">,</span>
+                <span class="s1">&#39;question_type&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span><span class="p">,</span>
+                <span class="s1">&#39;points&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">points</span><span class="p">,</span>
+                <span class="s1">&#39;order_number&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">order_number</span>
+            <span class="p">}</span>
+            
+            <span class="k">if</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]:</span>
+                <span class="n">options</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">question</span><span class="o">.</span><span class="n">answer_options</span><span class="p">:</span>
+                    <span class="n">opt_data</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">option</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                        <span class="s1">&#39;option_text&#39;</span><span class="p">:</span> <span class="n">option</span><span class="o">.</span><span class="n">option_text</span>
+                    <span class="p">}</span>
+                    <span class="k">if</span> <span class="n">include_answers</span><span class="p">:</span>
+                        <span class="n">opt_data</span><span class="p">[</span><span class="s1">&#39;is_correct&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">option</span><span class="o">.</span><span class="n">is_correct</span>
+                    <span class="n">options</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">opt_data</span><span class="p">)</span>
+                <span class="n">q_data</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">options</span>
+            
+            <span class="n">questions_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q_data</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">questions_data</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.submit_quiz_attempt">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.submit_quiz_attempt">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">submit_quiz_attempt</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">answers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submit and grade a quiz attempt&quot;&quot;&quot;</span>
+        <span class="n">attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">attempt</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quiz attempt not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="s1">&#39;in_progress&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quiz has already been submitted&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">time_limit_minutes</span><span class="p">:</span>
+            <span class="n">time_spent</span> <span class="o">=</span> <span class="n">calculate_time_spent</span><span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">started_at</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">time_spent</span> <span class="o">&gt;</span> <span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">time_limit_minutes</span><span class="p">:</span>
+                <span class="n">attempt</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;abandoned&#39;</span>
+                <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Time limit exceeded&quot;</span><span class="p">)</span>
+        
+        <span class="n">total_points</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">earned_points</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">for</span> <span class="n">question_id</span><span class="p">,</span> <span class="n">answer_value</span> <span class="ow">in</span> <span class="n">answers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">question</span> <span class="o">=</span> <span class="n">Question</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">question_id</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">question</span> <span class="ow">or</span> <span class="n">question</span><span class="o">.</span><span class="n">quiz_id</span> <span class="o">!=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">quiz_id</span><span class="p">:</span>
+                <span class="k">continue</span>
+            
+            <span class="n">total_points</span> <span class="o">+=</span> <span class="n">question</span><span class="o">.</span><span class="n">points</span>
+            
+            <span class="n">student_answer</span> <span class="o">=</span> <span class="n">StudentAnswer</span><span class="p">(</span>
+                <span class="n">attempt_id</span><span class="o">=</span><span class="n">attempt_id</span><span class="p">,</span>
+                <span class="n">question_id</span><span class="o">=</span><span class="n">question</span><span class="o">.</span><span class="n">id</span>
+            <span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]:</span>
+                <span class="n">student_answer</span><span class="o">.</span><span class="n">selected_option_id</span> <span class="o">=</span> <span class="n">answer_value</span>
+                <span class="n">selected_option</span> <span class="o">=</span> <span class="n">AnswerOption</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">answer_value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">selected_option</span> <span class="ow">and</span> <span class="n">selected_option</span><span class="o">.</span><span class="n">is_correct</span><span class="p">:</span>
+                    <span class="n">student_answer</span><span class="o">.</span><span class="n">is_correct</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">student_answer</span><span class="o">.</span><span class="n">points_earned</span> <span class="o">=</span> <span class="n">question</span><span class="o">.</span><span class="n">points</span>
+                    <span class="n">earned_points</span> <span class="o">+=</span> <span class="n">question</span><span class="o">.</span><span class="n">points</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">student_answer</span><span class="o">.</span><span class="n">is_correct</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">student_answer</span><span class="o">.</span><span class="n">points_earned</span> <span class="o">=</span> <span class="mi">0</span>
+            
+            <span class="k">elif</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="o">==</span> <span class="s1">&#39;short_answer&#39;</span><span class="p">:</span>
+                <span class="n">student_answer</span><span class="o">.</span><span class="n">answer_text</span> <span class="o">=</span> <span class="n">answer_value</span>
+                <span class="n">student_answer</span><span class="o">.</span><span class="n">is_correct</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">student_answer</span><span class="o">.</span><span class="n">points_earned</span> <span class="o">=</span> <span class="mi">0</span>
+            
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">student_answer</span><span class="p">)</span>
+        
+        <span class="n">attempt</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="p">(</span><span class="n">earned_points</span> <span class="o">/</span> <span class="n">total_points</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_points</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">attempt</span><span class="o">.</span><span class="n">submitted_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">attempt</span><span class="o">.</span><span class="n">time_spent_minutes</span> <span class="o">=</span> <span class="n">calculate_time_spent</span><span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">started_at</span><span class="p">,</span> <span class="n">attempt</span><span class="o">.</span><span class="n">submitted_at</span><span class="p">)</span>
+        <span class="n">attempt</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;score&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+            <span class="s1">&#39;earned_points&#39;</span><span class="p">:</span> <span class="n">earned_points</span><span class="p">,</span>
+            <span class="s1">&#39;total_points&#39;</span><span class="p">:</span> <span class="n">total_points</span><span class="p">,</span>
+            <span class="s1">&#39;passed&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span>
+        <span class="p">}</span></div>
+
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_detailed_results</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get detailed results for a quiz attempt&quot;&quot;&quot;</span>
+        <span class="n">attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">attempt</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quiz attempt not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Quiz has not been completed&quot;</span><span class="p">)</span>
+        
+        <span class="n">attempt_data</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="n">attempt_data</span><span class="p">[</span><span class="s1">&#39;student_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span> <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student</span> <span class="k">else</span> <span class="s1">&#39;Unknown&#39;</span>
+        <span class="n">attempt_data</span><span class="p">[</span><span class="s1">&#39;student_email&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">email</span> <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student</span> <span class="k">else</span> <span class="s1">&#39;Unknown&#39;</span>
+        
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;attempt&#39;</span><span class="p">:</span> <span class="n">attempt_data</span><span class="p">,</span>
+            <span class="s1">&#39;quiz&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s1">&#39;questions&#39;</span><span class="p">:</span> <span class="p">[]</span>
+        <span class="p">}</span>
+        
+        <span class="k">for</span> <span class="n">answer</span> <span class="ow">in</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student_answers</span><span class="p">:</span>
+            <span class="n">question</span> <span class="o">=</span> <span class="n">answer</span><span class="o">.</span><span class="n">question</span>
+            <span class="n">question_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;question_text&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">question_text</span><span class="p">,</span>
+                <span class="s1">&#39;question_type&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span><span class="p">,</span>
+                <span class="s1">&#39;points&#39;</span><span class="p">:</span> <span class="n">question</span><span class="o">.</span><span class="n">points</span><span class="p">,</span>
+                <span class="s1">&#39;student_answer&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;correct_answer&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;is_correct&#39;</span><span class="p">:</span> <span class="n">answer</span><span class="o">.</span><span class="n">is_correct</span><span class="p">,</span>
+                <span class="s1">&#39;points_earned&#39;</span><span class="p">:</span> <span class="n">answer</span><span class="o">.</span><span class="n">points_earned</span><span class="p">,</span>
+                <span class="s1">&#39;answer_id&#39;</span><span class="p">:</span> <span class="n">answer</span><span class="o">.</span><span class="n">id</span>  
+            <span class="p">}</span>
+            
+            <span class="k">if</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">selected_option</span><span class="p">:</span>
+                    <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;student_answer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">answer</span><span class="o">.</span><span class="n">selected_option</span><span class="o">.</span><span class="n">option_text</span>
+                
+                <span class="n">correct_options</span> <span class="o">=</span> <span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">option_text</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">question</span><span class="o">.</span><span class="n">answer_options</span> <span class="k">if</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_correct</span><span class="p">]</span>
+                <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;correct_answer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">correct_options</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">correct_options</span> <span class="k">else</span> <span class="kc">None</span>
+                
+                <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                        <span class="s1">&#39;option_text&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">option_text</span><span class="p">,</span>
+                        <span class="s1">&#39;is_correct&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_correct</span><span class="p">,</span>
+                        <span class="s1">&#39;selected&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">answer</span><span class="o">.</span><span class="n">selected_option_id</span>
+                    <span class="p">}</span>
+                    <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">question</span><span class="o">.</span><span class="n">answer_options</span>
+                <span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;student_answer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">answer</span><span class="o">.</span><span class="n">answer_text</span>
+            
+            <span class="n">results</span><span class="p">[</span><span class="s1">&#39;questions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">question_data</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">results</span>
+    
+<div class="viewcode-block" id="QuizService.get_student_quiz_attempts">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.get_student_quiz_attempts">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_student_quiz_attempts</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all quiz attempts for a student&quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">quiz_id</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">)</span>
+        
+        <span class="n">attempts</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="o">.</span><span class="n">started_at</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;attempts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">attempt</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="n">attempts</span><span class="p">],</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">attempts</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="QuizService.can_retake_quiz">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.can_retake_quiz">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">can_retake_quiz</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if student can retake a quiz&quot;&quot;&quot;</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;Quiz not found&quot;</span>
+        
+        <span class="n">attempts</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">attempts</span> <span class="o">&gt;=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">max_attempts</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Maximum attempts (</span><span class="si">{</span><span class="n">quiz</span><span class="o">.</span><span class="n">max_attempts</span><span class="si">}</span><span class="s2">) reached&quot;</span>
+        
+        <span class="n">in_progress</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s1">&#39;in_progress&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">in_progress</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;You have an in-progress attempt&quot;</span>
+        
+        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;You have </span><span class="si">{</span><span class="n">quiz</span><span class="o">.</span><span class="n">max_attempts</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">attempts</span><span class="si">}</span><span class="s2"> attempts remaining&quot;</span></div>
+
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_resume_questions</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">attempt</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Attempt not found&quot;</span><span class="p">)</span>
+
+        <span class="n">answers_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="o">.</span><span class="n">question_id</span><span class="p">:</span> <span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student_answers</span><span class="p">}</span>
+        <span class="n">questions</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">quiz</span><span class="o">.</span><span class="n">questions</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Question</span><span class="o">.</span><span class="n">order_number</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">questions</span><span class="p">:</span>
+            <span class="n">q_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;question_text&#39;</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">question_text</span><span class="p">,</span>
+                <span class="s1">&#39;question_type&#39;</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">question_type</span><span class="p">,</span>
+                <span class="s1">&#39;points&#39;</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">points</span><span class="p">,</span>
+                <span class="s1">&#39;order_number&#39;</span><span class="p">:</span> <span class="n">q</span><span class="o">.</span><span class="n">order_number</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">question_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]:</span>
+                <span class="n">q_data</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                        <span class="s1">&#39;option_text&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">option_text</span>
+                    <span class="p">}</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">q</span><span class="o">.</span><span class="n">answer_options</span>
+                <span class="p">]</span>
+
+            <span class="n">answer</span> <span class="o">=</span> <span class="n">answers_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">answer</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">question_type</span> <span class="o">==</span> <span class="s1">&#39;short_answer&#39;</span><span class="p">:</span>
+                    <span class="n">q_data</span><span class="p">[</span><span class="s1">&#39;student_answer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">answer</span><span class="o">.</span><span class="n">answer_text</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">q_data</span><span class="p">[</span><span class="s1">&#39;selected_option_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">answer</span><span class="o">.</span><span class="n">selected_option_id</span>
+
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q_data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+<div class="viewcode-block" id="QuizService.grade_attempt">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.grade_attempt">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">grade_attempt</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">attempt_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">short_answer_grades</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Grade a quiz attempt, particularly for short answer questions&quot;&quot;&quot;</span>
+        <span class="n">attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attempt_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">attempt</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz attempt not found&quot;</span><span class="p">)</span>
+
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+
+        <span class="n">course</span> <span class="o">=</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span> <span class="ow">or</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Grading attempt ID: </span><span class="si">{</span><span class="n">attempt_id</span><span class="si">}</span><span class="s2">, attempt number: </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">attempt_number</span><span class="si">}</span><span class="s2">, student: </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">student_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">student_answers</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">student_answers</span>
+        
+        <span class="n">total_possible_points</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total_earned_points</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">for</span> <span class="n">answer</span> <span class="ow">in</span> <span class="n">student_answers</span><span class="p">:</span>
+            <span class="n">question</span> <span class="o">=</span> <span class="n">Question</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">answer</span><span class="o">.</span><span class="n">question_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">question</span><span class="p">:</span>
+                <span class="k">continue</span>
+            
+            <span class="n">total_possible_points</span> <span class="o">+=</span> <span class="n">question</span><span class="o">.</span><span class="n">points</span>
+
+            <span class="k">if</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]:</span>
+                <span class="n">total_earned_points</span> <span class="o">+=</span> <span class="p">(</span><span class="n">answer</span><span class="o">.</span><span class="n">points_earned</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="o">==</span> <span class="s1">&#39;short_answer&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">answer</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="ow">in</span> <span class="n">short_answer_grades</span><span class="p">:</span>
+                    <span class="n">is_correct</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">short_answer_grades</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">answer</span><span class="o">.</span><span class="n">id</span><span class="p">)])</span>
+                    <span class="n">answer</span><span class="o">.</span><span class="n">is_correct</span> <span class="o">=</span> <span class="n">is_correct</span>
+                    <span class="n">answer</span><span class="o">.</span><span class="n">points_earned</span> <span class="o">=</span> <span class="n">question</span><span class="o">.</span><span class="n">points</span> <span class="k">if</span> <span class="n">is_correct</span> <span class="k">else</span> <span class="mi">0</span>
+                    <span class="n">total_earned_points</span> <span class="o">+=</span> <span class="n">answer</span><span class="o">.</span><span class="n">points_earned</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Graded short answer </span><span class="si">{</span><span class="n">answer</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="s1">&#39;correct&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">is_correct</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;incorrect&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">answer</span><span class="o">.</span><span class="n">is_correct</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">answer</span><span class="o">.</span><span class="n">points_earned</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">final_score</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_earned_points</span> <span class="o">/</span> <span class="n">total_possible_points</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_possible_points</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        
+        <span class="n">previous_score</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">score</span>
+        
+        <span class="n">attempt</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">final_score</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">attempt</span><span class="o">.</span><span class="n">graded_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">attempt</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Score updated from </span><span class="si">{</span><span class="n">previous_score</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">score</span><span class="si">}</span><span class="s2"> for attempt ID </span><span class="si">{</span><span class="n">attempt_id</span><span class="si">}</span><span class="s2"> (attempt #</span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">attempt_number</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">app.services.notification_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">NotificationService</span>
+            <span class="n">NotificationService</span><span class="o">.</span><span class="n">notify_quiz_graded</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">attempt</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">teacher_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+                <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">score</span><span class="o">=</span><span class="n">attempt</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+                <span class="n">attempt_number</span><span class="o">=</span><span class="n">attempt</span><span class="o">.</span><span class="n">attempt_number</span><span class="p">,</span>
+                <span class="n">attempt_id</span><span class="o">=</span><span class="n">attempt_id</span> 
+            <span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Notification sent for attempt_id=</span><span class="si">{</span><span class="n">attempt_id</span><span class="si">}</span><span class="s2">, attempt_number=</span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">attempt_number</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to send quiz graded notification: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Quiz graded successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;attempt&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s1">&#39;total_points&#39;</span><span class="p">:</span> <span class="n">total_possible_points</span><span class="p">,</span>
+            <span class="s1">&#39;earned_points&#39;</span><span class="p">:</span> <span class="n">total_earned_points</span><span class="p">,</span>
+            <span class="s1">&#39;final_score&#39;</span><span class="p">:</span> <span class="n">final_score</span><span class="p">,</span>
+            <span class="s1">&#39;attempt_id&#39;</span><span class="p">:</span> <span class="n">attempt_id</span><span class="p">,</span> 
+            <span class="s1">&#39;attempt_number&#39;</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">attempt_number</span><span class="p">,</span>  
+            <span class="s1">&#39;previous_score&#39;</span><span class="p">:</span> <span class="n">previous_score</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="QuizService.get_question_details">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.quiz_service.QuizService.get_question_details">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_question_details</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">quiz_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">question_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get detailed information about a specific question with answer statistics&quot;&quot;&quot;</span>
+        <span class="n">quiz</span> <span class="o">=</span> <span class="n">Quiz</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">quiz_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiz</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Quiz not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">quiz</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">question</span> <span class="o">=</span> <span class="n">Question</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">question_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">question</span> <span class="ow">or</span> <span class="n">question</span><span class="o">.</span><span class="n">quiz_id</span> <span class="o">!=</span> <span class="n">quiz_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Question not found&quot;</span><span class="p">)</span>
+        
+        <span class="n">question_data</span> <span class="o">=</span> <span class="n">question</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        
+        <span class="n">completed_attempts</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz_id</span><span class="p">,</span>
+            <span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">attempt_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">attempt</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="n">completed_attempts</span><span class="p">]</span>
+        <span class="n">total_responses</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">attempt_ids</span><span class="p">)</span>
+        
+        <span class="n">student_answers</span> <span class="o">=</span> <span class="n">StudentAnswer</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">StudentAnswer</span><span class="o">.</span><span class="n">question_id</span> <span class="o">==</span> <span class="n">question_id</span><span class="p">,</span>
+            <span class="n">StudentAnswer</span><span class="o">.</span><span class="n">attempt_id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">attempt_ids</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span> <span class="k">if</span> <span class="n">attempt_ids</span> <span class="k">else</span> <span class="p">[]</span>
+        
+        <span class="k">if</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;multiple_choice&#39;</span><span class="p">,</span> <span class="s1">&#39;true_false&#39;</span><span class="p">]:</span>
+            <span class="n">options_with_stats</span> <span class="o">=</span> <span class="p">[]</span>
+            
+            <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">question</span><span class="o">.</span><span class="n">answer_options</span><span class="p">:</span>
+                <span class="n">selection_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">answer</span> <span class="ow">in</span> <span class="n">student_answers</span> <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">selected_option_id</span> <span class="o">==</span> <span class="n">opt</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                <span class="n">percentage</span> <span class="o">=</span> <span class="p">(</span><span class="n">selection_count</span> <span class="o">/</span> <span class="n">total_responses</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_responses</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+                
+                <span class="n">options_with_stats</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;option_text&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">option_text</span><span class="p">,</span>
+                    <span class="s1">&#39;is_correct&#39;</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">is_correct</span><span class="p">,</span>
+                    <span class="s1">&#39;selection_count&#39;</span><span class="p">:</span> <span class="n">selection_count</span><span class="p">,</span>
+                    <span class="s1">&#39;selection_percentage&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">percentage</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="p">})</span>
+            
+            <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">options_with_stats</span>
+            
+            <span class="n">answered_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">student_answers</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">selected_option_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">])</span>
+            <span class="n">skipped_count</span> <span class="o">=</span> <span class="n">total_responses</span> <span class="o">-</span> <span class="n">answered_count</span>
+            
+            <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;answer_statistics&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;total_responses&#39;</span><span class="p">:</span> <span class="n">total_responses</span><span class="p">,</span>
+                <span class="s1">&#39;answered&#39;</span><span class="p">:</span> <span class="n">answered_count</span><span class="p">,</span>
+                <span class="s1">&#39;skipped&#39;</span><span class="p">:</span> <span class="n">skipped_count</span><span class="p">,</span>
+                <span class="s1">&#39;skip_percentage&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">((</span><span class="n">skipped_count</span> <span class="o">/</span> <span class="n">total_responses</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_responses</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">}</span>
+            
+        <span class="k">elif</span> <span class="n">question</span><span class="o">.</span><span class="n">question_type</span> <span class="o">==</span> <span class="s1">&#39;short_answer&#39;</span><span class="p">:</span>
+            <span class="n">answer_texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">answer</span><span class="o">.</span><span class="n">answer_text</span> <span class="k">for</span> <span class="n">answer</span> <span class="ow">in</span> <span class="n">student_answers</span> <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">answer_text</span><span class="p">]</span>
+            
+            <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+            <span class="n">answer_frequency</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">answer</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">answer</span> <span class="ow">in</span> <span class="n">answer_texts</span> <span class="k">if</span> <span class="n">answer</span> <span class="ow">and</span> <span class="n">answer</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            
+            <span class="n">common_answers</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">answer_text</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">answer_frequency</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+                <span class="n">percentage</span> <span class="o">=</span> <span class="p">(</span><span class="n">count</span> <span class="o">/</span> <span class="n">total_responses</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_responses</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">common_answers</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;answer_text&#39;</span><span class="p">:</span> <span class="n">answer_text</span><span class="p">,</span>
+                    <span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="n">count</span><span class="p">,</span>
+                    <span class="s1">&#39;percentage&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">percentage</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="p">})</span>
+            
+            <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;common_answers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">common_answers</span>
+            <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;correct_answer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="s1">&#39;correct_answer&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            
+            <span class="n">answered_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">student_answers</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">answer_text</span> <span class="ow">and</span> <span class="n">a</span><span class="o">.</span><span class="n">answer_text</span><span class="o">.</span><span class="n">strip</span><span class="p">()])</span>
+            <span class="n">skipped_count</span> <span class="o">=</span> <span class="n">total_responses</span> <span class="o">-</span> <span class="n">answered_count</span>
+            
+            <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;answer_statistics&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;total_responses&#39;</span><span class="p">:</span> <span class="n">total_responses</span><span class="p">,</span>
+                <span class="s1">&#39;answered&#39;</span><span class="p">:</span> <span class="n">answered_count</span><span class="p">,</span>
+                <span class="s1">&#39;skipped&#39;</span><span class="p">:</span> <span class="n">skipped_count</span><span class="p">,</span>
+                <span class="s1">&#39;skip_percentage&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">((</span><span class="n">skipped_count</span> <span class="o">/</span> <span class="n">total_responses</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_responses</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="s1">&#39;unique_answers&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">answer_frequency</span><span class="p">)</span>
+            <span class="p">}</span>
+        
+        <span class="n">correct_answers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">student_answers</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">is_correct</span><span class="p">])</span>
+        <span class="n">accuracy_rate</span> <span class="o">=</span> <span class="p">(</span><span class="n">correct_answers</span> <span class="o">/</span> <span class="n">total_responses</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_responses</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        
+        <span class="n">question_data</span><span class="p">[</span><span class="s1">&#39;performance_statistics&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;total_attempts&#39;</span><span class="p">:</span> <span class="n">total_responses</span><span class="p">,</span>
+            <span class="s1">&#39;correct_answers&#39;</span><span class="p">:</span> <span class="n">correct_answers</span><span class="p">,</span>
+            <span class="s1">&#39;incorrect_answers&#39;</span><span class="p">:</span> <span class="n">total_responses</span> <span class="o">-</span> <span class="n">correct_answers</span><span class="p">,</span>
+            <span class="s1">&#39;accuracy_rate&#39;</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">accuracy_rate</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="s1">&#39;difficulty_level&#39;</span><span class="p">:</span> <span class="s1">&#39;Easy&#39;</span> <span class="k">if</span> <span class="n">accuracy_rate</span> <span class="o">&gt;=</span> <span class="mi">80</span> <span class="k">else</span> <span class="s1">&#39;Medium&#39;</span> <span class="k">if</span> <span class="n">accuracy_rate</span> <span class="o">&gt;=</span> <span class="mi">60</span> <span class="k">else</span> <span class="s1">&#39;Hard&#39;</span>
+        <span class="p">}</span>
+        
+        <span class="k">return</span> <span class="n">question_data</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

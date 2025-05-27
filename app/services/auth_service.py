@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from flask_jwt_extended import create_access_token, create_refresh_token
 from app.models import db, User, UserRole
-from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
+from app.utils.base_controller import ValidationException, NotFoundException
 from app.utils.validators import validate_email, validate_password, validate_phone, validate_username
 
 class AuthService:

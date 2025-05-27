@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import get_jwt_identity
 from app.services.certificate_service import CertificateService
 from app.utils.base_controller import BaseController
 from app.utils.decorators import admin_required, student_required

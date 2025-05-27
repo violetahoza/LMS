@@ -1,0 +1,634 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.services.lesson_service &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.services.lesson_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.services.lesson_service</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AssignmentSubmission</span><span class="p">,</span> <span class="n">QuizAttempt</span><span class="p">,</span> <span class="n">db</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">Course</span><span class="p">,</span> <span class="n">Lesson</span><span class="p">,</span> <span class="n">LessonProgress</span><span class="p">,</span> <span class="n">Enrollment</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.base_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationException</span><span class="p">,</span> <span class="n">PermissionException</span><span class="p">,</span> <span class="n">NotFoundException</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.services.notification_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">NotificationService</span>
+
+<div class="viewcode-block" id="LessonService">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.lesson_service.LessonService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LessonService</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Service for lesson-related operations&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="LessonService.get_course_lessons">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.lesson_service.LessonService.get_course_lessons">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_course_lessons</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all lessons for a course with user progress&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
+        
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Course not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">can_access_course</span><span class="p">(</span><span class="n">course</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">lessons</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">lessons</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Lesson</span><span class="o">.</span><span class="n">order_number</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">lessons_data</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="n">lessons</span><span class="p">:</span>
+            <span class="n">lesson_dict</span> <span class="o">=</span> <span class="n">lesson</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+                <span class="n">progress</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                    <span class="n">student_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span>
+                    <span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+                
+                <span class="n">lesson_dict</span><span class="p">[</span><span class="s1">&#39;progress&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;viewed&#39;</span><span class="p">:</span> <span class="n">progress</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="n">progress</span><span class="o">.</span><span class="n">completed_at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">progress</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;time_spent_minutes&#39;</span><span class="p">:</span> <span class="n">progress</span><span class="o">.</span><span class="n">time_spent_minutes</span> <span class="k">if</span> <span class="n">progress</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s1">&#39;last_viewed&#39;</span><span class="p">:</span> <span class="n">progress</span><span class="o">.</span><span class="n">viewed_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">progress</span> <span class="ow">and</span> <span class="n">progress</span><span class="o">.</span><span class="n">viewed_at</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">}</span>
+            
+            <span class="k">elif</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">()</span> <span class="ow">and</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">==</span> <span class="n">user_id</span><span class="p">:</span>
+                <span class="n">total_students</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">enrollments</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                <span class="n">views</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                <span class="n">completions</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                    <span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">id</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">LessonProgress</span><span class="o">.</span><span class="n">completed_at</span><span class="o">.</span><span class="n">isnot</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                
+                <span class="n">lesson_dict</span><span class="p">[</span><span class="s1">&#39;engagement&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;total_students&#39;</span><span class="p">:</span> <span class="n">total_students</span><span class="p">,</span>
+                    <span class="s1">&#39;views&#39;</span><span class="p">:</span> <span class="n">views</span><span class="p">,</span>
+                    <span class="s1">&#39;completions&#39;</span><span class="p">:</span> <span class="n">completions</span><span class="p">,</span>
+                    <span class="s1">&#39;view_rate&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">views</span> <span class="o">/</span> <span class="n">total_students</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_students</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s1">&#39;completion_rate&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">completions</span> <span class="o">/</span> <span class="n">total_students</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_students</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="p">}</span>
+            
+            <span class="n">lessons_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lesson_dict</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;lessons&#39;</span><span class="p">:</span> <span class="n">lessons_data</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">lessons_data</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="LessonService.get_lesson">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.lesson_service.LessonService.get_lesson">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_lesson</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lesson_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a specific lesson and track view for students&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;User not found&quot;</span><span class="p">)</span>
+        
+        <span class="n">lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lesson_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lesson</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Lesson not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">can_access_course</span><span class="p">(</span><span class="n">lesson</span><span class="o">.</span><span class="n">course</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">lesson_data</span> <span class="o">=</span> <span class="n">lesson</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="n">progress</span> <span class="o">=</span> <span class="n">LessonService</span><span class="o">.</span><span class="n">_track_lesson_view</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">lesson_id</span><span class="p">)</span>
+            <span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;progress&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;viewed&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="n">progress</span><span class="o">.</span><span class="n">completed_at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;time_spent_minutes&#39;</span><span class="p">:</span> <span class="n">progress</span><span class="o">.</span><span class="n">time_spent_minutes</span><span class="p">,</span>
+                <span class="s1">&#39;last_viewed&#39;</span><span class="p">:</span> <span class="n">progress</span><span class="o">.</span><span class="n">viewed_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">progress</span><span class="o">.</span><span class="n">viewed_at</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">}</span>
+            
+            <span class="k">if</span> <span class="n">lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">previous_lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                    <span class="n">course_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">course_id</span><span class="p">,</span>
+                    <span class="n">order_number</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+                
+                <span class="k">if</span> <span class="n">previous_lesson</span><span class="p">:</span>
+                    <span class="n">prev_progress</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                        <span class="n">student_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span>
+                        <span class="n">lesson_id</span><span class="o">=</span><span class="n">previous_lesson</span><span class="o">.</span><span class="n">id</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+                    
+                    <span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;prerequisites_met&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prev_progress</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;prerequisites_met&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;prerequisites_met&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        
+        <span class="k">return</span> <span class="n">lesson_data</span></div>
+
+    
+<div class="viewcode-block" id="LessonService.create_lesson">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.lesson_service.LessonService.create_lesson">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_lesson</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lesson_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new lesson&quot;&quot;&quot;</span>
+        <span class="n">required_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="s1">&#39;order_number&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">required_fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lesson_data</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">lesson_data</span><span class="p">[</span><span class="n">field</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s1"> is required&#39;</span><span class="p">)</span>
+        
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Course not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">order_number</span> <span class="o">=</span> <span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;order_number&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">order_number</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s2">&quot;Order number must be positive&quot;</span><span class="p">)</span>
+        
+        <span class="n">existing_lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">],</span>
+            <span class="n">order_number</span><span class="o">=</span><span class="n">order_number</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">existing_lesson</span><span class="p">:</span>
+            <span class="n">lessons_to_shift</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Lesson</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">],</span>
+                <span class="n">Lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">&gt;=</span> <span class="n">order_number</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            
+            <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="n">lessons_to_shift</span><span class="p">:</span>
+                <span class="n">lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="n">lesson_type</span> <span class="o">=</span> <span class="n">lesson_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lesson_type&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span>
+        <span class="n">video_url</span> <span class="o">=</span> <span class="n">lesson_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;video_url&#39;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">lesson_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;video&#39;</span><span class="p">,</span> <span class="s1">&#39;mixed&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">video_url</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Video URL is required for </span><span class="si">{</span><span class="n">lesson_type</span><span class="si">}</span><span class="s2"> lessons&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">lesson_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span> <span class="ow">and</span> <span class="n">video_url</span><span class="p">:</span>
+            <span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;video_url&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span> 
+        
+        <span class="n">lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="p">(</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">],</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="n">content</span><span class="o">=</span><span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="n">order_number</span><span class="o">=</span><span class="n">order_number</span><span class="p">,</span>
+            <span class="n">lesson_type</span><span class="o">=</span><span class="n">lesson_type</span><span class="p">,</span>
+            <span class="n">video_url</span><span class="o">=</span><span class="n">video_url</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">video_url</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">duration_minutes</span><span class="o">=</span><span class="n">lesson_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;duration_minutes&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lesson</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">])</span>
+        <span class="n">enrolled_students</span> <span class="o">=</span> <span class="p">[</span><span class="n">enrollment</span><span class="o">.</span><span class="n">student_id</span> <span class="k">for</span> <span class="n">enrollment</span> <span class="ow">in</span> <span class="n">course</span><span class="o">.</span><span class="n">enrollments</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span><span class="p">)]</span>
+        
+        <span class="k">if</span> <span class="n">enrolled_students</span><span class="p">:</span>
+            <span class="n">NotificationService</span><span class="o">.</span><span class="n">notify_new_content</span><span class="p">(</span>
+                <span class="n">student_ids</span><span class="o">=</span><span class="n">enrolled_students</span><span class="p">,</span>
+                <span class="n">teacher_id</span><span class="o">=</span><span class="n">teacher_id</span><span class="p">,</span>
+                <span class="n">course_id</span><span class="o">=</span><span class="n">course</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;lesson&#39;</span><span class="p">,</span>
+                <span class="n">content_title</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">title</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Lesson created successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;lesson&#39;</span><span class="p">:</span> <span class="n">lesson</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="LessonService.update_lesson">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.lesson_service.LessonService.update_lesson">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_lesson</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lesson_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lesson_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update a lesson&quot;&quot;&quot;</span>
+        <span class="n">lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lesson_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lesson</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Lesson not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">lesson</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="s1">&#39;order_number&#39;</span> <span class="ow">in</span> <span class="n">lesson_data</span><span class="p">:</span>
+            <span class="n">new_order</span> <span class="o">=</span> <span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;order_number&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">new_order</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s2">&quot;Order number must be positive&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">new_order</span> <span class="o">!=</span> <span class="n">lesson</span><span class="o">.</span><span class="n">order_number</span><span class="p">:</span>
+                <span class="n">LessonService</span><span class="o">.</span><span class="n">_reorder_lessons</span><span class="p">(</span><span class="n">lesson</span><span class="o">.</span><span class="n">course_id</span><span class="p">,</span> <span class="n">lesson</span><span class="o">.</span><span class="n">order_number</span><span class="p">,</span> <span class="n">new_order</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="s1">&#39;lesson_type&#39;</span> <span class="ow">in</span> <span class="n">lesson_data</span><span class="p">:</span>
+            <span class="n">lesson_type</span> <span class="o">=</span> <span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;lesson_type&#39;</span><span class="p">]</span>
+            <span class="n">video_url</span> <span class="o">=</span> <span class="n">lesson_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;video_url&#39;</span><span class="p">,</span> <span class="n">lesson</span><span class="o">.</span><span class="n">video_url</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">lesson_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;video&#39;</span><span class="p">,</span> <span class="s1">&#39;mixed&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">video_url</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Video URL is required for </span><span class="si">{</span><span class="n">lesson_type</span><span class="si">}</span><span class="s2"> lessons&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">lesson_type</span> <span class="o">==</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span>
+                <span class="n">lesson_data</span><span class="p">[</span><span class="s1">&#39;video_url&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  
+        
+        <span class="n">allowed_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">,</span> <span class="s1">&#39;order_number&#39;</span><span class="p">,</span> <span class="s1">&#39;lesson_type&#39;</span><span class="p">,</span> <span class="s1">&#39;video_url&#39;</span><span class="p">,</span> <span class="s1">&#39;duration_minutes&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">allowed_fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">lesson_data</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">lesson_data</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;content&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">field</span> <span class="o">==</span> <span class="s1">&#39;video_url&#39;</span> <span class="ow">and</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">lesson</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        
+        <span class="n">lesson</span><span class="o">.</span><span class="n">updated_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Lesson updated successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;lesson&#39;</span><span class="p">:</span> <span class="n">lesson</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="LessonService.delete_lesson">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.lesson_service.LessonService.delete_lesson">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_lesson</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lesson_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete a lesson&quot;&quot;&quot;</span>
+        <span class="n">lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lesson_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lesson</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Lesson not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">lesson</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">progress_count</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson_id</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">progress_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cannot delete lesson with </span><span class="si">{</span><span class="n">progress_count</span><span class="si">}</span><span class="s1"> student views&#39;</span><span class="p">)</span>
+        
+        <span class="n">course_id</span> <span class="o">=</span> <span class="n">lesson</span><span class="o">.</span><span class="n">course_id</span>
+        <span class="n">order_number</span> <span class="o">=</span> <span class="n">lesson</span><span class="o">.</span><span class="n">order_number</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">lesson</span><span class="p">)</span>
+        
+        <span class="n">lessons_to_shift</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Lesson</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course_id</span><span class="p">,</span>
+            <span class="n">Lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">&gt;</span> <span class="n">order_number</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="n">lessons_to_shift</span><span class="p">:</span>
+            <span class="n">lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">-=</span> <span class="mi">1</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Lesson deleted successfully&#39;</span><span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="LessonService.complete_lesson">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.lesson_service.LessonService.complete_lesson">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">complete_lesson</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lesson_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">time_spent_minutes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mark a lesson as complete&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s2">&quot;Only students can complete lessons&quot;</span><span class="p">)</span>
+        
+        <span class="n">lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lesson_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lesson</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Lesson not found&quot;</span><span class="p">)</span>
+        
+        <span class="n">enrollment</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">in_</span><span class="p">([</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">enrollment</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Not enrolled in this course&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">previous_lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">course_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">course_id</span><span class="p">,</span>
+                <span class="n">order_number</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">previous_lesson</span><span class="p">:</span>
+                <span class="n">prev_progress</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                    <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                    <span class="n">lesson_id</span><span class="o">=</span><span class="n">previous_lesson</span><span class="o">.</span><span class="n">id</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+                
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">prev_progress</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s2">&quot;Previous lesson must be viewed first&quot;</span><span class="p">)</span>
+        
+        <span class="n">progress</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">progress</span><span class="p">:</span>
+            <span class="n">progress</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson_id</span>
+            <span class="p">)</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">progress</span><span class="p">)</span>
+        
+        <span class="n">progress</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">time_spent_minutes</span> <span class="ow">and</span> <span class="n">time_spent_minutes</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">progress</span><span class="o">.</span><span class="n">time_spent_minutes</span> <span class="o">=</span> <span class="n">time_spent_minutes</span>
+        
+        <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">calculate_progress</span><span class="p">()</span>
+        
+        <span class="n">course_completed</span> <span class="o">=</span> <span class="n">LessonService</span><span class="o">.</span><span class="n">_is_course_fully_completed</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">lesson</span><span class="o">.</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">course_completed</span> <span class="ow">and</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span>
+            <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
+            <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+            <span class="n">NotificationService</span><span class="o">.</span><span class="n">notify_course_completion</span><span class="p">(</span>
+                <span class="n">teacher_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span><span class="p">,</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">course_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">course_id</span>
+            <span class="p">)</span>
+            
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Lesson completed successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;lesson_completed&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;course_progress&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span><span class="p">,</span>
+            <span class="s1">&#39;course_completed&#39;</span><span class="p">:</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;completed&#39;</span>
+        <span class="p">}</span></div>
+
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_course_fully_completed</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if student has completed ALL course requirements (lessons, quizzes, assignments)&quot;&quot;&quot;</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="n">total_lessons</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">lessons</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">total_lessons</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">completed_lessons</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Lesson</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Lesson</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course_id</span><span class="p">,</span>
+                <span class="n">LessonProgress</span><span class="o">.</span><span class="n">completed_at</span><span class="o">.</span><span class="n">isnot</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">completed_lessons</span> <span class="o">&lt;</span> <span class="n">total_lessons</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="n">course_quizzes</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">quizzes</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">quiz</span> <span class="ow">in</span> <span class="n">course_quizzes</span><span class="p">:</span>
+            <span class="n">best_attempt</span> <span class="o">=</span> <span class="n">QuizAttempt</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">quiz_id</span><span class="o">=</span><span class="n">quiz</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">status</span><span class="o">=</span><span class="s1">&#39;completed&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">QuizAttempt</span><span class="o">.</span><span class="n">score</span><span class="o">.</span><span class="n">desc</span><span class="p">())</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">best_attempt</span> <span class="ow">or</span> <span class="n">best_attempt</span><span class="o">.</span><span class="n">score</span> <span class="o">&lt;</span> <span class="n">quiz</span><span class="o">.</span><span class="n">passing_score</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="n">course_assignments</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">assignments</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">course_assignments</span><span class="p">:</span>
+            <span class="n">submission</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">assignment_id</span><span class="o">=</span><span class="n">assignment</span><span class="o">.</span><span class="n">id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">submission</span> <span class="ow">or</span> <span class="n">submission</span><span class="o">.</span><span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;submitted&#39;</span><span class="p">,</span> <span class="s1">&#39;graded&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        
+        <span class="k">return</span> <span class="kc">True</span>
+    
+<div class="viewcode-block" id="LessonService.get_lesson_analytics">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.lesson_service.LessonService.get_lesson_analytics">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_lesson_analytics</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lesson_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get detailed analytics for a lesson&quot;&quot;&quot;</span>
+        <span class="n">lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lesson_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lesson</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Lesson not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">lesson</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">progress_records</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson_id</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        
+        <span class="n">total_enrolled</span> <span class="o">=</span> <span class="n">lesson</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">enrollments</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;active&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="n">total_views</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">progress_records</span><span class="p">)</span>
+        <span class="n">total_completions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">progress_records</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">completed_at</span><span class="p">])</span>
+        
+        <span class="n">time_spent_data</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">time_spent_minutes</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">progress_records</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">time_spent_minutes</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">avg_time_spent</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">time_spent_data</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_spent_data</span><span class="p">)</span> <span class="k">if</span> <span class="n">time_spent_data</span> <span class="k">else</span> <span class="mi">0</span>
+        
+        <span class="n">completion_timeline</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">progress</span> <span class="ow">in</span> <span class="n">progress_records</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">progress</span><span class="o">.</span><span class="n">completed_at</span><span class="p">:</span>
+                <span class="n">completion_timeline</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;student_name&#39;</span><span class="p">:</span> <span class="n">progress</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span>
+                    <span class="s1">&#39;completed_at&#39;</span><span class="p">:</span> <span class="n">progress</span><span class="o">.</span><span class="n">completed_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                    <span class="s1">&#39;time_spent&#39;</span><span class="p">:</span> <span class="n">progress</span><span class="o">.</span><span class="n">time_spent_minutes</span>
+                <span class="p">})</span>
+        
+        <span class="n">completion_timeline</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;completed_at&#39;</span><span class="p">])</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;lesson&#39;</span><span class="p">:</span> <span class="n">lesson</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s1">&#39;statistics&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;total_enrolled&#39;</span><span class="p">:</span> <span class="n">total_enrolled</span><span class="p">,</span>
+                <span class="s1">&#39;total_views&#39;</span><span class="p">:</span> <span class="n">total_views</span><span class="p">,</span>
+                <span class="s1">&#39;total_completions&#39;</span><span class="p">:</span> <span class="n">total_completions</span><span class="p">,</span>
+                <span class="s1">&#39;view_rate&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">total_views</span> <span class="o">/</span> <span class="n">total_enrolled</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_enrolled</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;completion_rate&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">total_completions</span> <span class="o">/</span> <span class="n">total_enrolled</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span> <span class="k">if</span> <span class="n">total_enrolled</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s1">&#39;average_time_spent&#39;</span><span class="p">:</span> <span class="n">avg_time_spent</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;completion_timeline&#39;</span><span class="p">:</span> <span class="n">completion_timeline</span>
+        <span class="p">}</span></div>
+
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_track_lesson_view</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lesson_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LessonProgress</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Track that a student viewed a lesson&quot;&quot;&quot;</span>
+        <span class="n">progress</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">progress</span><span class="p">:</span>
+            <span class="n">progress</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">lesson_id</span><span class="o">=</span><span class="n">lesson_id</span>
+            <span class="p">)</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">progress</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">progress</span><span class="o">.</span><span class="n">viewed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">progress</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_course_completed</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if student has completed all lessons in course&quot;&quot;&quot;</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        <span class="n">total_lessons</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">lessons</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">total_lessons</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="n">completed_lessons</span> <span class="o">=</span> <span class="n">LessonProgress</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Lesson</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">Lesson</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course_id</span><span class="p">,</span>
+            <span class="n">LessonProgress</span><span class="o">.</span><span class="n">completed_at</span><span class="o">.</span><span class="n">isnot</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="n">completed_lessons</span> <span class="o">==</span> <span class="n">total_lessons</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reorder_lessons</span><span class="p">(</span><span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">old_order</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">new_order</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reorder lessons when order number changes&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">old_order</span> <span class="o">==</span> <span class="n">new_order</span><span class="p">:</span>
+            <span class="k">return</span>
+        
+        <span class="k">if</span> <span class="n">old_order</span> <span class="o">&lt;</span> <span class="n">new_order</span><span class="p">:</span>
+            <span class="n">lessons_to_shift</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Lesson</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course_id</span><span class="p">,</span>
+                <span class="n">Lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">&gt;</span> <span class="n">old_order</span><span class="p">,</span>
+                <span class="n">Lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">&lt;=</span> <span class="n">new_order</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            
+            <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="n">lessons_to_shift</span><span class="p">:</span>
+                <span class="n">lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lessons_to_shift</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">Lesson</span><span class="o">.</span><span class="n">course_id</span> <span class="o">==</span> <span class="n">course_id</span><span class="p">,</span>
+                <span class="n">Lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">&gt;=</span> <span class="n">new_order</span><span class="p">,</span>
+                <span class="n">Lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">&lt;</span> <span class="n">old_order</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            
+            <span class="k">for</span> <span class="n">lesson</span> <span class="ow">in</span> <span class="n">lessons_to_shift</span><span class="p">:</span>
+                <span class="n">lesson</span><span class="o">.</span><span class="n">order_number</span> <span class="o">+=</span> <span class="mi">1</span>
+    
+<div class="viewcode-block" id="LessonService.duplicate_lesson">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.lesson_service.LessonService.duplicate_lesson">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">duplicate_lesson</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">lesson_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Duplicate an existing lesson&quot;&quot;&quot;</span>
+        <span class="n">lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lesson_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lesson</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Lesson not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">lesson</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">max_order</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Lesson</span><span class="o">.</span><span class="n">order_number</span><span class="p">))</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span> <span class="ow">or</span> <span class="mi">0</span>
+        
+        <span class="n">new_lesson</span> <span class="o">=</span> <span class="n">Lesson</span><span class="p">(</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">course_id</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lesson</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2"> (Copy)&quot;</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+            <span class="n">order_number</span><span class="o">=</span><span class="n">max_order</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">lesson_type</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">lesson_type</span><span class="p">,</span>
+            <span class="n">video_url</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">video_url</span><span class="p">,</span>
+            <span class="n">duration_minutes</span><span class="o">=</span><span class="n">lesson</span><span class="o">.</span><span class="n">duration_minutes</span>
+        <span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">new_lesson</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Lesson duplicated successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;lesson&#39;</span><span class="p">:</span> <span class="n">new_lesson</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

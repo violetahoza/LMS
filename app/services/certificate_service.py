@@ -181,7 +181,7 @@ class CertificateService:
         
         return {
             'message': 'Certificate issued successfully',
-            'certificate': certificate.to_dict()  # This was missing .to_dict()
+            'certificate': certificate.to_dict() 
         }
 
     @staticmethod

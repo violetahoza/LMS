@@ -1,0 +1,1312 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.routes package &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">app.routes package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-app.routes.admin">app.routes.admin module</a><ul>
+<li><a class="reference internal" href="#app.routes.admin.get_dashboard"><code class="docutils literal notranslate"><span class="pre">get_dashboard()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.get_users"><code class="docutils literal notranslate"><span class="pre">get_users()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.get_user"><code class="docutils literal notranslate"><span class="pre">get_user()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.update_user"><code class="docutils literal notranslate"><span class="pre">update_user()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.export_users"><code class="docutils literal notranslate"><span class="pre">export_users()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.toggle_user_active"><code class="docutils literal notranslate"><span class="pre">toggle_user_active()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.get_all_courses"><code class="docutils literal notranslate"><span class="pre">get_all_courses()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.delete_course"><code class="docutils literal notranslate"><span class="pre">delete_course()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.export_courses"><code class="docutils literal notranslate"><span class="pre">export_courses()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.toggle_course_published"><code class="docutils literal notranslate"><span class="pre">toggle_course_published()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.get_user_activity_report"><code class="docutils literal notranslate"><span class="pre">get_user_activity_report()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.get_course_performance_report"><code class="docutils literal notranslate"><span class="pre">get_course_performance_report()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.get_achievements"><code class="docutils literal notranslate"><span class="pre">get_achievements()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.create_achievement"><code class="docutils literal notranslate"><span class="pre">create_achievement()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.get_user_activity_overview"><code class="docutils literal notranslate"><span class="pre">get_user_activity_overview()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.admin.get_course_categories"><code class="docutils literal notranslate"><span class="pre">get_course_categories()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes.assignments">app.routes.assignments module</a><ul>
+<li><a class="reference internal" href="#app.routes.assignments.get_course_assignments"><code class="docutils literal notranslate"><span class="pre">get_course_assignments()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.assignments.get_assignment"><code class="docutils literal notranslate"><span class="pre">get_assignment()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.assignments.create_assignment"><code class="docutils literal notranslate"><span class="pre">create_assignment()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.assignments.update_assignment"><code class="docutils literal notranslate"><span class="pre">update_assignment()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.assignments.delete_assignment"><code class="docutils literal notranslate"><span class="pre">delete_assignment()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.assignments.submit_assignment"><code class="docutils literal notranslate"><span class="pre">submit_assignment()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.assignments.get_assignment_submissions"><code class="docutils literal notranslate"><span class="pre">get_assignment_submissions()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.assignments.grade_submission"><code class="docutils literal notranslate"><span class="pre">grade_submission()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.assignments.return_submission"><code class="docutils literal notranslate"><span class="pre">return_submission()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes.auth">app.routes.auth module</a><ul>
+<li><a class="reference internal" href="#app.routes.auth.register"><code class="docutils literal notranslate"><span class="pre">register()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.auth.login"><code class="docutils literal notranslate"><span class="pre">login()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.auth.get_profile"><code class="docutils literal notranslate"><span class="pre">get_profile()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.auth.update_profile"><code class="docutils literal notranslate"><span class="pre">update_profile()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.auth.change_password"><code class="docutils literal notranslate"><span class="pre">change_password()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes.certificates">app.routes.certificates module</a><ul>
+<li><a class="reference internal" href="#app.routes.certificates.get_pending_certificates"><code class="docutils literal notranslate"><span class="pre">get_pending_certificates()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.certificates.issue_certificate"><code class="docutils literal notranslate"><span class="pre">issue_certificate()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.certificates.bulk_issue_certificates"><code class="docutils literal notranslate"><span class="pre">bulk_issue_certificates()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.certificates.revoke_certificate"><code class="docutils literal notranslate"><span class="pre">revoke_certificate()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.certificates.verify_certificate"><code class="docutils literal notranslate"><span class="pre">verify_certificate()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.certificates.request_certificate"><code class="docutils literal notranslate"><span class="pre">request_certificate()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.certificates.get_certificate_requests"><code class="docutils literal notranslate"><span class="pre">get_certificate_requests()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.certificates.approve_certificate_request"><code class="docutils literal notranslate"><span class="pre">approve_certificate_request()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.certificates.reject_certificate_request"><code class="docutils literal notranslate"><span class="pre">reject_certificate_request()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes.courses">app.routes.courses module</a><ul>
+<li><a class="reference internal" href="#app.routes.courses.get_courses"><code class="docutils literal notranslate"><span class="pre">get_courses()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.courses.get_course"><code class="docutils literal notranslate"><span class="pre">get_course()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.courses.create_course"><code class="docutils literal notranslate"><span class="pre">create_course()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.courses.update_course"><code class="docutils literal notranslate"><span class="pre">update_course()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.courses.delete_course"><code class="docutils literal notranslate"><span class="pre">delete_course()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.courses.enroll_in_course"><code class="docutils literal notranslate"><span class="pre">enroll_in_course()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.courses.drop_course"><code class="docutils literal notranslate"><span class="pre">drop_course()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.courses.get_enrolled_courses"><code class="docutils literal notranslate"><span class="pre">get_enrolled_courses()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.courses.get_course_students"><code class="docutils literal notranslate"><span class="pre">get_course_students()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes.frontend">app.routes.frontend module</a><ul>
+<li><a class="reference internal" href="#app.routes.frontend.get_auth_headers"><code class="docutils literal notranslate"><span class="pre">get_auth_headers()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.index"><code class="docutils literal notranslate"><span class="pre">index()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.login"><code class="docutils literal notranslate"><span class="pre">login()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.register"><code class="docutils literal notranslate"><span class="pre">register()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.logout"><code class="docutils literal notranslate"><span class="pre">logout()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.admin_dashboard"><code class="docutils literal notranslate"><span class="pre">admin_dashboard()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.admin_users"><code class="docutils literal notranslate"><span class="pre">admin_users()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.admin_courses"><code class="docutils literal notranslate"><span class="pre">admin_courses()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.admin_reports"><code class="docutils literal notranslate"><span class="pre">admin_reports()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.toggle_user_active"><code class="docutils literal notranslate"><span class="pre">toggle_user_active()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.get_user_details"><code class="docutils literal notranslate"><span class="pre">get_user_details()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.edit_user"><code class="docutils literal notranslate"><span class="pre">edit_user()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.export_users"><code class="docutils literal notranslate"><span class="pre">export_users()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.toggle_course_published"><code class="docutils literal notranslate"><span class="pre">toggle_course_published()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.get_course_details"><code class="docutils literal notranslate"><span class="pre">get_course_details()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.export_courses"><code class="docutils literal notranslate"><span class="pre">export_courses()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.profile"><code class="docutils literal notranslate"><span class="pre">profile()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.update_profile"><code class="docutils literal notranslate"><span class="pre">update_profile()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.change_password"><code class="docutils literal notranslate"><span class="pre">change_password()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_dashboard"><code class="docutils literal notranslate"><span class="pre">student_dashboard()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_browse_courses"><code class="docutils literal notranslate"><span class="pre">student_browse_courses()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_courses"><code class="docutils literal notranslate"><span class="pre">student_courses()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_course_view"><code class="docutils literal notranslate"><span class="pre">student_course_view()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_lesson_view"><code class="docutils literal notranslate"><span class="pre">student_lesson_view()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_quiz_take"><code class="docutils literal notranslate"><span class="pre">student_quiz_take()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_quiz_results"><code class="docutils literal notranslate"><span class="pre">student_quiz_results()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_assignment_view"><code class="docutils literal notranslate"><span class="pre">student_assignment_view()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_assignments"><code class="docutils literal notranslate"><span class="pre">student_assignments()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_progress"><code class="docutils literal notranslate"><span class="pre">student_progress()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_achievements"><code class="docutils literal notranslate"><span class="pre">student_achievements()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.student_certificates"><code class="docutils literal notranslate"><span class="pre">student_certificates()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_dashboard"><code class="docutils literal notranslate"><span class="pre">teacher_dashboard()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_courses"><code class="docutils literal notranslate"><span class="pre">teacher_courses()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_create_course"><code class="docutils literal notranslate"><span class="pre">teacher_create_course()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_course_view"><code class="docutils literal notranslate"><span class="pre">teacher_course_view()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_course_content"><code class="docutils literal notranslate"><span class="pre">teacher_course_content()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_course_analytics"><code class="docutils literal notranslate"><span class="pre">teacher_course_analytics()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_course_students"><code class="docutils literal notranslate"><span class="pre">teacher_course_students()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_submissions"><code class="docutils literal notranslate"><span class="pre">teacher_submissions()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_analytics"><code class="docutils literal notranslate"><span class="pre">teacher_analytics()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_lesson_preview"><code class="docutils literal notranslate"><span class="pre">teacher_lesson_preview()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_quiz_analytics"><code class="docutils literal notranslate"><span class="pre">teacher_quiz_analytics()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_quiz_questions"><code class="docutils literal notranslate"><span class="pre">teacher_quiz_questions()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_assignment_submissions"><code class="docutils literal notranslate"><span class="pre">teacher_assignment_submissions()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.messages"><code class="docutils literal notranslate"><span class="pre">messages()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.compose_message"><code class="docutils literal notranslate"><span class="pre">compose_message()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.message_conversation"><code class="docutils literal notranslate"><span class="pre">message_conversation()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_student_progress"><code class="docutils literal notranslate"><span class="pre">teacher_student_progress()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.notifications"><code class="docutils literal notranslate"><span class="pre">notifications()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.admin_certificates"><code class="docutils literal notranslate"><span class="pre">admin_certificates()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.verify_certificate_public"><code class="docutils literal notranslate"><span class="pre">verify_certificate_public()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_quiz_grading"><code class="docutils literal notranslate"><span class="pre">teacher_quiz_grading()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.frontend.teacher_quiz_results"><code class="docutils literal notranslate"><span class="pre">teacher_quiz_results()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes.lessons">app.routes.lessons module</a><ul>
+<li><a class="reference internal" href="#app.routes.lessons.get_course_lessons"><code class="docutils literal notranslate"><span class="pre">get_course_lessons()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.lessons.get_lesson"><code class="docutils literal notranslate"><span class="pre">get_lesson()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.lessons.create_lesson"><code class="docutils literal notranslate"><span class="pre">create_lesson()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.lessons.update_lesson"><code class="docutils literal notranslate"><span class="pre">update_lesson()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.lessons.delete_lesson"><code class="docutils literal notranslate"><span class="pre">delete_lesson()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.lessons.complete_lesson"><code class="docutils literal notranslate"><span class="pre">complete_lesson()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes.messages">app.routes.messages module</a><ul>
+<li><a class="reference internal" href="#app.routes.messages.send_message"><code class="docutils literal notranslate"><span class="pre">send_message()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.messages.get_messages"><code class="docutils literal notranslate"><span class="pre">get_messages()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.messages.get_message"><code class="docutils literal notranslate"><span class="pre">get_message()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.messages.mark_as_read"><code class="docutils literal notranslate"><span class="pre">mark_as_read()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.messages.get_conversations"><code class="docutils literal notranslate"><span class="pre">get_conversations()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.messages.get_conversation_messages"><code class="docutils literal notranslate"><span class="pre">get_conversation_messages()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.messages.search_users"><code class="docutils literal notranslate"><span class="pre">search_users()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes.notifications">app.routes.notifications module</a><ul>
+<li><a class="reference internal" href="#app.routes.notifications.get_notifications"><code class="docutils literal notranslate"><span class="pre">get_notifications()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.notifications.mark_as_read"><code class="docutils literal notranslate"><span class="pre">mark_as_read()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.notifications.mark_all_as_read"><code class="docutils literal notranslate"><span class="pre">mark_all_as_read()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.notifications.delete_notification"><code class="docutils literal notranslate"><span class="pre">delete_notification()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.notifications.get_unread_count"><code class="docutils literal notranslate"><span class="pre">get_unread_count()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.notifications.bulk_delete_notifications"><code class="docutils literal notranslate"><span class="pre">bulk_delete_notifications()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.notifications.update_notification_preferences"><code class="docutils literal notranslate"><span class="pre">update_notification_preferences()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes.quizzes">app.routes.quizzes module</a><ul>
+<li><a class="reference internal" href="#app.routes.quizzes.get_course_quizzes"><code class="docutils literal notranslate"><span class="pre">get_course_quizzes()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.get_quiz"><code class="docutils literal notranslate"><span class="pre">get_quiz()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.create_quiz"><code class="docutils literal notranslate"><span class="pre">create_quiz()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.update_quiz"><code class="docutils literal notranslate"><span class="pre">update_quiz()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.delete_quiz"><code class="docutils literal notranslate"><span class="pre">delete_quiz()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.add_question"><code class="docutils literal notranslate"><span class="pre">add_question()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.update_question"><code class="docutils literal notranslate"><span class="pre">update_question()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.delete_question"><code class="docutils literal notranslate"><span class="pre">delete_question()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.start_quiz"><code class="docutils literal notranslate"><span class="pre">start_quiz()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.submit_quiz"><code class="docutils literal notranslate"><span class="pre">submit_quiz()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.get_quiz_results"><code class="docutils literal notranslate"><span class="pre">get_quiz_results()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.get_quiz_statistics"><code class="docutils literal notranslate"><span class="pre">get_quiz_statistics()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.quizzes.get_question"><code class="docutils literal notranslate"><span class="pre">get_question()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes.student">app.routes.student module</a><ul>
+<li><a class="reference internal" href="#app.routes.student.get_dashboard"><code class="docutils literal notranslate"><span class="pre">get_dashboard()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.student.get_student_progress"><code class="docutils literal notranslate"><span class="pre">get_student_progress()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.student.get_achievements"><code class="docutils literal notranslate"><span class="pre">get_achievements()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.student.get_certificates"><code class="docutils literal notranslate"><span class="pre">get_certificates()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.student.request_certificate"><code class="docutils literal notranslate"><span class="pre">request_certificate()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.student.get_study_streak"><code class="docutils literal notranslate"><span class="pre">get_study_streak()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.student.get_course_recommendations"><code class="docutils literal notranslate"><span class="pre">get_course_recommendations()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.student.send_message"><code class="docutils literal notranslate"><span class="pre">send_message()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.student.get_student_progress_by_teacher"><code class="docutils literal notranslate"><span class="pre">get_student_progress_by_teacher()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.student.get_student_quiz_attempts"><code class="docutils literal notranslate"><span class="pre">get_student_quiz_attempts()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.student.download_certificate"><code class="docutils literal notranslate"><span class="pre">download_certificate()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.student.bulk_download_certificates"><code class="docutils literal notranslate"><span class="pre">bulk_download_certificates()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes.teacher">app.routes.teacher module</a><ul>
+<li><a class="reference internal" href="#app.routes.teacher.get_dashboard"><code class="docutils literal notranslate"><span class="pre">get_dashboard()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_teacher_courses"><code class="docutils literal notranslate"><span class="pre">get_teacher_courses()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_course_details"><code class="docutils literal notranslate"><span class="pre">get_course_details()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_pending_submissions"><code class="docutils literal notranslate"><span class="pre">get_pending_submissions()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_all_submissions"><code class="docutils literal notranslate"><span class="pre">get_all_submissions()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_quiz_analytics"><code class="docutils literal notranslate"><span class="pre">get_quiz_analytics()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_student_progress_report"><code class="docutils literal notranslate"><span class="pre">get_student_progress_report()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_course_analytics"><code class="docutils literal notranslate"><span class="pre">get_course_analytics()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_teacher_analytics_overview"><code class="docutils literal notranslate"><span class="pre">get_teacher_analytics_overview()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_individual_student_progress"><code class="docutils literal notranslate"><span class="pre">get_individual_student_progress()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.export_course_students"><code class="docutils literal notranslate"><span class="pre">export_course_students()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_all_quiz_attempts"><code class="docutils literal notranslate"><span class="pre">get_all_quiz_attempts()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_quiz_attempt_details"><code class="docutils literal notranslate"><span class="pre">get_quiz_attempt_details()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.grade_quiz_attempt"><code class="docutils literal notranslate"><span class="pre">grade_quiz_attempt()</span></code></a></li>
+<li><a class="reference internal" href="#app.routes.teacher.get_quiz_grading_summary"><code class="docutils literal notranslate"><span class="pre">get_quiz_grading_summary()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-app.routes">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">app.routes package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/source/app.routes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="app-routes-package">
+<h1>app.routes package<a class="headerlink" href="#app-routes-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-app.routes.admin">
+<span id="app-routes-admin-module"></span><h2>app.routes.admin module<a class="headerlink" href="#module-app.routes.admin" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.get_dashboard">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">get_dashboard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#get_dashboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.get_dashboard" title="Link to this definition"></a></dt>
+<dd><p>Get admin dashboard statistics</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.get_users">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">get_users</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#get_users"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.get_users" title="Link to this definition"></a></dt>
+<dd><p>Get all users with filtering and pagination</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.get_user">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">get_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#get_user"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.get_user" title="Link to this definition"></a></dt>
+<dd><p>Get detailed user information</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.update_user">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">update_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#update_user"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.update_user" title="Link to this definition"></a></dt>
+<dd><p>Update user information</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.export_users">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">export_users</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#export_users"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.export_users" title="Link to this definition"></a></dt>
+<dd><p>Export users to CSV</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.toggle_user_active">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">toggle_user_active</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#toggle_user_active"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.toggle_user_active" title="Link to this definition"></a></dt>
+<dd><p>Toggle user active status</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.get_all_courses">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">get_all_courses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#get_all_courses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.get_all_courses" title="Link to this definition"></a></dt>
+<dd><p>Get all courses with detailed information</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.delete_course">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">delete_course</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#delete_course"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.delete_course" title="Link to this definition"></a></dt>
+<dd><p>Delete a course</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.export_courses">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">export_courses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#export_courses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.export_courses" title="Link to this definition"></a></dt>
+<dd><p>Export courses to CSV</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.toggle_course_published">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">toggle_course_published</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#toggle_course_published"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.toggle_course_published" title="Link to this definition"></a></dt>
+<dd><p>Toggle course published status</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.get_user_activity_report">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">get_user_activity_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#get_user_activity_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.get_user_activity_report" title="Link to this definition"></a></dt>
+<dd><p>Get user activity report</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.get_course_performance_report">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">get_course_performance_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#get_course_performance_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.get_course_performance_report" title="Link to this definition"></a></dt>
+<dd><p>Get course performance report</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.get_achievements">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">get_achievements</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#get_achievements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.get_achievements" title="Link to this definition"></a></dt>
+<dd><p>Get all achievements</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.create_achievement">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">create_achievement</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#create_achievement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.create_achievement" title="Link to this definition"></a></dt>
+<dd><p>Create a new achievement</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.get_user_activity_overview">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">get_user_activity_overview</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#get_user_activity_overview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.get_user_activity_overview" title="Link to this definition"></a></dt>
+<dd><p>Get user overview chart data for dashboard</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.admin.get_course_categories">
+<span class="sig-prename descclassname"><span class="pre">app.routes.admin.</span></span><span class="sig-name descname"><span class="pre">get_course_categories</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/admin.html#get_course_categories"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.admin.get_course_categories" title="Link to this definition"></a></dt>
+<dd><p>Return course category distribution</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes.assignments">
+<span id="app-routes-assignments-module"></span><h2>app.routes.assignments module<a class="headerlink" href="#module-app.routes.assignments" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.assignments.get_course_assignments">
+<span class="sig-prename descclassname"><span class="pre">app.routes.assignments.</span></span><span class="sig-name descname"><span class="pre">get_course_assignments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/assignments.html#get_course_assignments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.assignments.get_course_assignments" title="Link to this definition"></a></dt>
+<dd><p>Get all assignments for a course</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.assignments.get_assignment">
+<span class="sig-prename descclassname"><span class="pre">app.routes.assignments.</span></span><span class="sig-name descname"><span class="pre">get_assignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assignment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/assignments.html#get_assignment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.assignments.get_assignment" title="Link to this definition"></a></dt>
+<dd><p>Get a specific assignment</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.assignments.create_assignment">
+<span class="sig-prename descclassname"><span class="pre">app.routes.assignments.</span></span><span class="sig-name descname"><span class="pre">create_assignment</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/assignments.html#create_assignment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.assignments.create_assignment" title="Link to this definition"></a></dt>
+<dd><p>Create a new assignment</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.assignments.update_assignment">
+<span class="sig-prename descclassname"><span class="pre">app.routes.assignments.</span></span><span class="sig-name descname"><span class="pre">update_assignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assignment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/assignments.html#update_assignment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.assignments.update_assignment" title="Link to this definition"></a></dt>
+<dd><p>Update an assignment</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.assignments.delete_assignment">
+<span class="sig-prename descclassname"><span class="pre">app.routes.assignments.</span></span><span class="sig-name descname"><span class="pre">delete_assignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assignment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/assignments.html#delete_assignment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.assignments.delete_assignment" title="Link to this definition"></a></dt>
+<dd><p>Delete an assignment</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.assignments.submit_assignment">
+<span class="sig-prename descclassname"><span class="pre">app.routes.assignments.</span></span><span class="sig-name descname"><span class="pre">submit_assignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assignment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/assignments.html#submit_assignment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.assignments.submit_assignment" title="Link to this definition"></a></dt>
+<dd><p>Submit an assignment</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.assignments.get_assignment_submissions">
+<span class="sig-prename descclassname"><span class="pre">app.routes.assignments.</span></span><span class="sig-name descname"><span class="pre">get_assignment_submissions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assignment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/assignments.html#get_assignment_submissions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.assignments.get_assignment_submissions" title="Link to this definition"></a></dt>
+<dd><p>Get all submissions for an assignment (teacher only)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.assignments.grade_submission">
+<span class="sig-prename descclassname"><span class="pre">app.routes.assignments.</span></span><span class="sig-name descname"><span class="pre">grade_submission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">submission_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/assignments.html#grade_submission"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.assignments.grade_submission" title="Link to this definition"></a></dt>
+<dd><p>Grade an assignment submission</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.assignments.return_submission">
+<span class="sig-prename descclassname"><span class="pre">app.routes.assignments.</span></span><span class="sig-name descname"><span class="pre">return_submission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">submission_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/assignments.html#return_submission"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.assignments.return_submission" title="Link to this definition"></a></dt>
+<dd><p>Return submission to student for revision</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes.auth">
+<span id="app-routes-auth-module"></span><h2>app.routes.auth module<a class="headerlink" href="#module-app.routes.auth" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.auth.register">
+<span class="sig-prename descclassname"><span class="pre">app.routes.auth.</span></span><span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/auth.html#register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.auth.register" title="Link to this definition"></a></dt>
+<dd><p>Register a new user</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.auth.login">
+<span class="sig-prename descclassname"><span class="pre">app.routes.auth.</span></span><span class="sig-name descname"><span class="pre">login</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/auth.html#login"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.auth.login" title="Link to this definition"></a></dt>
+<dd><p>Login user</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.auth.get_profile">
+<span class="sig-prename descclassname"><span class="pre">app.routes.auth.</span></span><span class="sig-name descname"><span class="pre">get_profile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/auth.html#get_profile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.auth.get_profile" title="Link to this definition"></a></dt>
+<dd><p>Get current user profile</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.auth.update_profile">
+<span class="sig-prename descclassname"><span class="pre">app.routes.auth.</span></span><span class="sig-name descname"><span class="pre">update_profile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/auth.html#update_profile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.auth.update_profile" title="Link to this definition"></a></dt>
+<dd><p>Update current user profile</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.auth.change_password">
+<span class="sig-prename descclassname"><span class="pre">app.routes.auth.</span></span><span class="sig-name descname"><span class="pre">change_password</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/auth.html#change_password"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.auth.change_password" title="Link to this definition"></a></dt>
+<dd><p>Change user password</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes.certificates">
+<span id="app-routes-certificates-module"></span><h2>app.routes.certificates module<a class="headerlink" href="#module-app.routes.certificates" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.certificates.get_pending_certificates">
+<span class="sig-prename descclassname"><span class="pre">app.routes.certificates.</span></span><span class="sig-name descname"><span class="pre">get_pending_certificates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/certificates.html#get_pending_certificates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.certificates.get_pending_certificates" title="Link to this definition"></a></dt>
+<dd><p>Get students eligible for certificates (admin only)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.certificates.issue_certificate">
+<span class="sig-prename descclassname"><span class="pre">app.routes.certificates.</span></span><span class="sig-name descname"><span class="pre">issue_certificate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/certificates.html#issue_certificate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.certificates.issue_certificate" title="Link to this definition"></a></dt>
+<dd><p>Issue a certificate (admin only)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.certificates.bulk_issue_certificates">
+<span class="sig-prename descclassname"><span class="pre">app.routes.certificates.</span></span><span class="sig-name descname"><span class="pre">bulk_issue_certificates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/certificates.html#bulk_issue_certificates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.certificates.bulk_issue_certificates" title="Link to this definition"></a></dt>
+<dd><p>Issue multiple certificates at once (admin only)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.certificates.revoke_certificate">
+<span class="sig-prename descclassname"><span class="pre">app.routes.certificates.</span></span><span class="sig-name descname"><span class="pre">revoke_certificate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">certificate_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/certificates.html#revoke_certificate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.certificates.revoke_certificate" title="Link to this definition"></a></dt>
+<dd><p>Revoke a certificate (admin only)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.certificates.verify_certificate">
+<span class="sig-prename descclassname"><span class="pre">app.routes.certificates.</span></span><span class="sig-name descname"><span class="pre">verify_certificate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">certificate_code</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/certificates.html#verify_certificate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.certificates.verify_certificate" title="Link to this definition"></a></dt>
+<dd><p>Verify a certificate by its code (public endpoint)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.certificates.request_certificate">
+<span class="sig-prename descclassname"><span class="pre">app.routes.certificates.</span></span><span class="sig-name descname"><span class="pre">request_certificate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/certificates.html#request_certificate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.certificates.request_certificate" title="Link to this definition"></a></dt>
+<dd><p>Student requests certificate approval</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.certificates.get_certificate_requests">
+<span class="sig-prename descclassname"><span class="pre">app.routes.certificates.</span></span><span class="sig-name descname"><span class="pre">get_certificate_requests</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/certificates.html#get_certificate_requests"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.certificates.get_certificate_requests" title="Link to this definition"></a></dt>
+<dd><p>Get all certificate requests (admin only)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.certificates.approve_certificate_request">
+<span class="sig-prename descclassname"><span class="pre">app.routes.certificates.</span></span><span class="sig-name descname"><span class="pre">approve_certificate_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/certificates.html#approve_certificate_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.certificates.approve_certificate_request" title="Link to this definition"></a></dt>
+<dd><p>Approve a certificate request (admin only)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.certificates.reject_certificate_request">
+<span class="sig-prename descclassname"><span class="pre">app.routes.certificates.</span></span><span class="sig-name descname"><span class="pre">reject_certificate_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/certificates.html#reject_certificate_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.certificates.reject_certificate_request" title="Link to this definition"></a></dt>
+<dd><p>Reject a certificate request (admin only)</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes.courses">
+<span id="app-routes-courses-module"></span><h2>app.routes.courses module<a class="headerlink" href="#module-app.routes.courses" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.courses.get_courses">
+<span class="sig-prename descclassname"><span class="pre">app.routes.courses.</span></span><span class="sig-name descname"><span class="pre">get_courses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/courses.html#get_courses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.courses.get_courses" title="Link to this definition"></a></dt>
+<dd><p>Get all courses (filtered based on user role)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.courses.get_course">
+<span class="sig-prename descclassname"><span class="pre">app.routes.courses.</span></span><span class="sig-name descname"><span class="pre">get_course</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/courses.html#get_course"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.courses.get_course" title="Link to this definition"></a></dt>
+<dd><p>Get a specific course</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.courses.create_course">
+<span class="sig-prename descclassname"><span class="pre">app.routes.courses.</span></span><span class="sig-name descname"><span class="pre">create_course</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/courses.html#create_course"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.courses.create_course" title="Link to this definition"></a></dt>
+<dd><p>Create a new course (teachers only)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.courses.update_course">
+<span class="sig-prename descclassname"><span class="pre">app.routes.courses.</span></span><span class="sig-name descname"><span class="pre">update_course</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/courses.html#update_course"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.courses.update_course" title="Link to this definition"></a></dt>
+<dd><p>Update a course (teachers and admins)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.courses.delete_course">
+<span class="sig-prename descclassname"><span class="pre">app.routes.courses.</span></span><span class="sig-name descname"><span class="pre">delete_course</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/courses.html#delete_course"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.courses.delete_course" title="Link to this definition"></a></dt>
+<dd><p>Delete a course (teachers and admins)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.courses.enroll_in_course">
+<span class="sig-prename descclassname"><span class="pre">app.routes.courses.</span></span><span class="sig-name descname"><span class="pre">enroll_in_course</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/courses.html#enroll_in_course"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.courses.enroll_in_course" title="Link to this definition"></a></dt>
+<dd><p>Enroll in a course (students only)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.courses.drop_course">
+<span class="sig-prename descclassname"><span class="pre">app.routes.courses.</span></span><span class="sig-name descname"><span class="pre">drop_course</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/courses.html#drop_course"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.courses.drop_course" title="Link to this definition"></a></dt>
+<dd><p>Drop a course (students only)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.courses.get_enrolled_courses">
+<span class="sig-prename descclassname"><span class="pre">app.routes.courses.</span></span><span class="sig-name descname"><span class="pre">get_enrolled_courses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/courses.html#get_enrolled_courses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.courses.get_enrolled_courses" title="Link to this definition"></a></dt>
+<dd><p>Get courses the student is enrolled in</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.courses.get_course_students">
+<span class="sig-prename descclassname"><span class="pre">app.routes.courses.</span></span><span class="sig-name descname"><span class="pre">get_course_students</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/courses.html#get_course_students"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.courses.get_course_students" title="Link to this definition"></a></dt>
+<dd><p>Get students enrolled in a course (teachers and admins)</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes.frontend">
+<span id="app-routes-frontend-module"></span><h2>app.routes.frontend module<a class="headerlink" href="#module-app.routes.frontend" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.get_auth_headers">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">get_auth_headers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#get_auth_headers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.get_auth_headers" title="Link to this definition"></a></dt>
+<dd><p>Get authentication headers from session</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.index">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.index" title="Link to this definition"></a></dt>
+<dd><p>Home page - redirect based on login status</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.login">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">login</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#login"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.login" title="Link to this definition"></a></dt>
+<dd><p>Login page</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.register">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.register" title="Link to this definition"></a></dt>
+<dd><p>Registration page</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.logout">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">logout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#logout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.logout" title="Link to this definition"></a></dt>
+<dd><p>Logout user</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.admin_dashboard">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">admin_dashboard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#admin_dashboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.admin_dashboard" title="Link to this definition"></a></dt>
+<dd><p>Admin dashboard</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.admin_users">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">admin_users</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#admin_users"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.admin_users" title="Link to this definition"></a></dt>
+<dd><p>Admin users management</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.admin_courses">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">admin_courses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#admin_courses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.admin_courses" title="Link to this definition"></a></dt>
+<dd><p>Admin courses management</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.admin_reports">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">admin_reports</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#admin_reports"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.admin_reports" title="Link to this definition"></a></dt>
+<dd><p>Admin reports page</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.toggle_user_active">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">toggle_user_active</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#toggle_user_active"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.toggle_user_active" title="Link to this definition"></a></dt>
+<dd><p>Toggle user active status</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.get_user_details">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">get_user_details</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#get_user_details"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.get_user_details" title="Link to this definition"></a></dt>
+<dd><p>Get user details for modal</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.edit_user">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">edit_user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#edit_user"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.edit_user" title="Link to this definition"></a></dt>
+<dd><p>Update user information</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.export_users">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">export_users</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#export_users"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.export_users" title="Link to this definition"></a></dt>
+<dd><p>Export users to CSV</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.toggle_course_published">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">toggle_course_published</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#toggle_course_published"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.toggle_course_published" title="Link to this definition"></a></dt>
+<dd><p>Toggle course published status</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.get_course_details">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">get_course_details</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#get_course_details"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.get_course_details" title="Link to this definition"></a></dt>
+<dd><p>Get course details for viewing - NEW</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.export_courses">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">export_courses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#export_courses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.export_courses" title="Link to this definition"></a></dt>
+<dd><p>Export courses to CSV</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.profile">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">profile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#profile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.profile" title="Link to this definition"></a></dt>
+<dd><p>User profile page</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.update_profile">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">update_profile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#update_profile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.update_profile" title="Link to this definition"></a></dt>
+<dd><p>Update user profile - AJAX endpoint</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.change_password">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">change_password</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#change_password"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.change_password" title="Link to this definition"></a></dt>
+<dd><p>Change user password - AJAX endpoint</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_dashboard">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_dashboard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_dashboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_dashboard" title="Link to this definition"></a></dt>
+<dd><p>Student dashboard (placeholder)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_browse_courses">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_browse_courses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_browse_courses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_browse_courses" title="Link to this definition"></a></dt>
+<dd><p>Browse available courses for students</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_courses">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_courses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_courses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_courses" title="Link to this definition"></a></dt>
+<dd><p>Student’s enrolled courses</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_course_view">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_course_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_course_view"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_course_view" title="Link to this definition"></a></dt>
+<dd><p>View course content as student</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_lesson_view">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_lesson_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lesson_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_lesson_view"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_lesson_view" title="Link to this definition"></a></dt>
+<dd><p>View specific lesson</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_quiz_take">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_quiz_take</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_quiz_take"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_quiz_take" title="Link to this definition"></a></dt>
+<dd><p>Take a quiz</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_quiz_results">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_quiz_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attempt_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_quiz_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_quiz_results" title="Link to this definition"></a></dt>
+<dd><p>View quiz results</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_assignment_view">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_assignment_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assignment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_assignment_view"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_assignment_view" title="Link to this definition"></a></dt>
+<dd><p>View and submit assignment</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_assignments">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_assignments</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_assignments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_assignments" title="Link to this definition"></a></dt>
+<dd><p>Student assignments overview</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_progress">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_progress</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_progress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_progress" title="Link to this definition"></a></dt>
+<dd><p>Student progress overview</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_achievements">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_achievements</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_achievements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_achievements" title="Link to this definition"></a></dt>
+<dd><p>Student achievements</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.student_certificates">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">student_certificates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#student_certificates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.student_certificates" title="Link to this definition"></a></dt>
+<dd><p>Student certificates</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_dashboard">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_dashboard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_dashboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_dashboard" title="Link to this definition"></a></dt>
+<dd><p>Teacher dashboard</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_courses">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_courses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_courses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_courses" title="Link to this definition"></a></dt>
+<dd><p>Teacher courses management</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_create_course">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_create_course</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_create_course"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_create_course" title="Link to this definition"></a></dt>
+<dd><p>Create new course page</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_course_view">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_course_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_course_view"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_course_view" title="Link to this definition"></a></dt>
+<dd><p>View specific course - redirects to content management</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_course_content">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_course_content</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_course_content"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_course_content" title="Link to this definition"></a></dt>
+<dd><p>Manage course content</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_course_analytics">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_course_analytics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_course_analytics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_course_analytics" title="Link to this definition"></a></dt>
+<dd><p>Course analytics</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_course_students">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_course_students</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_course_students"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_course_students" title="Link to this definition"></a></dt>
+<dd><p>Course students management</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_submissions">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_submissions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_submissions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_submissions" title="Link to this definition"></a></dt>
+<dd><p>Pending submissions for grading</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_analytics">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_analytics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_analytics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_analytics" title="Link to this definition"></a></dt>
+<dd><p>Teacher analytics overview</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_lesson_preview">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_lesson_preview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lesson_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_lesson_preview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_lesson_preview" title="Link to this definition"></a></dt>
+<dd><p>Preview a lesson</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_quiz_analytics">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_quiz_analytics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_quiz_analytics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_quiz_analytics" title="Link to this definition"></a></dt>
+<dd><p>Quiz analytics</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_quiz_questions">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_quiz_questions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_quiz_questions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_quiz_questions" title="Link to this definition"></a></dt>
+<dd><p>Manage quiz questions</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_assignment_submissions">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_assignment_submissions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assignment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_assignment_submissions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_assignment_submissions" title="Link to this definition"></a></dt>
+<dd><p>View assignment submissions</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.messages">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">messages</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#messages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.messages" title="Link to this definition"></a></dt>
+<dd><p>Messages inbox page</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.compose_message">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">compose_message</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#compose_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.compose_message" title="Link to this definition"></a></dt>
+<dd><p>Compose new message page</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.message_conversation">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">message_conversation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">partner_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#message_conversation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.message_conversation" title="Link to this definition"></a></dt>
+<dd><p>View conversation with specific user</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_student_progress">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_student_progress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">student_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_student_progress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_student_progress" title="Link to this definition"></a></dt>
+<dd><p>View individual student progress</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.notifications">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">notifications</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#notifications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.notifications" title="Link to this definition"></a></dt>
+<dd><p>Notifications page</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.admin_certificates">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">admin_certificates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#admin_certificates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.admin_certificates" title="Link to this definition"></a></dt>
+<dd><p>Admin certificate management page</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.verify_certificate_public">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">verify_certificate_public</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">certificate_code</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#verify_certificate_public"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.verify_certificate_public" title="Link to this definition"></a></dt>
+<dd><p>Public certificate verification page</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_quiz_grading">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_quiz_grading</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_quiz_grading"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_quiz_grading" title="Link to this definition"></a></dt>
+<dd><p>View pending quiz grading</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.frontend.teacher_quiz_results">
+<span class="sig-prename descclassname"><span class="pre">app.routes.frontend.</span></span><span class="sig-name descname"><span class="pre">teacher_quiz_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attempt_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/frontend.html#teacher_quiz_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.frontend.teacher_quiz_results" title="Link to this definition"></a></dt>
+<dd><p>View quiz results as teacher</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes.lessons">
+<span id="app-routes-lessons-module"></span><h2>app.routes.lessons module<a class="headerlink" href="#module-app.routes.lessons" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.lessons.get_course_lessons">
+<span class="sig-prename descclassname"><span class="pre">app.routes.lessons.</span></span><span class="sig-name descname"><span class="pre">get_course_lessons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/lessons.html#get_course_lessons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.lessons.get_course_lessons" title="Link to this definition"></a></dt>
+<dd><p>Get all lessons for a course</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.lessons.get_lesson">
+<span class="sig-prename descclassname"><span class="pre">app.routes.lessons.</span></span><span class="sig-name descname"><span class="pre">get_lesson</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lesson_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/lessons.html#get_lesson"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.lessons.get_lesson" title="Link to this definition"></a></dt>
+<dd><p>Get a specific lesson</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.lessons.create_lesson">
+<span class="sig-prename descclassname"><span class="pre">app.routes.lessons.</span></span><span class="sig-name descname"><span class="pre">create_lesson</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/lessons.html#create_lesson"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.lessons.create_lesson" title="Link to this definition"></a></dt>
+<dd><p>Create a new lesson</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.lessons.update_lesson">
+<span class="sig-prename descclassname"><span class="pre">app.routes.lessons.</span></span><span class="sig-name descname"><span class="pre">update_lesson</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lesson_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/lessons.html#update_lesson"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.lessons.update_lesson" title="Link to this definition"></a></dt>
+<dd><p>Update a lesson</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.lessons.delete_lesson">
+<span class="sig-prename descclassname"><span class="pre">app.routes.lessons.</span></span><span class="sig-name descname"><span class="pre">delete_lesson</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lesson_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/lessons.html#delete_lesson"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.lessons.delete_lesson" title="Link to this definition"></a></dt>
+<dd><p>Delete a lesson</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.lessons.complete_lesson">
+<span class="sig-prename descclassname"><span class="pre">app.routes.lessons.</span></span><span class="sig-name descname"><span class="pre">complete_lesson</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lesson_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/lessons.html#complete_lesson"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.lessons.complete_lesson" title="Link to this definition"></a></dt>
+<dd><p>Mark a lesson as complete</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes.messages">
+<span id="app-routes-messages-module"></span><h2>app.routes.messages module<a class="headerlink" href="#module-app.routes.messages" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.messages.send_message">
+<span class="sig-prename descclassname"><span class="pre">app.routes.messages.</span></span><span class="sig-name descname"><span class="pre">send_message</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/messages.html#send_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.messages.send_message" title="Link to this definition"></a></dt>
+<dd><p>Send a message</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.messages.get_messages">
+<span class="sig-prename descclassname"><span class="pre">app.routes.messages.</span></span><span class="sig-name descname"><span class="pre">get_messages</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/messages.html#get_messages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.messages.get_messages" title="Link to this definition"></a></dt>
+<dd><p>Get messages for current user</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.messages.get_message">
+<span class="sig-prename descclassname"><span class="pre">app.routes.messages.</span></span><span class="sig-name descname"><span class="pre">get_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/messages.html#get_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.messages.get_message" title="Link to this definition"></a></dt>
+<dd><p>Get a specific message</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.messages.mark_as_read">
+<span class="sig-prename descclassname"><span class="pre">app.routes.messages.</span></span><span class="sig-name descname"><span class="pre">mark_as_read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/messages.html#mark_as_read"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.messages.mark_as_read" title="Link to this definition"></a></dt>
+<dd><p>Mark a message as read</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.messages.get_conversations">
+<span class="sig-prename descclassname"><span class="pre">app.routes.messages.</span></span><span class="sig-name descname"><span class="pre">get_conversations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/messages.html#get_conversations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.messages.get_conversations" title="Link to this definition"></a></dt>
+<dd><p>Get conversations for current user</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.messages.get_conversation_messages">
+<span class="sig-prename descclassname"><span class="pre">app.routes.messages.</span></span><span class="sig-name descname"><span class="pre">get_conversation_messages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">partner_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/messages.html#get_conversation_messages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.messages.get_conversation_messages" title="Link to this definition"></a></dt>
+<dd><p>Get messages in a conversation with a specific user</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.messages.search_users">
+<span class="sig-prename descclassname"><span class="pre">app.routes.messages.</span></span><span class="sig-name descname"><span class="pre">search_users</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/messages.html#search_users"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.messages.search_users" title="Link to this definition"></a></dt>
+<dd><p>Search for users that the current user can message</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes.notifications">
+<span id="app-routes-notifications-module"></span><h2>app.routes.notifications module<a class="headerlink" href="#module-app.routes.notifications" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.notifications.get_notifications">
+<span class="sig-prename descclassname"><span class="pre">app.routes.notifications.</span></span><span class="sig-name descname"><span class="pre">get_notifications</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/notifications.html#get_notifications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.notifications.get_notifications" title="Link to this definition"></a></dt>
+<dd><p>Get notifications for current user</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.notifications.mark_as_read">
+<span class="sig-prename descclassname"><span class="pre">app.routes.notifications.</span></span><span class="sig-name descname"><span class="pre">mark_as_read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">notification_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/notifications.html#mark_as_read"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.notifications.mark_as_read" title="Link to this definition"></a></dt>
+<dd><p>Mark a notification as read</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.notifications.mark_all_as_read">
+<span class="sig-prename descclassname"><span class="pre">app.routes.notifications.</span></span><span class="sig-name descname"><span class="pre">mark_all_as_read</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/notifications.html#mark_all_as_read"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.notifications.mark_all_as_read" title="Link to this definition"></a></dt>
+<dd><p>Mark all notifications as read</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.notifications.delete_notification">
+<span class="sig-prename descclassname"><span class="pre">app.routes.notifications.</span></span><span class="sig-name descname"><span class="pre">delete_notification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">notification_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/notifications.html#delete_notification"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.notifications.delete_notification" title="Link to this definition"></a></dt>
+<dd><p>Delete a notification</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.notifications.get_unread_count">
+<span class="sig-prename descclassname"><span class="pre">app.routes.notifications.</span></span><span class="sig-name descname"><span class="pre">get_unread_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/notifications.html#get_unread_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.notifications.get_unread_count" title="Link to this definition"></a></dt>
+<dd><p>Get count of unread notifications</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.notifications.bulk_delete_notifications">
+<span class="sig-prename descclassname"><span class="pre">app.routes.notifications.</span></span><span class="sig-name descname"><span class="pre">bulk_delete_notifications</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/notifications.html#bulk_delete_notifications"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.notifications.bulk_delete_notifications" title="Link to this definition"></a></dt>
+<dd><p>Delete multiple notifications</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.notifications.update_notification_preferences">
+<span class="sig-prename descclassname"><span class="pre">app.routes.notifications.</span></span><span class="sig-name descname"><span class="pre">update_notification_preferences</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/notifications.html#update_notification_preferences"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.notifications.update_notification_preferences" title="Link to this definition"></a></dt>
+<dd><p>Update user notification preferences</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes.quizzes">
+<span id="app-routes-quizzes-module"></span><h2>app.routes.quizzes module<a class="headerlink" href="#module-app.routes.quizzes" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.get_course_quizzes">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">get_course_quizzes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#get_course_quizzes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.get_course_quizzes" title="Link to this definition"></a></dt>
+<dd><p>Get all quizzes for a course</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.get_quiz">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">get_quiz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#get_quiz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.get_quiz" title="Link to this definition"></a></dt>
+<dd><p>Get a specific quiz</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.create_quiz">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">create_quiz</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#create_quiz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.create_quiz" title="Link to this definition"></a></dt>
+<dd><p>Create a new quiz</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.update_quiz">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">update_quiz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#update_quiz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.update_quiz" title="Link to this definition"></a></dt>
+<dd><p>Update a quiz</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.delete_quiz">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">delete_quiz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#delete_quiz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.delete_quiz" title="Link to this definition"></a></dt>
+<dd><p>Delete a quiz</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.add_question">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">add_question</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#add_question"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.add_question" title="Link to this definition"></a></dt>
+<dd><p>Add a question to a quiz</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.update_question">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">update_question</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">question_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#update_question"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.update_question" title="Link to this definition"></a></dt>
+<dd><p>Update a question</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.delete_question">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">delete_question</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">question_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#delete_question"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.delete_question" title="Link to this definition"></a></dt>
+<dd><p>Delete a question</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.start_quiz">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">start_quiz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#start_quiz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.start_quiz" title="Link to this definition"></a></dt>
+<dd><p>Start a quiz attempt</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.submit_quiz">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">submit_quiz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attempt_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#submit_quiz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.submit_quiz" title="Link to this definition"></a></dt>
+<dd><p>Submit quiz answers</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.get_quiz_results">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">get_quiz_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attempt_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#get_quiz_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.get_quiz_results" title="Link to this definition"></a></dt>
+<dd><p>Get quiz results</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.get_quiz_statistics">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">get_quiz_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#get_quiz_statistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.get_quiz_statistics" title="Link to this definition"></a></dt>
+<dd><p>Get quiz statistics (teacher only)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.quizzes.get_question">
+<span class="sig-prename descclassname"><span class="pre">app.routes.quizzes.</span></span><span class="sig-name descname"><span class="pre">get_question</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">question_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/quizzes.html#get_question"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.quizzes.get_question" title="Link to this definition"></a></dt>
+<dd><p>Get a specific question with its details</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes.student">
+<span id="app-routes-student-module"></span><h2>app.routes.student module<a class="headerlink" href="#module-app.routes.student" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.get_dashboard">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">get_dashboard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#get_dashboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.get_dashboard" title="Link to this definition"></a></dt>
+<dd><p>Get student dashboard data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.get_student_progress">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">get_student_progress</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#get_student_progress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.get_student_progress" title="Link to this definition"></a></dt>
+<dd><p>Get student progress - accessible by teachers and the student themselves</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.get_achievements">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">get_achievements</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#get_achievements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.get_achievements" title="Link to this definition"></a></dt>
+<dd><p>Get student achievements</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.get_certificates">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">get_certificates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#get_certificates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.get_certificates" title="Link to this definition"></a></dt>
+<dd><p>Get student certificates</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.request_certificate">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">request_certificate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#request_certificate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.request_certificate" title="Link to this definition"></a></dt>
+<dd><p>Request certificate for completed course</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.get_study_streak">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">get_study_streak</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#get_study_streak"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.get_study_streak" title="Link to this definition"></a></dt>
+<dd><p>Get student study streak information</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.get_course_recommendations">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">get_course_recommendations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#get_course_recommendations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.get_course_recommendations" title="Link to this definition"></a></dt>
+<dd><p>Get course recommendations for student</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.send_message">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">send_message</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#send_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.send_message" title="Link to this definition"></a></dt>
+<dd><p>Send a message from student</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.get_student_progress_by_teacher">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">get_student_progress_by_teacher</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#get_student_progress_by_teacher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.get_student_progress_by_teacher" title="Link to this definition"></a></dt>
+<dd><p>Get student progress - accessible by teachers and the student themselves</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.get_student_quiz_attempts">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">get_student_quiz_attempts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#get_student_quiz_attempts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.get_student_quiz_attempts" title="Link to this definition"></a></dt>
+<dd><p>Get student’s quiz attempts</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.download_certificate">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">download_certificate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">certificate_code</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#download_certificate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.download_certificate" title="Link to this definition"></a></dt>
+<dd><p>Download certificate as PDF</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.student.bulk_download_certificates">
+<span class="sig-prename descclassname"><span class="pre">app.routes.student.</span></span><span class="sig-name descname"><span class="pre">bulk_download_certificates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/student.html#bulk_download_certificates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.student.bulk_download_certificates" title="Link to this definition"></a></dt>
+<dd><p>Download all certificates as a ZIP file</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes.teacher">
+<span id="app-routes-teacher-module"></span><h2>app.routes.teacher module<a class="headerlink" href="#module-app.routes.teacher" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_dashboard">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_dashboard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_dashboard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_dashboard" title="Link to this definition"></a></dt>
+<dd><p>Get teacher dashboard data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_teacher_courses">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_teacher_courses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_teacher_courses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_teacher_courses" title="Link to this definition"></a></dt>
+<dd><p>Get all courses for the teacher</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_course_details">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_course_details</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_course_details"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_course_details" title="Link to this definition"></a></dt>
+<dd><p>Get detailed course information</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_pending_submissions">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_pending_submissions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_pending_submissions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_pending_submissions" title="Link to this definition"></a></dt>
+<dd><p>Get assignments that need grading</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_all_submissions">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_all_submissions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_all_submissions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_all_submissions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_quiz_analytics">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_quiz_analytics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiz_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_quiz_analytics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_quiz_analytics" title="Link to this definition"></a></dt>
+<dd><p>Get detailed quiz analytics</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_student_progress_report">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_student_progress_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_student_progress_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_student_progress_report" title="Link to this definition"></a></dt>
+<dd><p>Get student progress report for a course</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_course_analytics">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_course_analytics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_course_analytics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_course_analytics" title="Link to this definition"></a></dt>
+<dd><p>Get comprehensive course analytics</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_teacher_analytics_overview">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_teacher_analytics_overview</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_teacher_analytics_overview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_teacher_analytics_overview" title="Link to this definition"></a></dt>
+<dd><p>Get aggregate analytics for all teacher’s courses</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_individual_student_progress">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_individual_student_progress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">student_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_individual_student_progress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_individual_student_progress" title="Link to this definition"></a></dt>
+<dd><p>Get detailed progress for a student (by teacher)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.export_course_students">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">export_course_students</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">course_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#export_course_students"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.export_course_students" title="Link to this definition"></a></dt>
+<dd><p>Export course students to CSV</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_all_quiz_attempts">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_all_quiz_attempts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_all_quiz_attempts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_all_quiz_attempts" title="Link to this definition"></a></dt>
+<dd><p>Get all quiz attempts for teacher’s courses</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_quiz_attempt_details">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_quiz_attempt_details</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attempt_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_quiz_attempt_details"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_quiz_attempt_details" title="Link to this definition"></a></dt>
+<dd><p>Get detailed quiz attempt information for grading</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.grade_quiz_attempt">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">grade_quiz_attempt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attempt_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#grade_quiz_attempt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.grade_quiz_attempt" title="Link to this definition"></a></dt>
+<dd><p>Grade a quiz attempt (mainly for short answer questions)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="app.routes.teacher.get_quiz_grading_summary">
+<span class="sig-prename descclassname"><span class="pre">app.routes.teacher.</span></span><span class="sig-name descname"><span class="pre">get_quiz_grading_summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/app/routes/teacher.html#get_quiz_grading_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#app.routes.teacher.get_quiz_grading_summary" title="Link to this definition"></a></dt>
+<dd><p>Get quiz grading summary statistics</p>
+</dd></dl>
+
+</section>
+<section id="module-app.routes">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-app.routes" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

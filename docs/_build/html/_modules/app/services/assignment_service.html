@@ -1,0 +1,530 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>app.services.assignment_service &mdash; LMS  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            LMS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">LMS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../app.html">app</a></li>
+      <li class="breadcrumb-item active">app.services.assignment_service</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for app.services.assignment_service</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">werkzeug.datastructures</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileStorage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">db</span><span class="p">,</span> <span class="n">User</span><span class="p">,</span> <span class="n">Course</span><span class="p">,</span> <span class="n">Assignment</span><span class="p">,</span> <span class="n">AssignmentSubmission</span><span class="p">,</span> <span class="n">Enrollment</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.base_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationException</span><span class="p">,</span> <span class="n">PermissionException</span><span class="p">,</span> <span class="n">NotFoundException</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.validators</span><span class="w"> </span><span class="kn">import</span> <span class="n">allowed_file</span><span class="p">,</span> <span class="n">validate_file_size</span><span class="p">,</span> <span class="n">sanitize_filename</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.utils.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_upload_directory</span><span class="p">,</span> <span class="n">delete_file</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">current_app</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">app.services.notification_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">NotificationService</span>
+
+<div class="viewcode-block" id="AssignmentService">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.assignment_service.AssignmentService">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AssignmentService</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Service for assignment-related operations&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="AssignmentService.get_course_assignments">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.assignment_service.AssignmentService.get_course_assignments">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_course_assignments</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">course_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all assignments for a course&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">course_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Course not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">can_access_course</span><span class="p">(</span><span class="n">course</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">assignments</span> <span class="o">=</span> <span class="n">course</span><span class="o">.</span><span class="n">assignments</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Assignment</span><span class="o">.</span><span class="n">due_date</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">assignments_data</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">assignments</span><span class="p">:</span>
+            <span class="n">assignment_dict</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+                <span class="n">submission</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                    <span class="n">student_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span>
+                    <span class="n">assignment_id</span><span class="o">=</span><span class="n">assignment</span><span class="o">.</span><span class="n">id</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+                
+                <span class="n">assignment_dict</span><span class="p">[</span><span class="s1">&#39;submission&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">submission</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">if</span> <span class="n">submission</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">assignment_dict</span><span class="p">[</span><span class="s1">&#39;submitted&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">submission</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="n">assignment_dict</span><span class="p">[</span><span class="s1">&#39;overdue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">assignment</span><span class="o">.</span><span class="n">due_date</span> <span class="ow">and</span> 
+                    <span class="n">assignment</span><span class="o">.</span><span class="n">due_date</span> <span class="o">&lt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="ow">and</span> 
+                    <span class="ow">not</span> <span class="n">submission</span>
+                <span class="p">)</span>
+            
+            <span class="k">elif</span> <span class="n">user</span><span class="o">.</span><span class="n">is_teacher</span><span class="p">()</span> <span class="ow">and</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">==</span> <span class="n">user_id</span><span class="p">:</span>
+                <span class="n">assignment_dict</span><span class="p">[</span><span class="s1">&#39;submission_count&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">submissions</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                <span class="n">assignment_dict</span><span class="p">[</span><span class="s1">&#39;graded_count&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">submissions</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;graded&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+            
+            <span class="n">assignments_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">assignment_dict</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;assignments&#39;</span><span class="p">:</span> <span class="n">assignments_data</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">assignments_data</span><span class="p">)</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="AssignmentService.get_assignment">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.assignment_service.AssignmentService.get_assignment">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_assignment</span><span class="p">(</span><span class="n">user_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">assignment_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a specific assignment&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span>
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">Assignment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">assignment_id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">assignment</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Assignment not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">can_access_course</span><span class="p">(</span><span class="n">assignment</span><span class="o">.</span><span class="n">course</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">assignment_data</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="n">submission</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+                <span class="n">student_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">,</span>
+                <span class="n">assignment_id</span><span class="o">=</span><span class="n">assignment_id</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            
+            <span class="n">assignment_data</span><span class="p">[</span><span class="s1">&#39;submission&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">submission</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">if</span> <span class="n">submission</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">assignment_data</span><span class="p">[</span><span class="s1">&#39;can_submit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="n">submission</span> <span class="ow">or</span> 
+                <span class="n">submission</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;returned&#39;</span>
+            <span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="n">assignment</span><span class="o">.</span><span class="n">due_date</span> <span class="ow">or</span> 
+                <span class="n">assignment</span><span class="o">.</span><span class="n">due_date</span> <span class="o">&gt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">assignment_data</span></div>
+
+    
+<div class="viewcode-block" id="AssignmentService.create_assignment">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.assignment_service.AssignmentService.create_assignment">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_assignment</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">assignment_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new assignment&quot;&quot;&quot;</span>
+        <span class="n">required_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">,</span> <span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">required_fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">assignment_data</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s1"> is required&#39;</span><span class="p">)</span>
+        
+        <span class="n">course</span> <span class="o">=</span> <span class="n">Course</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">assignment_data</span><span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">course</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Course not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">due_date</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">assignment_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;due_date&#39;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">due_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">assignment_data</span><span class="p">[</span><span class="s1">&#39;due_date&#39;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Invalid due date format&#39;</span><span class="p">)</span>
+        
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">Assignment</span><span class="p">(</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">assignment_data</span><span class="p">[</span><span class="s1">&#39;course_id&#39;</span><span class="p">],</span>
+            <span class="n">lesson_id</span><span class="o">=</span><span class="n">assignment_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lesson_id&#39;</span><span class="p">),</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">assignment_data</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">],</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">assignment_data</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">],</span>
+            <span class="n">due_date</span><span class="o">=</span><span class="n">due_date</span><span class="p">,</span>
+            <span class="n">total_points</span><span class="o">=</span><span class="n">assignment_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;total_points&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">assignment</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Assignment created successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;assignment&#39;</span><span class="p">:</span> <span class="n">assignment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="AssignmentService.update_assignment">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.assignment_service.AssignmentService.update_assignment">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_assignment</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">assignment_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">assignment_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update an assignment&quot;&quot;&quot;</span>
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">Assignment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">assignment_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">assignment</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Assignment not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">assignment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">allowed_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">,</span> <span class="s1">&#39;total_points&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">allowed_fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">assignment_data</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">assignment</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">assignment_data</span><span class="p">[</span><span class="n">field</span><span class="p">])</span>
+        
+        <span class="k">if</span> <span class="s1">&#39;due_date&#39;</span> <span class="ow">in</span> <span class="n">assignment_data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">assignment_data</span><span class="p">[</span><span class="s1">&#39;due_date&#39;</span><span class="p">]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">assignment</span><span class="o">.</span><span class="n">due_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">assignment_data</span><span class="p">[</span><span class="s1">&#39;due_date&#39;</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;Invalid due date format&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">assignment</span><span class="o">.</span><span class="n">due_date</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="n">assignment</span><span class="o">.</span><span class="n">updated_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Assignment updated successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;assignment&#39;</span><span class="p">:</span> <span class="n">assignment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="AssignmentService.delete_assignment">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.assignment_service.AssignmentService.delete_assignment">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_assignment</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">assignment_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete an assignment&quot;&quot;&quot;</span>
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">Assignment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">assignment_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">assignment</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Assignment not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">assignment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Delete associated files</span>
+        <span class="k">for</span> <span class="n">submission</span> <span class="ow">in</span> <span class="n">assignment</span><span class="o">.</span><span class="n">submissions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">submission</span><span class="o">.</span><span class="n">file_path</span><span class="p">:</span>
+                <span class="n">delete_file</span><span class="p">(</span><span class="n">submission</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">assignment</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Assignment deleted successfully&#39;</span><span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="AssignmentService.submit_assignment">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.assignment_service.AssignmentService.submit_assignment">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">submit_assignment</span><span class="p">(</span><span class="n">student_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">assignment_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">submission_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
+                        <span class="n">file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FileStorage</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">max_file_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16777216</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Submit an assignment&quot;&quot;&quot;</span>
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">student_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">is_student</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Only students can submit assignments&quot;</span><span class="p">)</span>
+        
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">Assignment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">assignment_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">assignment</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Assignment not found&quot;</span><span class="p">)</span>
+        
+        <span class="n">enrollment</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">assignment</span><span class="o">.</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">in_</span><span class="p">([</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">enrollment</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Not enrolled in this course&quot;</span><span class="p">)</span>
+        
+        <span class="n">existing_submission</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">assignment_id</span><span class="o">=</span><span class="n">assignment_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">existing_submission</span> <span class="ow">and</span> <span class="n">existing_submission</span><span class="o">.</span><span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;returned&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s2">&quot;Assignment already submitted&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">assignment</span><span class="o">.</span><span class="n">due_date</span> <span class="ow">and</span> <span class="n">assignment</span><span class="o">.</span><span class="n">due_date</span> <span class="o">&lt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s2">&quot;Assignment is past due date&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">submission_text</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">file</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s2">&quot;Either text submission or file is required&quot;</span><span class="p">)</span>
+        
+        <span class="n">file_path</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">file</span> <span class="ow">and</span> <span class="n">file</span><span class="o">.</span><span class="n">filename</span><span class="p">:</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">AssignmentService</span><span class="o">.</span><span class="n">_handle_file_upload</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">max_file_size</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">existing_submission</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">existing_submission</span><span class="o">.</span><span class="n">file_path</span> <span class="ow">and</span> <span class="n">file_path</span><span class="p">:</span>
+                    <span class="n">delete_file</span><span class="p">(</span><span class="n">existing_submission</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
+                
+                <span class="n">existing_submission</span><span class="o">.</span><span class="n">submission_text</span> <span class="o">=</span> <span class="n">submission_text</span>
+                <span class="n">existing_submission</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
+                <span class="n">existing_submission</span><span class="o">.</span><span class="n">submitted_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+                <span class="n">existing_submission</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;submitted&#39;</span>
+                <span class="n">existing_submission</span><span class="o">.</span><span class="n">grade</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">existing_submission</span><span class="o">.</span><span class="n">feedback</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">existing_submission</span><span class="o">.</span><span class="n">graded_at</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">existing_submission</span><span class="o">.</span><span class="n">graded_by</span> <span class="o">=</span> <span class="kc">None</span>
+                
+                <span class="n">submission</span> <span class="o">=</span> <span class="n">existing_submission</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">submission</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="p">(</span>
+                    <span class="n">assignment_id</span><span class="o">=</span><span class="n">assignment_id</span><span class="p">,</span>
+                    <span class="n">student_id</span><span class="o">=</span><span class="n">student_id</span><span class="p">,</span>
+                    <span class="n">submission_text</span><span class="o">=</span><span class="n">submission_text</span><span class="p">,</span>
+                    <span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">,</span>
+                    <span class="n">status</span><span class="o">=</span><span class="s1">&#39;submitted&#39;</span>
+                <span class="p">)</span>
+                <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">submission</span><span class="p">)</span>
+            
+            <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">calculate_progress</span><span class="p">()</span>
+            
+            <span class="kn">from</span><span class="w"> </span><span class="nn">app.services.lesson_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">LessonService</span>
+            <span class="n">course_completed</span> <span class="o">=</span> <span class="n">LessonService</span><span class="o">.</span><span class="n">_is_course_fully_completed</span><span class="p">(</span><span class="n">student_id</span><span class="p">,</span> <span class="n">assignment</span><span class="o">.</span><span class="n">course_id</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">course_completed</span> <span class="ow">and</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span>
+                <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
+                <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+                <span class="n">NotificationService</span><span class="o">.</span><span class="n">notify_course_completion</span><span class="p">(</span><span class="n">assignment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span><span class="p">,</span> <span class="n">student_id</span><span class="p">,</span> <span class="n">assignment</span><span class="o">.</span><span class="n">course_id</span><span class="p">)</span>
+            
+            <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">NotificationService</span><span class="o">.</span><span class="n">notify_assignment_submission</span><span class="p">(</span>
+                    <span class="n">assignment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span><span class="p">,</span> 
+                    <span class="n">student_id</span><span class="p">,</span> 
+                    <span class="n">assignment_id</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to send assignment submission notification: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Assignment submitted successfully&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;submission&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="p">}</span>
+        
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">file_path</span><span class="p">:</span>
+                <span class="n">delete_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span></div>
+
+
+    
+<div class="viewcode-block" id="AssignmentService.get_assignment_submissions">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.assignment_service.AssignmentService.get_assignment_submissions">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_assignment_submissions</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">assignment_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all submissions for an assignment&quot;&quot;&quot;</span>
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">Assignment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">assignment_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">assignment</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Assignment not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">assignment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">submissions</span> <span class="o">=</span> <span class="n">assignment</span><span class="o">.</span><span class="n">submissions</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">submissions_data</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">submission</span> <span class="ow">in</span> <span class="n">submissions</span><span class="p">:</span>
+            <span class="n">submission_data</span> <span class="o">=</span> <span class="n">submission</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="n">submission_data</span><span class="p">[</span><span class="s1">&#39;student&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">submission</span><span class="o">.</span><span class="n">student</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="n">submissions_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">submission_data</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;submissions&#39;</span><span class="p">:</span> <span class="n">submissions_data</span><span class="p">,</span>
+            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">submissions_data</span><span class="p">),</span>
+            <span class="s1">&#39;assignment&#39;</span><span class="p">:</span> <span class="n">assignment</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="AssignmentService.grade_submission">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.assignment_service.AssignmentService.grade_submission">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">grade_submission</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">grade</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">feedback</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Grade an assignment submission&quot;&quot;&quot;</span>
+        <span class="n">submission</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">submission_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">submission</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Submission not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">submission</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">grade</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">grade</span> <span class="o">&gt;</span> <span class="n">submission</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">total_points</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Grade must be between 0 and </span><span class="si">{</span><span class="n">submission</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">total_points</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        
+        <span class="n">submission</span><span class="o">.</span><span class="n">grade</span> <span class="o">=</span> <span class="n">grade</span>
+        <span class="n">submission</span><span class="o">.</span><span class="n">feedback</span> <span class="o">=</span> <span class="n">feedback</span>
+        <span class="n">submission</span><span class="o">.</span><span class="n">graded_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">submission</span><span class="o">.</span><span class="n">graded_by</span> <span class="o">=</span> <span class="n">teacher_id</span>
+        <span class="n">submission</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;graded&#39;</span>
+        
+        <span class="n">enrollment</span> <span class="o">=</span> <span class="n">Enrollment</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span>
+            <span class="n">student_id</span><span class="o">=</span><span class="n">submission</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">course_id</span><span class="o">=</span><span class="n">submission</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">course_id</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Enrollment</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">in_</span><span class="p">([</span><span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">enrollment</span><span class="p">:</span>
+            <span class="n">enrollment</span><span class="o">.</span><span class="n">progress_percentage</span> <span class="o">=</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">calculate_progress</span><span class="p">()</span>
+            
+            <span class="kn">from</span><span class="w"> </span><span class="nn">app.services.lesson_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">LessonService</span>
+            <span class="n">course_completed</span> <span class="o">=</span> <span class="n">LessonService</span><span class="o">.</span><span class="n">_is_course_fully_completed</span><span class="p">(</span><span class="n">submission</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span> <span class="n">submission</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">course_id</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">course_completed</span> <span class="ow">and</span> <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;active&#39;</span><span class="p">:</span>
+                <span class="n">enrollment</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;completed&#39;</span>
+                <span class="n">enrollment</span><span class="o">.</span><span class="n">completed_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+                <span class="n">NotificationService</span><span class="o">.</span><span class="n">notify_course_completion</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">,</span> <span class="n">submission</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span> <span class="n">submission</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">course_id</span><span class="p">)</span>
+       
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">NotificationService</span><span class="o">.</span><span class="n">notify_assignment_graded</span><span class="p">(</span>
+                <span class="n">submission</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span>
+                <span class="n">teacher_id</span><span class="p">,</span>
+                <span class="n">submission</span><span class="o">.</span><span class="n">assignment_id</span><span class="p">,</span>
+                <span class="n">grade</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to send grading notification: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Assignment graded successfully&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;submission&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+    
+<div class="viewcode-block" id="AssignmentService.return_submission">
+<a class="viewcode-back" href="../../../source/app.services.html#app.services.assignment_service.AssignmentService.return_submission">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">return_submission</span><span class="p">(</span><span class="n">teacher_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">feedback</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Please revise and resubmit.&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return submission to student for revision&quot;&quot;&quot;</span>
+        <span class="n">submission</span> <span class="o">=</span> <span class="n">AssignmentSubmission</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">submission_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">submission</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFoundException</span><span class="p">(</span><span class="s2">&quot;Submission not found&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">submission</span><span class="o">.</span><span class="n">assignment</span><span class="o">.</span><span class="n">course</span><span class="o">.</span><span class="n">teacher_id</span> <span class="o">!=</span> <span class="n">teacher_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PermissionException</span><span class="p">(</span><span class="s2">&quot;Access denied&quot;</span><span class="p">)</span>
+        
+        <span class="n">submission</span><span class="o">.</span><span class="n">feedback</span> <span class="o">=</span> <span class="n">feedback</span>
+        <span class="n">submission</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;returned&#39;</span>
+        <span class="n">submission</span><span class="o">.</span><span class="n">graded_at</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">submission</span><span class="o">.</span><span class="n">graded_by</span> <span class="o">=</span> <span class="n">teacher_id</span>
+        
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="n">NotificationService</span><span class="o">.</span><span class="n">notify_assignment_returned</span><span class="p">(</span>
+            <span class="n">submission</span><span class="o">.</span><span class="n">student_id</span><span class="p">,</span>
+            <span class="n">teacher_id</span><span class="p">,</span>
+            <span class="n">submission</span><span class="o">.</span><span class="n">assignment_id</span><span class="p">,</span>
+            <span class="n">feedback</span>
+        <span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Assignment returned to student&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;submission&#39;</span><span class="p">:</span> <span class="n">submission</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_file_upload</span><span class="p">(</span><span class="n">file</span><span class="p">:</span> <span class="n">FileStorage</span><span class="p">,</span> <span class="n">max_file_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle file upload for assignment submission&quot;&quot;&quot;</span>
+        
+        <span class="n">allowed_extensions</span> <span class="o">=</span> <span class="n">current_app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ALLOWED_EXTENSIONS&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="s1">&#39;doc&#39;</span><span class="p">,</span> <span class="s1">&#39;docx&#39;</span><span class="p">,</span> <span class="s1">&#39;txt&#39;</span><span class="p">})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">allowed_file</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">allowed_extensions</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="s1">&#39;File type not allowed&#39;</span><span class="p">)</span>
+        
+        <span class="n">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">SEEK_END</span><span class="p">)</span>
+        <span class="n">file_size</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        
+        <span class="n">is_valid</span><span class="p">,</span> <span class="n">message</span> <span class="o">=</span> <span class="n">validate_file_size</span><span class="p">(</span><span class="n">file_size</span><span class="p">,</span> <span class="n">max_file_size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_valid</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationException</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        
+        <span class="n">upload_dir</span> <span class="o">=</span> <span class="n">create_upload_directory</span><span class="p">(</span><span class="s1">&#39;assignments&#39;</span><span class="p">)</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">sanitize_filename</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">upload_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">file_path</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Violeta Hoza.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

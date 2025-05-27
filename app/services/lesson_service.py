@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 from app.models import AssignmentSubmission, QuizAttempt, db, User, Course, Lesson, LessonProgress, Enrollment
 from app.utils.base_controller import ValidationException, PermissionException, NotFoundException
 from app.services.notification_service import NotificationService
@@ -147,7 +147,7 @@ class LessonService:
             raise ValidationException(f"Video URL is required for {lesson_type} lessons")
         
         if lesson_type == 'text' and video_url:
-            lesson_data['video_url'] = None  # Clear video URL for text-only lessons
+            lesson_data['video_url'] = None 
         
         lesson = Lesson(
             course_id=lesson_data['course_id'],
