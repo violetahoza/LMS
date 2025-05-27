@@ -21,7 +21,6 @@ def teacher_required():
             if not user:
                 return jsonify({'error': 'User not found'}), 404
                 
-            # Allow both teachers and admins
             if not (user.role == UserRole.TEACHER or user.role == UserRole.ADMIN):
                 return jsonify({'error': 'Teacher or admin access required'}), 403
             

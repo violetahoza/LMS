@@ -204,18 +204,26 @@ class NotificationService:
     def notify_assignment_graded(student_id: int, teacher_id: int, assignment_id: int, grade: float):
         """Notify student about graded assignment"""
         from app.models import Assignment
-        teacher = User.query.get(teacher_id)
-        assignment = Assignment.query.get(assignment_id)
         
-        return NotificationService.create_notification(
-            recipient_id=student_id,
-            sender_id=teacher_id,
-            notification_type=NotificationType.ASSIGNMENT_GRADED,
-            title="Assignment Graded",
-            message=f"Your assignment '{assignment.title}' has been graded by {teacher.full_name}. Grade: {grade}%",
-            action_url=f"/student/courses/{assignment.course_id}/assignment/{assignment_id}",
-            related_id=assignment_id
-        )
+        try:
+            teacher = User.query.get(teacher_id)
+            assignment = Assignment.query.get(assignment_id)
+            
+            if not teacher or not assignment:
+                return
+            
+            return NotificationService.create_notification(
+                recipient_id=student_id,
+                sender_id=teacher_id,
+                notification_type=NotificationType.ASSIGNMENT_GRADED,
+                title="Assignment Graded",
+                message=f"Your assignment '{assignment.title}' has been graded by {teacher.full_name}. Grade: {grade}%",
+                action_url=f"/student/courses/{assignment.course_id}/assignment/{assignment_id}",
+                related_id=assignment_id
+            )
+        except Exception as e:
+            print(f"Error sending assignment graded notification: {e}")
+            return None
     
     @staticmethod
     def notify_quiz_submission(teacher_id: int, student_id: int, quiz_id: int, score: float):

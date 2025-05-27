@@ -65,7 +65,6 @@ def update_course(course_id):
             success_message="Course updated successfully"
         )
     
-    # Check if user exists and has permission
     user = User.query.get(user_id)
     if not user:
         return BaseController.handle_request(
@@ -73,7 +72,6 @@ def update_course(course_id):
             success_message="Course updated successfully"
         )
     
-    # Allow teachers and admins to update courses
     if not (user.is_teacher() or user.is_admin()):
         return BaseController.handle_request(
             lambda: (_ for _ in ()).throw(PermissionError("Access denied. Teacher or admin role required")),
